@@ -153,6 +153,8 @@ private:
 
     ZSTD_DCtx* zstd_dctx;
 
+    sqlite3* db_conn;
+
 public:
     TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path);
 
@@ -205,6 +207,8 @@ public:
     const std::unique_ptr<uint32_t[]>& tofs_buffer() { return _tofs_buffer; };
 
     const std::unique_ptr<uint32_t[]>& intensities_buffer() { return _intensities_buffer; };
+
+    const sqlite3* db_connection() { return db_conn; };
 
     friend int tims_sql_callback(void* out, int cols, char** row, char** colnames);
 

@@ -1,0 +1,6 @@
+**/__pycache__
+*.egg-info
+dist
+timsdata_ve
+.python-version
+timsVE

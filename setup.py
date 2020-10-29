@@ -16,8 +16,12 @@ class get_pybind_include(object):
     method can be invoked. """
 
     def __str__(self):
-        import pybind11
-        return pybind11.get_include()
+        try:
+            import pybind11
+            return pybind11.get_include()
+        except ImportError:
+            print("pybind11 not found. Please either install it manually, or install via pip rather than through setuptools directly.")
+            sys.exit(1)
 
 import platform
 

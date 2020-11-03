@@ -229,28 +229,26 @@ int tims_sql_callback(void* out, int cols, char** row, [[maybe_unused]] char** c
 
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 {
-    sqlite3* db;
-
-    if(sqlite3_open_v2(tims_tdf_path.c_str(), &db, SQLITE_OPEN_READONLY, NULL))
-        throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db));
+    if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
+        throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
 
     const char sql[] = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
 
     char* error = NULL;
 
-    if(sqlite3_exec(db, sql, tims_sql_callback, this, &error) != SQLITE_OK)
+    if(sqlite3_exec(db_conn, sql, tims_sql_callback, this, &error) != SQLITE_OK)
     {
         std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
         sqlite3_free(error);
+        sqlite3_close(db_conn);
         throw std::runtime_error(err_msg);
     }
 
-    sqlite3_close(db);
 }
 
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path)
-: tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
+: tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr), db_conn(nullptr)
 {
     read_sql(tims_tdf_path);
 
@@ -278,6 +276,8 @@ TimsDataHandle::~TimsDataHandle()
 {
     if(zstd_dctx != nullptr)
         ZSTD_freeDCtx(zstd_dctx);
+    if(db_conn != nullptr)
+        sqlite3_close(db_conn);
     // std::cout << "KABOOM!!!" << std::endl; // JUST A TEST: this can be triggered by Python GC with pybind11.
 }
 

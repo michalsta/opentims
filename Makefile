@@ -20,8 +20,10 @@ rinst: rprep
 	R CMD INSTALL opentims_*.tar.gz
 ipython:
 	python -m IPython
-clean: pyclean rclean
+clean: pyclean rclean hereclean
 rclean:
 	rm -rf opentims_*.tar.gz  opentims.Rcheck
 pyclean:
 	rm -rf build dist opentims.egg-info
+hereclean:
+	rm -f *.so a.out

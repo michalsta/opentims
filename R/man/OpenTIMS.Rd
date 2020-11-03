@@ -4,7 +4,7 @@
 \alias{OpenTIMS}
 \title{Get OpenTIMS data representation.}
 \usage{
-OpenTIMS(path, db_path = "")
+OpenTIMS(path, analysis.tdf = "")
 }
 \arguments{
 \item{path}{Path to the TimsTOF .d folder. Otherwise direct path to .tdf_bin file containing the raw data.}

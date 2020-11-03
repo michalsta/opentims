@@ -23,16 +23,35 @@ NULL
 }
 
 
+#' TimsTOF data accessor.
+#'
+#' S4 class that facilitates data queries for TimsTOF data.
+#'
+#' @slot analysis.tdf_bin Path to raw data (typically *.d/analysis.tdf_bin).
+#' @slot analysis.tdf Path to sqlite database (typically *.d/analysis.tdf).
+#' @slot handle Pointer to raw data.
+#' @slot min_frame The index of the minimal frame.
+#' @slot max_frame The index of the miximal frame.
+#' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
+#' @slot windows A data.frame with information on the windows.
+#' @slot MS1 Indices of frames corresponding to MS1, i.e. precursor ions.
+#' @slot MS2 Indices of frames corresponding to MS2, i.e. fragment ions.
+#' @slot analysis.tdf.table_names Names of tables in the accompanying sqlite database.
+#' @export
 setClass('OpenTIMS',
-         slots=c(path='character',
-                 db_path='character',
+         slots=c(analysis.tdf_bin='character',
+                 analysis.tdf='character',
                  handle='externalptr',
                  min_frame='integer',
-                 max_frame='integer'),
+                 max_frame='integer',
+                 frames='data.frame'),
          validity=function(object){
-            if(object@db_path=='') dir.exists(object@path)
-            else file.exists(object@path)&file.exists(object@db_path)
-        }
+            analysis.tdf_bin_OK = file.exists(object@analysis.tdf_bin)
+            if(!analysis.tdf_bin_OK) print('Missing analysis.tdf_bin')
+            analysis.tdf_OK = file.exists(object@analysis.tdf)
+            if(!analysis.tdf_OK) print('Missing analysis.tdf')
+            analysis.tdf_bin_OK & analysis.tdf_OK
+         }
 )
 
 setMethod('show',
@@ -61,8 +80,9 @@ setMethod("[",
           function(x, i){
             i = as.integer(i)
             stopifnot(all(x@min_frame <= i, i <= x@max_frame))
-            tdf_get_indexes(x@handle, i)
+            return(tdf_get_indexes(x@handle, i))
         })
+
 
 #' Select a range of frames to extract.
 #'
@@ -84,9 +104,37 @@ setMethod("range",
             tdf_get_range(x@handle, start, stop, step)
           })
 
-#' Get OpenTIMS data representation.
+
+
+#' Extract tables from sqlite database analysis.tdf.
 #'
-#' 
+#' @param opentims Instance of OpenTIMS
+#' @param names Names to extract from the sqlite database.
+#' @return A list of tables.
+#' @export
+table2df = function(opentims, names){
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
+    DBI::dbDisconnect(sql_conn)
+    return(tables)
+}
+
+
+#' Extract tables from sqlite database analysis.tdf.
+#'
+#' @param opentims Instance of OpenTIMS
+#' @return Names of tables.
+#' @export
+tables_names = function(opentims, names){
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    tables_names = DBI::dbListTables(sql_conn)
+    DBI::dbDisconnect(sql_conn)
+    return(tables_names)
+}
+
+
+
+#' Get OpenTIMS data representation.
 #' 
 #' @param path Path to the TimsTOF .d folder. Otherwise direct path to .tdf_bin file containing the raw data.
 #' @param db_path Path to the sqlite database with the .tdf extension. Only supply it when 'path' corresponded to raw data file. If 'path' corresponds to the whole folder, you can skip this argument.
@@ -97,14 +145,43 @@ setMethod("range",
 #' }
 #' @importFrom methods new
 #' @export
-OpenTIMS = function(path, db_path=''){
-    handle = ifelse(db_path == '',
-                    tdf_open_dir(path),
-                    tdf_open(path, db_path))
+OpenTIMS = function(path, analysis.tdf=''){
+    if(analysis.tdf==''){
+        analysis.tdf_bin = file.path(path,'analysis.tdf_bin')
+        analysis.tdf = file.path(path,'analysis.tdf')
+    } else {
+        analysis.tdf = path
+    }
+
+    # getting necessary tables from the accompanying sqlite database. 
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    frames = DBI::dbReadTable(sql_conn, 'Frames')
+    DBI::dbDisconnect(sql_conn)
+
+    handle = tdf_open(analysis.tdf_bin, analysis.tdf)
+
     new("OpenTIMS",
-        path=path, 
-        db_path=db_path,
+        analysis.tdf_bin=analysis.tdf_bin, 
+        analysis.tdf=analysis.tdf,
         handle=handle,
         min_frame=as.integer(tdf_min_frame_id(handle)),
-        max_frame=as.integer(tdf_max_frame_id(handle)))
+        max_frame=as.integer(tdf_max_frame_id(handle)),
+        frames=frames)
 }
+
+#' Get MS1 frame numbers.
+#'
+#' @param opentims Instance of OpenTIMS
+#' @return Numbers of frames corresponding to MS1, i.e. precursor ions.
+#' @export
+MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
+
+
+#' Get MS2 frame numbers.
+#'
+#' @param opentims Instance of OpenTIMS
+#' @return Numbers of frames corresponding to MS2, i.e. fragment ions.
+#' @export
+MS2 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 9]
+
+

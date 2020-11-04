@@ -177,6 +177,7 @@ OpenTIMS = function(path, analysis.tdf=''){
 MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 
 
+# WRONG!!!
 #' Get MS2 frame numbers.
 #'
 #' @param opentims Instance of OpenTIMS
@@ -185,3 +186,18 @@ MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 MS2 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 9]
 
 
+#' Explore the contentents of the sqlite .tdf database.
+#'
+#' @param opentims Instance of OpenTIMS
+#' @param ... Parameters passed to head and tail functions.
+#' @export
+explore.tdf.tables = function(opentims, ...){
+    for(table_name in tables_names(opentims)){
+        print(table_name)
+        df=table2dt(opentims, table_name)
+        print(head(df,...))
+        print(tail(df,...))
+        readline("PRESS ENTER")
+    }
+    print('Get full tables using "table2df".')
+}

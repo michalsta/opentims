@@ -136,6 +136,7 @@ struct Peak
 };
 
 class BrukerTof2MZConverter;
+class Tof2MZConverter;
 
 class TimsDataHandle
 {
@@ -158,6 +159,8 @@ private:
     ZSTD_DCtx* zstd_dctx;
 
     sqlite3* db_conn;
+
+    std::unique_ptr<Tof2MZConverter> tof2mz_converter;
 
 public:
     TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
@@ -183,6 +186,8 @@ public:
     uint32_t max_frame_id() const { return _max_frame_id; };
 
     bool has_frame(uint32_t frame_id) const { return frame_descs.count(frame_id) > 0; };
+
+    void set_converter(std::unique_ptr<Tof2MZConverter>&& converter);
 
     void extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result);
 

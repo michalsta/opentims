@@ -1,5 +1,6 @@
 #include <cassert>
 #include "opentims.cpp"
+#include "converter.cpp"
 
 int main(int argc, char** argv)
 {

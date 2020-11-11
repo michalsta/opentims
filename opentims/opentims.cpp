@@ -35,6 +35,7 @@
 #include "opentims.h"
 #endif
 
+#include "converter.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -264,6 +265,8 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
     decompression_buffer = std::make_unique<char[]>(decomp_buffer_size);
 
     zstd_dctx = ZSTD_createDCtx();
+
+    tof2mz_converter = DefaultConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 
@@ -315,6 +318,14 @@ size_t TimsDataHandle::no_peaks_total() const
     for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
         ret += it->second.num_peaks;
     return ret;
+}
+
+void TimsDataHandle::set_converter(std::unique_ptr<Tof2MZConverter>&& converter)
+{
+    if(converter)
+        tof2mz_converter = std::move(converter);
+    else
+        tof2mz_converter = DefaultConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result)

@@ -14,8 +14,8 @@ class Tof2MZConverter
 class ErrorTof2MZConverter : public Tof2MZConverter
 {
  public:
-    ErrorTof2MZConverter(TimsDataHandle& TDH) {};
-    void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final
+    ErrorTof2MZConverter([[maybe_unused]] TimsDataHandle& TDH) {};
+    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* mzs, [[maybe_unused]] const uint32_t* tofs, [[maybe_unused]] uint32_t size) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
@@ -48,7 +48,7 @@ class BrukerTof2MZConverter : public Tof2MZConverter
             throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + errmsg);
         return ret;
     };
-
+ public:
     BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0)
     {
         // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
@@ -68,7 +68,7 @@ class BrukerTof2MZConverter : public Tof2MZConverter
     }
 
     ~BrukerTof2MZConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
- public:
+
     void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final
     {
         std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
@@ -87,7 +87,7 @@ class ConverterFactory
 class ErrorConverterFactory : public ConverterFactory
 {
  public:
-    virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MZConverter>(); };
+    std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MZConverter>(TDH); };
 };
 
 class BrukerConverterFactory : public ConverterFactory
@@ -113,7 +113,7 @@ class DefaultConverterFactory
 
     template<class FactoryType, class... Args> void setAsDefault(Args&& ... args)
     {
-        static_assert(std::is_base_of<ConverterFactory, FactoryType>::value);
+        static_assert(std::is_base_of<ConverterFactory, FactoryType>::value, "FactoryType must be a subclass of ConverterFactory");
         fac_instance = std::make_unique<FactoryType>(std::forward(args...));
     }
 };

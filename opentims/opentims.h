@@ -135,10 +135,14 @@ struct Peak
     void print();
 };
 
+class BrukerTof2MZConverter;
 
 class TimsDataHandle
 {
+friend class BrukerTof2MZConverter;
+
 private:
+    const std::string tims_dir_path;
     mio::mmap_source tims_data_bin;
     std::unordered_map<uint32_t, TimsFrame> frame_descs;
     void read_sql(const std::string& tims_tdf_path);
@@ -156,7 +160,7 @@ private:
     sqlite3* db_conn;
 
 public:
-    TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path);
+    TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
 
     TimsDataHandle(const std::string& tims_data_dir);
 

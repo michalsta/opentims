@@ -247,8 +247,8 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 }
 
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path)
-: tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr), db_conn(nullptr)
+TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir)
+: tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr), db_conn(nullptr)
 {
     read_sql(tims_tdf_path);
 
@@ -268,7 +268,7 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
 
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir)
-: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf")
+: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf", tims_data_dir)
 {}
 
 

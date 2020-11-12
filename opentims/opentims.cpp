@@ -185,6 +185,9 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t*
     for(size_t idx = 0; idx < nnum_peaks; idx++)
         intensities[idx] = static_cast<double>(intensities[idx]) * intensity_correction + 0.5;
 
+    if(mzs != nullptr)
+        parent_tdh.tof2mz_converter->convert(id, mzs, tofs, nnum_peaks);
+
     if(frame_ids != nullptr)
         for(size_t idx = 0; idx < nnum_peaks; idx++)
             frame_ids[idx] = id;

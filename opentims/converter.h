@@ -48,6 +48,7 @@ class BrukerTof2MZConverter : public Tof2MZConverter
             throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + errmsg);
         return ret;
     };
+
  public:
     BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0)
     {
@@ -111,9 +112,9 @@ class DefaultConverterFactory
         return fac_instance->produce(TDH);
     }
 
-    template<class FactoryType, class... Args> void setAsDefault(Args&& ... args)
+    template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {
         static_assert(std::is_base_of<ConverterFactory, FactoryType>::value, "FactoryType must be a subclass of ConverterFactory");
-        fac_instance = std::make_unique<FactoryType>(std::forward(args...));
+        fac_instance = std::make_unique<FactoryType>(std::forward<Args...>(args...));
     }
 };

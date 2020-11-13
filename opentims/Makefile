@@ -10,4 +10,4 @@ zstddeclib.o: zstd/*
 check:
 	clang++ opentims.cpp -Weverything -fsyntax-only -std=c++14 -Wno-c++98-compat
 clean:
-	rm -f *.o a.out
+	rm -f *.o a.out *.gch

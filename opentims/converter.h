@@ -9,6 +9,7 @@ class Tof2MZConverter
 {
  public:
     virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
+    virtual ~Tof2MZConverter() {};
 };
 
 class ErrorTof2MZConverter : public Tof2MZConverter
@@ -21,7 +22,7 @@ class ErrorTof2MZConverter : public Tof2MZConverter
     }
 };
 
-class BrukerTof2MZConverter : public Tof2MZConverter
+class BrukerTof2MZConverter final : public Tof2MZConverter
 {
     void* dllhandle;
     uint64_t bruker_file_handle;
@@ -83,15 +84,16 @@ class ConverterFactory
 {
  public:
     virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) = 0;
+    virtual ~ConverterFactory() {};
 };
 
-class ErrorConverterFactory : public ConverterFactory
+class ErrorConverterFactory final : public ConverterFactory
 {
  public:
     std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MZConverter>(TDH); };
 };
 
-class BrukerConverterFactory : public ConverterFactory
+class BrukerConverterFactory final : public ConverterFactory
 {
     const std::string dll_path;
  public:
@@ -100,7 +102,7 @@ class BrukerConverterFactory : public ConverterFactory
     virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MZConverter>(TDH, dll_path.c_str()); };
 };
 
-class DefaultConverterFactory
+class DefaultConverterFactory final
 {
     static std::unique_ptr<ConverterFactory> fac_instance;
  public:

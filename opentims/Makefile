@@ -1,7 +1,8 @@
 all: zstddeclib.o sqlite3.o
-	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -O2 -g zstddeclib.o sqlite3.o -lpthread -ldl
+	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -O3 -g zstddeclib.o sqlite3.o -lpthread -ldl
 	#clang++ sqlite3.o tims2hdf5.cpp -lpthread -ldl -lzstd -lhdf5 -g -o tims2hdf5
-
+dbg: zstddeclib.o sqlite3.o
+	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -Og -g zstddeclib.o sqlite3.o -lpthread -ldl
 sqlite3.o: sqlite/*
 	gcc -c -O2 sqlite/sqlite3.c -o sqlite3.o
 zstddeclib.o: zstd/*

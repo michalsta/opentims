@@ -150,7 +150,11 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t*
     {
         accum_tofs = -1;
 
-        uint32_t no_peaks = back_data(scan_idx+1) / 2;
+        const uint32_t no_peaks = back_data(scan_idx+1) / 2;
+
+        const uint32_t for_loop_end = no_peaks + peaks_processed;
+        for(uint32_t ii = peaks_processed; ii < for_loop_end; ii++)
+            scan_ids[ii] = scan_idx;
 
         for(uint32_t ii = 0; ii < no_peaks; ii++)
         {
@@ -162,8 +166,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t*
             read_offset++;
             peaks_processed++;
         }
-        for(uint32_t ii = 0; ii < no_peaks; ii++)
-            scan_ids[peaks_processed] = scan_idx;
     }
 
     accum_tofs = -1;

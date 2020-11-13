@@ -99,7 +99,7 @@ class BrukerConverterFactory final : public ConverterFactory
  public:
     BrukerConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
     BrukerConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
-    virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MZConverter>(TDH, dll_path.c_str()); };
+    std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MZConverter>(TDH, dll_path.c_str()); };
 };
 
 class DefaultConverterFactory final

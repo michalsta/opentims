@@ -22,6 +22,14 @@ namespace py = pybind11;
 
 using namespace pybind11::literals;
 
+template<typename T> T* get_ptr(py::buffer& buf)
+{
+	py::buffer_info buf_info = buf.request();
+	if(buf_info.size == 0)
+		return nullptr;
+	return static_cast<T*>(buf_info.ptr);
+}
+
 PYBIND11_MODULE(opentims_cpp, m) {
     py::class_<TimsFrame>(m, "TimsFrame")
         .def_readonly("id", &TimsFrame::id)
@@ -60,10 +68,64 @@ PYBIND11_MODULE(opentims_cpp, m) {
                 py::buffer_info result_info  = result_b.request();
                 dh.extract_frames(static_cast<uint32_t*>(indexes_info.ptr), indexes_info.size, static_cast<uint32_t*>(result_info.ptr));
             })
+	.def("extract_frames",
+	    [](
+		TimsDataHandle& dh,
+		py::buffer& indexes_b,
+		py::buffer& frame_ids,
+		py::buffer& scan_ids,
+		py::buffer& tofs,
+		py::buffer& intensities,
+		py::buffer& mzs,
+		py::buffer& drift_times,
+		py::buffer& retention_times)
+	    {
+                py::buffer_info indexes_info = indexes_b.request();
+		dh.extract_frames(
+			get_ptr<uint32_t>(indexes_b),
+			indexes_info.size,
+			get_ptr<uint32_t>(frame_ids),
+			get_ptr<uint32_t>(scan_ids),
+			get_ptr<uint32_t>(tofs),
+			get_ptr<uint32_t>(intensities),
+			get_ptr<double>(mzs),
+			get_ptr<double>(drift_times),
+			get_ptr<double>(retention_times)
+		);
+	    })
         .def("extract_frames_slice",
             [](TimsDataHandle& dh, size_t start, size_t end, size_t step, py::buffer& result_b)
             {
                 py::buffer_info result_info  = result_b.request();
                 dh.extract_frames_slice(start, end, step, static_cast<uint32_t*>(result_info.ptr));
-            });
+            })
+	.def("extract_frames_slice",
+	    [](
+		TimsDataHandle& dh,
+		size_t start,
+		size_t end,
+		size_t step,
+		py::buffer& frame_ids,
+		py::buffer& scan_ids,
+		py::buffer& tofs,
+		py::buffer& intensities,
+		py::buffer& mzs,
+		py::buffer& drift_times,
+		py::buffer& retention_times)
+	    {
+		dh.extract_frames_slice(
+			start,
+			end,
+			step,
+			get_ptr<uint32_t>(frame_ids),
+			get_ptr<uint32_t>(scan_ids),
+			get_ptr<uint32_t>(tofs),
+			get_ptr<uint32_t>(intensities),
+			get_ptr<double>(mzs),
+			get_ptr<double>(drift_times),
+			get_ptr<double>(retention_times)
+		);
+	     });
+
+    m.def("setup_bruker_so", [](const std::string& path) { DefaultConverterFactory::setAsDefault<BrukerConverterFactory, const char*>(path.c_str()); } );
 }

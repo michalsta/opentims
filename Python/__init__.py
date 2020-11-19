@@ -22,3 +22,19 @@ except ImportError:
     support_lib = pkgutil.get_loader("opentims_support")
     ctypes.CDLL(support_lib.get_filename(), ctypes.RTLD_GLOBAL)
     import opentims_cpp
+
+
+bruker_bridge_present = False
+
+try:
+    # Try to find and load Bruker's dll for data conversion
+    import opentims_bruker_bridge as obb
+    for so_path in obb.get_so_paths():
+        try:
+            opentims_cpp.setup_bruker_so(so_path)
+            bruker_bridge_present = True
+            break
+        except RuntimeError:
+            pass
+except ImportError:
+    pass

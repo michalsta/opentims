@@ -52,7 +52,7 @@ if dual_build:
         ),
         Extension(
             name='opentims_cpp',
-            sources=[join('opentims','opentims_pybind11.cpp')],
+            sources=[join('opentims','opentims_pybind11.cpp'), join("opentims", "converter.cpp")],
             extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split(),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],

@@ -59,6 +59,7 @@ if dual_build:
             extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split() if not build_asan else "-Og -g -std=c++14 -fsanitize=address".split(),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
+            undef_macros = [] if not build_asan else [ "NDEBUG" ]
         )
     ]
 else:

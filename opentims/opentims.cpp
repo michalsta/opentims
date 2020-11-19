@@ -271,6 +271,8 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
 
     zstd_dctx = ZSTD_createDCtx();
 
+    std::cout << "THIS: " << this << std::endl;
+
     tof2mz_converter = DefaultConverterFactory::produceDefaultConverterInstance(*this);
 }
 

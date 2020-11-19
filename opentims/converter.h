@@ -56,6 +56,7 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
  public:
     BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
     {
+        std::cerr << "Start\n";
         // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
         if(dllhandle == nullptr)
             throw std::runtime_error(std::string("dlopen(") + dll_path + ") failed, reason: " + dlerror());
@@ -66,7 +67,9 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
         tims_close = reinterpret_cast<tims_close_fun_t*>(symbol_lookup("tims_close"));
         tims_index_to_mz = reinterpret_cast<tims_convert_fun_t*>(symbol_lookup("tims_index_to_mz"));
 
+        std::cerr << "1\n";
         bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 0); // Recalibrated states not supported
+        std::cerr << "2\n";
 
         if(bruker_file_handle == 0)
             throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());

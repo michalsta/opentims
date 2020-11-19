@@ -10,6 +10,7 @@ class Tof2MZConverter
  public:
     virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
     virtual ~Tof2MZConverter() {};
+    virtual std::string description() { return "Tof2MZConverter default"; };
 };
 
 class ErrorTof2MZConverter : public Tof2MZConverter
@@ -20,12 +21,14 @@ class ErrorTof2MZConverter : public Tof2MZConverter
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
+    std::string description() override final { return "ErrorTof2MZConverter default"; };
 };
 
 class BrukerTof2MZConverter final : public Tof2MZConverter
 {
     void* dllhandle;
     uint64_t bruker_file_handle;
+    const std::string so_path;
 
     tims_open_fun_t* tims_open;
     tims_get_last_error_string_fun_t* tims_get_last_error_string;
@@ -51,7 +54,7 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
     };
 
  public:
-    BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0)
+    BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
     {
         // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
         if(dllhandle == nullptr)
@@ -78,6 +81,8 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
             dbl_tofs[idx] = static_cast<double>(tofs[idx]);
         tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
     }
+
+    std::string description() override final { return "BrukerTof2MZConverter, shared lib path:" + so_path; };
 };
 
 class ConverterFactory

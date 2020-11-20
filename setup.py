@@ -25,7 +25,7 @@ class get_pybind_include(object):
 
 import platform
 
-build_asan = True
+build_asan = False
 
 # If we're not on Windows, assume something POSIX-compatible (either Linux, OSX, *BSD or Cygwin) with a working gcc-like compiler
 windows = platform.system() == 'Windows'

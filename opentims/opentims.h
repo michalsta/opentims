@@ -120,10 +120,6 @@ public:
     void save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times, ZSTD_DCtx* decomp_ctx = nullptr);
 
     void save_to_matrix_buffer(uint32_t* buf, ZSTD_DCtx* decomp_ctx = nullptr) { save_to_buffs(buf, buf+num_peaks, buf+2*num_peaks, buf+3*num_peaks, nullptr, nullptr, nullptr, decomp_ctx); };
-
-    inline double scan_id_to_drift_time(uint32_t scan_id) { return static_cast<double>(scan_id) * 42.0; };
-
-    inline double tof_to_mz(uint32_t tof) { return static_cast<double>(tof) / 42.0; };
 };
 
 struct Peak
@@ -135,12 +131,15 @@ struct Peak
     void print();
 };
 
-class BrukerTof2MZConverter;
-class Tof2MZConverter;
+class BrukerTof2MzConverter;
+class Tof2MzConverter;
+class BrukerScan2DriftConverter;
+class Scan2DriftConverter;
 
 class TimsDataHandle
 {
-friend class BrukerTof2MZConverter;
+friend class BrukerTof2MzConverter;
+friend class BrukerScan2DriftConverter;
 
 private:
     const std::string tims_dir_path;
@@ -160,7 +159,8 @@ private:
 
     sqlite3* db_conn;
 
-    std::unique_ptr<Tof2MZConverter> tof2mz_converter;
+    std::unique_ptr<Tof2MzConverter> tof2mz_converter;
+    std::unique_ptr<Scan2DriftConverter> scan2drift_converter;
 
 public:
     TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
@@ -187,7 +187,8 @@ public:
 
     bool has_frame(uint32_t frame_id) const { return frame_descs.count(frame_id) > 0; };
 
-    void set_converter(std::unique_ptr<Tof2MZConverter>&& converter);
+    void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
+    void set_converter(std::unique_ptr<Scan2DriftConverter>&& converter);
 
     void extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result);
 
@@ -196,7 +197,7 @@ public:
     void extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* result);
 
     void extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times);
-    void extract_frames(const std::vector<uint32_t>& indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times) 
+    void extract_frames(const std::vector<uint32_t>& indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
                                 { extract_frames(indexes.data(), indexes.size(), frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times); };
 
     void extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times);

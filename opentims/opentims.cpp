@@ -36,6 +36,7 @@
 #endif
 
 #include "tof2mz_converter.h"
+#include "scan2drift_converter.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -198,14 +199,8 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t*
         for(size_t idx = 0; idx < nnum_peaks; idx++)
             retention_times[idx] = time;
 
-
     if(drift_times != nullptr)
-        for(size_t idx = 0; idx < nnum_peaks; idx++)
-            drift_times[idx] = scan_id_to_drift_time(scan_ids[idx]);
-
-    if(mzs != nullptr)
-        for(size_t idx = 0; idx < nnum_peaks; idx++)
-            mzs[idx] = tof_to_mz(tofs[idx]);
+        parent_tdh.scan2drift_converter->convert(id, drift_times, scan_ids, nnum_peaks);
 
     if(needs_closure)
         close();
@@ -274,6 +269,7 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
     std::cout << "THIS: " << this << std::endl;
 
     tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
+    scan2drift_converter = DefaultScan2DriftConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 
@@ -327,12 +323,20 @@ size_t TimsDataHandle::no_peaks_total() const
     return ret;
 }
 
-void TimsDataHandle::set_converter(std::unique_ptr<Tof2MZConverter>&& converter)
+void TimsDataHandle::set_converter(std::unique_ptr<Tof2MzConverter>&& converter)
 {
     if(converter)
         tof2mz_converter = std::move(converter);
     else
         tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
+}
+
+void TimsDataHandle::set_converter(std::unique_ptr<Scan2DriftConverter>&& converter)
+{
+    if(converter)
+        scan2drift_converter = std::move(converter);
+    else
+        scan2drift_converter = DefaultScan2DriftConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result)

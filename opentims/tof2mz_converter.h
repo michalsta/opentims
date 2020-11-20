@@ -5,26 +5,26 @@
 #include "opentims.h"
 #include "bruker.h"
 
-class Tof2MZConverter
+class Tof2MzConverter
 {
  public:
     virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
-    virtual ~Tof2MZConverter() {};
-    virtual std::string description() { return "Tof2MZConverter default"; };
+    virtual ~Tof2MzConverter() {};
+    virtual std::string description() { return "Tof2MzConverter default"; };
 };
 
-class ErrorTof2MZConverter : public Tof2MZConverter
+class ErrorTof2MzConverter : public Tof2MzConverter
 {
  public:
-    ErrorTof2MZConverter([[maybe_unused]] TimsDataHandle& TDH) {};
+    ErrorTof2MzConverter([[maybe_unused]] TimsDataHandle& TDH) {};
     void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* mzs, [[maybe_unused]] const uint32_t* tofs, [[maybe_unused]] uint32_t size) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
-    std::string description() override final { return "ErrorTof2MZConverter default"; };
+    std::string description() override final { return "ErrorTof2MzConverter default"; };
 };
 
-class BrukerTof2MZConverter final : public Tof2MZConverter
+class BrukerTof2MzConverter final : public Tof2MzConverter
 {
     void* dllhandle;
     uint64_t bruker_file_handle;
@@ -54,7 +54,7 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
     };
 
  public:
-    BrukerTof2MZConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
+    BrukerTof2MzConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
     {
         std::cerr << "Start\n";
         // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
@@ -75,7 +75,7 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
             throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
     }
 
-    ~BrukerTof2MZConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
+    ~BrukerTof2MzConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
 
     void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final
     {
@@ -85,20 +85,20 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
         tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
     }
 
-    std::string description() override final { return "BrukerTof2MZConverter, shared lib path:" + so_path; };
+    std::string description() override final { return "BrukerTof2MzConverter, shared lib path:" + so_path; };
 };
 
 class Tof2MzConverterFactory
 {
  public:
-    virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) = 0;
+    virtual std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) = 0;
     virtual ~Tof2MzConverterFactory() {};
 };
 
 class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
  public:
-    std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MZConverter>(TDH); };
+    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MzConverter>(TDH); };
 };
 
 class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
@@ -107,14 +107,14 @@ class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
  public:
     BrukerTof2MzConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
     BrukerTof2MzConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
-    std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MZConverter>(TDH, dll_path.c_str()); };
+    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str()); };
 };
 
 class DefaultTof2MzConverterFactory final
 {
     static std::unique_ptr<Tof2MzConverterFactory> fac_instance;
  public:
-    static std::unique_ptr<Tof2MZConverter> produceDefaultConverterInstance(TimsDataHandle& TDH)
+    static std::unique_ptr<Tof2MzConverter> produceDefaultConverterInstance(TimsDataHandle& TDH)
     {
         if(!fac_instance)
             fac_instance = std::make_unique<ErrorTof2MzConverterFactory>();

@@ -2,7 +2,7 @@ all: zstddeclib.o sqlite3.o
 	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -O3 -g zstddeclib.o sqlite3.o -lpthread -ldl
 	#clang++ sqlite3.o tims2hdf5.cpp -lpthread -ldl -lzstd -lhdf5 -g -o tims2hdf5
 check-gcc:
-	g++ -fsyntax-only opentims.cpp opentims_pybind11.cpp tof2mz_converter.cpp -std=c++14
+	g++ -fsyntax-only opentims.cpp scan2drift_converter.cpp tof2mz_converter.cpp -std=c++14
 dbg: zstddeclib.o sqlite3.o
 	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -Og -g zstddeclib.o sqlite3.o -lpthread -ldl
 sqlite3.o: sqlite/*

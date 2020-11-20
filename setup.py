@@ -55,7 +55,7 @@ if dual_build:
         ),
         Extension(
             name='opentims_cpp',
-            sources=[join('opentims','opentims_pybind11.cpp'), join("opentims", "converter.cpp")],
+            sources=[join('opentims','opentims_pybind11.cpp'), join("opentims", "tof2mz_converter.cpp")],
             extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split() if not build_asan else "-Og -g -std=c++14 -fsanitize=address".split(),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],

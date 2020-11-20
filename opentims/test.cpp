@@ -1,6 +1,6 @@
 #include <cassert>
 #include "opentims.cpp"
-#include "converter.cpp"
+#include "tof2mz_converter.cpp"
 
 int main(int argc, char** argv)
 {

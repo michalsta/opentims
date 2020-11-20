@@ -35,7 +35,7 @@
 #include "opentims.h"
 #endif
 
-#include "converter.h"
+#include "tof2mz_converter.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,

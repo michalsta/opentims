@@ -273,7 +273,7 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
 
     std::cout << "THIS: " << this << std::endl;
 
-    tof2mz_converter = DefaultConverterFactory::produceDefaultConverterInstance(*this);
+    tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 
@@ -332,7 +332,7 @@ void TimsDataHandle::set_converter(std::unique_ptr<Tof2MZConverter>&& converter)
     if(converter)
         tof2mz_converter = std::move(converter);
     else
-        tof2mz_converter = DefaultConverterFactory::produceDefaultConverterInstance(*this);
+        tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result)

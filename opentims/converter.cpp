@@ -1,3 +1,3 @@
 #include "converter.h"
 
-std::unique_ptr<ConverterFactory> DefaultConverterFactory::fac_instance;
+std::unique_ptr<Tof2MzConverterFactory> DefaultTof2MzConverterFactory::fac_instance;

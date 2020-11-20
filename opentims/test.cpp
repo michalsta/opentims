@@ -5,7 +5,7 @@
 int main(int argc, char** argv)
 {
     assert(argc == 2);
-    DefaultConverterFactory::setAsDefault<BrukerConverterFactory, const char*>("/home/lackistar/Projects/bruker/timsdata_scratchpad/tims2hdf5/libtimsdata.so");
+    DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>("/home/lackistar/Projects/bruker/timsdata_scratchpad/tims2hdf5/libtimsdata.so");
     TimsDataHandle TDH(argv[1]);
     for(size_t ii = TDH.min_frame_id(); ii <= TDH.max_frame_id(); ii++)
     {

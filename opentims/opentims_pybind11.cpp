@@ -127,5 +127,5 @@ PYBIND11_MODULE(opentims_cpp, m) {
 		);
 	     });
 
-    m.def("setup_bruker_so", [](const std::string& path) { DefaultConverterFactory::setAsDefault<BrukerConverterFactory, const char*>(path.c_str()); } );
+    m.def("setup_bruker_so", [](const std::string& path) { DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str()); } );
 }

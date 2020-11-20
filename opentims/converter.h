@@ -88,43 +88,43 @@ class BrukerTof2MZConverter final : public Tof2MZConverter
     std::string description() override final { return "BrukerTof2MZConverter, shared lib path:" + so_path; };
 };
 
-class ConverterFactory
+class Tof2MzConverterFactory
 {
  public:
     virtual std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) = 0;
-    virtual ~ConverterFactory() {};
+    virtual ~Tof2MzConverterFactory() {};
 };
 
-class ErrorConverterFactory final : public ConverterFactory
+class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
  public:
     std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<ErrorTof2MZConverter>(TDH); };
 };
 
-class BrukerConverterFactory final : public ConverterFactory
+class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
     const std::string dll_path;
  public:
-    BrukerConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
-    BrukerConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
+    BrukerTof2MzConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
+    BrukerTof2MzConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
     std::unique_ptr<Tof2MZConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MZConverter>(TDH, dll_path.c_str()); };
 };
 
-class DefaultConverterFactory final
+class DefaultTof2MzConverterFactory final
 {
-    static std::unique_ptr<ConverterFactory> fac_instance;
+    static std::unique_ptr<Tof2MzConverterFactory> fac_instance;
  public:
     static std::unique_ptr<Tof2MZConverter> produceDefaultConverterInstance(TimsDataHandle& TDH)
     {
         if(!fac_instance)
-            fac_instance = std::make_unique<ErrorConverterFactory>();
+            fac_instance = std::make_unique<ErrorTof2MzConverterFactory>();
 
         return fac_instance->produce(TDH);
     }
 
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {
-        static_assert(std::is_base_of<ConverterFactory, FactoryType>::value, "FactoryType must be a subclass of ConverterFactory");
+        static_assert(std::is_base_of<Tof2MzConverterFactory, FactoryType>::value, "FactoryType must be a subclass of Tof2MzConverterFactory");
         fac_instance = std::make_unique<FactoryType>(std::forward<Args...>(args...));
     }
 };

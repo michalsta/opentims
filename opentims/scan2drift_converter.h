@@ -8,7 +8,8 @@
 class Scan2DriftConverter
 {
  public:
-    virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
+    virtual void convert(uint32_t frame_id, double* drifts, const double* scans, uint32_t size) = 0;
+    virtual void convert(uint32_t frame_id, double* drifts, const uint32_t* scans, uint32_t size) = 0;
     virtual ~Scan2DriftConverter() {};
     virtual std::string description() { return "Scan2DriftConverter default"; };
 };
@@ -17,7 +18,11 @@ class ErrorScan2DriftConverter : public Scan2DriftConverter
 {
  public:
     ErrorScan2DriftConverter([[maybe_unused]] TimsDataHandle& TDH) {};
-    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* mzs, [[maybe_unused]] const uint32_t* tofs, [[maybe_unused]] uint32_t size) override final
+    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* drifts, [[maybe_unused]] const double* scans, [[maybe_unused]] uint32_t size) override final
+    {
+        throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
+    }
+    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* drifts, [[maybe_unused]] const uint32_t* scans, [[maybe_unused]] uint32_t size) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
@@ -56,7 +61,6 @@ class BrukerScan2DriftConverter final : public Scan2DriftConverter
  public:
     BrukerScan2DriftConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
     {
-        std::cerr << "Start\n";
         // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
         if(dllhandle == nullptr)
             throw std::runtime_error(std::string("dlopen(") + dll_path + ") failed, reason: " + dlerror());
@@ -67,9 +71,7 @@ class BrukerScan2DriftConverter final : public Scan2DriftConverter
         tims_close = reinterpret_cast<tims_close_fun_t*>(symbol_lookup("tims_close"));
         tims_scannum_to_drift = reinterpret_cast<tims_convert_fun_t*>(symbol_lookup("tims_scannum_to_oneoverk0"));
 
-        std::cerr << "1\n";
         bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 0); // Recalibrated states not supported
-        std::cerr << "2\n";
 
         if(bruker_file_handle == 0)
             throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
@@ -77,12 +79,16 @@ class BrukerScan2DriftConverter final : public Scan2DriftConverter
 
     ~BrukerScan2DriftConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
 
-    void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final
+    void convert(uint32_t frame_id, double* drifts, const double* scans, uint32_t size) override final
     {
-        std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
+        tims_scannum_to_drift(bruker_file_handle, frame_id, scans, drifts, size);
+    }
+    void convert(uint32_t frame_id, double* drifts, const uint32_t* scans, uint32_t size) override final
+    {
+        std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
         for(uint32_t idx = 0; idx < size; idx++)
-            dbl_tofs[idx] = static_cast<double>(tofs[idx]);
-        tims_scannum_to_drift(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
+            dbl_scans[idx] = static_cast<double>(scans[idx]);
+        tims_scannum_to_drift(bruker_file_handle, frame_id, dbl_scans.get(), drifts, size);
     }
 
     std::string description() override final { return "BrukerScan2DriftConverter, shared lib path:" + so_path; };

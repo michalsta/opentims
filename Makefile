@@ -1,8 +1,7 @@
 # This Makefile is for the convenience of the package developers,
 # and is not meant for use by end-users.
 
-reinstall: pyclean
-	pip uninstall opentims -y || true
+reinstall: pyclean pipclean
 #	pip install . --verbose
 	pip install . --user --verbose --no-cache
 matteo:
@@ -27,3 +26,6 @@ pyclean:
 	rm -rf build dist opentims.egg-info
 hereclean:
 	rm -f *.so a.out
+pipclean:
+	pip uninstall opentims -y || true
+	pip uninstall opentims -y || true

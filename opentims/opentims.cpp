@@ -376,16 +376,40 @@ void TimsDataHandle::extract_frames_slice(uint32_t start, uint32_t end, uint32_t
     }
 }
 
+#define move_ptr(ptr) if(ptr) ptr += n;
+
 void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
 {
     for(size_t ii = 0; ii < no_indexes; ii++)
+    {
+        TimsFrame& frame = frame_descs.at(indexes[ii]);
+        const size_t n = frame.num_peaks;
         frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times, zstd_dctx);
+        move_ptr(frame_ids);
+        move_ptr(scan_ids);
+        move_ptr(tofs);
+        move_ptr(intensities);
+        move_ptr(mzs);
+        move_ptr(drift_times);
+        move_ptr(retention_times);
+    }
 }
 
 void TimsDataHandle::extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
 {
     for(uint32_t ii = start; ii < end; ii += step)
+    {
+        TimsFrame& frame = frame_descs.at(ii);
+        const size_t n = frame.num_peaks;
         frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times, zstd_dctx);
+        move_ptr(frame_ids);
+        move_ptr(scan_ids);
+        move_ptr(tofs);
+        move_ptr(intensities);
+        move_ptr(mzs);
+        move_ptr(drift_times);
+        move_ptr(retention_times);
+    }
 }
 
 

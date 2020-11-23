@@ -2,27 +2,31 @@
 %autoreload 2
 import opentims
 import numpy as np
+import pandas as pd
 
 from api_opentims import OpenTIMS
 
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
-D.frame2rt(np.arange(100, dtype=np.uint32))
+D.frame2rt(np.arange(1, 100, dtype=np.uint32))
 D[10]
 D[10:101]
 np.r_[[10,20]]
 
+Z = pd.DataFrame(D.query([10,40]))
+X = D[[10,40]]
+np.all(Z[['frame', 'scan', 'tof', 'intensity']].values == X)
 
-D.query([10,40])['frame']
+pd.DataFrame(D.query([10,40]))
 D.query([10,40])
-D.query([10,40], columns=('frame','intensity','tof','scan'))
+pd.DataFrame(D.query([10,40], columns=('frame','intensity','tof','scan')))
+pd.DataFrame(D.query([10,40], columns=('intensity','tof','scan')))
+
+
 D._get_empty_arrays(10, ('frame','intensity','tof','scan'))
 
-D.query([10,11])['frame'].shape
-D.peaks_per_frame_cnts([10,10,10])
-
-D.query(slice(10,20))
-
+W = pd.DataFrame(D.query(slice(10,101)))
+X[10:101]
 D[10]
 D[40]
 D[[10,40]]

@@ -273,7 +273,6 @@ class OpenTIMS:
         Returns:
             np.array: Array with 4 columns: frame numbers, scan numbers, time of flights, and intensities in the selected frame.
         """
-        print('Dupa')
         columns_to_extract = "frame scan tof intensity"
 
         if isinstance(frames, tuple) and len(frames) == 2 and isinstance(frames[1], str):

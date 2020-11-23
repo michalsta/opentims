@@ -7,7 +7,7 @@ reinstall: pyclean pipclean
 matteo:
 	rm -rf build
 	pip uninstall opentims -y || true
-	pip install . --verbose --no-cache > log
+	pip install . --verbose --no-cache 
 cached:
 	pip uninstall timsdata -y || pip uninstall opentims -y || true
 	pip install . --verbose > log

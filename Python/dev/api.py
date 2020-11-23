@@ -7,7 +7,13 @@ from api_opentims import OpenTIMS
 
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
+D.frame2rt(np.arange(100, dtype=np.uint32))
+D[10]
+D[10:101]
+np.r_[[10,20]]
 
+
+D.query([10,40])['frame']
 D.query([10,40])
 D.query([10,40], columns=('frame','intensity','tof','scan'))
 D._get_empty_arrays(10, ('frame','intensity','tof','scan'))
@@ -56,3 +62,4 @@ np.searchsorted([0,1,2,3], [-1, .5, 3, 3.5])
 np.searchsorted([0,1,2,3], [3], side='left')-1
 
 np.searchsorted([0,1,2,3], [1], side='left')
+

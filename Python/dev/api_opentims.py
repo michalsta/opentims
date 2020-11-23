@@ -33,9 +33,11 @@ class OpenTIMS:
         analysis_directory = pathlib.Path(analysis_directory)
         assert analysis_directory.exists(), f"There is no such location: {analysis_directory}"
         self.handle = opentims.opentims_cpp.TimsDataHandle(str(analysis_directory))
+
         self.min_frame = self.handle.min_frame_id()
         self.max_frame = self.handle.max_frame_id()
         self.rts = self.frame2rt(range(self.min_frame, self.max_frame+1))
+
         # self.iter = ComfyIter(self.iter_arrays)
         self.peaks_cnt = self.handle.no_peaks_total()
         self.columns = ('frame','scan','tof','intensity','mz','dt','rt')
@@ -49,7 +51,10 @@ class OpenTIMS:
             del self.handle
 
     def frame2rt(self, frames):
-        return np.array([self.handle.get_frame(i).time for i in np.r_[frames]])
+        frames = np.r_[frames]
+        assert frames.min() >= self.min_frame, f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
+        assert frames.max() <= self.max_frame, f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
+        return np.array([self.handle.get_frame(i).time for i in frames])
 
     def indexToMz(self, frame_number, mass_idxs):
         """Translate mass indices (time of flight) to true mass over charge values.

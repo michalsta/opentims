@@ -96,8 +96,6 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
     uint32_t nnum_scans = *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1);
     assert(nnum_scans == num_scans);
 
-    // std::cout << num_scans << " " << nnum_scans << std::endl;
-
     size_t dsbytes = data_size_bytes();
 
     if(decompression_buffer == nullptr)
@@ -265,8 +263,6 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
     decompression_buffer = std::make_unique<char[]>(decomp_buffer_size);
 
     zstd_dctx = ZSTD_createDCtx();
-
-    std::cout << "THIS: " << this << std::endl;
 
     tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
     scan2drift_converter = DefaultScan2DriftConverterFactory::produceDefaultConverterInstance(*this);

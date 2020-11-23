@@ -8,6 +8,7 @@
 class Tof2MzConverter
 {
  public:
+    virtual void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) = 0;
     virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
     virtual ~Tof2MzConverter() {};
     virtual std::string description() { return "Tof2MzConverter default"; };
@@ -17,6 +18,11 @@ class ErrorTof2MzConverter : public Tof2MzConverter
 {
  public:
     ErrorTof2MzConverter([[maybe_unused]] TimsDataHandle& TDH) {};
+    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]]double* mzs, [[maybe_unused]] const double* tofs, [[maybe_unused]] uint32_t size) override final
+    {
+        throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
+    }
+
     void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* mzs, [[maybe_unused]] const uint32_t* tofs, [[maybe_unused]] uint32_t size) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
@@ -73,6 +79,11 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
     }
 
     ~BrukerTof2MzConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
+
+    void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) override final
+    {
+        tims_index_to_mz(bruker_file_handle, frame_id, tofs, mzs, size);
+    }
 
     void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final
     {

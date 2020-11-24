@@ -3,25 +3,39 @@
 import opentims
 import numpy as np
 import pandas as pd
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', 7)
+import matplotlib.pyplot as plt
 
 from api_opentims import OpenTIMS
 
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
-D.frame2rt(np.arange(1, 100, dtype=np.uint32))
-D[10]
-D[10:101]
-np.r_[[10,20]]
+D.frame2rt(np.arange(1, 10000, dtype=np.uint32))
+D.MS1_frames
 
 Z = pd.DataFrame(D.query([10,40]))
+
+plt.scatter(Z.mz, Z.dt, s=1)
+plt.show()
+plt.scatter(Z.tof, Z.mz)
+plt.show()
+plt.scatter(Z.scan, Z.dt)
+plt.show()
+D.frame_arrays(20)
+
+D[10:20:2]
 X = D[[10,40]]
 np.all(Z[['frame', 'scan', 'tof', 'intensity']].values == X)
 
 pd.DataFrame(D.query([10,40]))
 D.query([10,40])
-pd.DataFrame(D.query([10,40], columns=('frame','intensity','tof','scan')))
-pd.DataFrame(D.query([10,40], columns=('intensity','tof','scan')))
 
+pd.DataFrame(D.query([10,40], columns=('frame','intensity','tof','scan')))
+pd.DataFrame(D.query([10,40], columns=('intensity',)))
+
+pd.DataFrame(D.rt_query(10,30))
+pd.DataFrame(D.rt_query(10,20))
 
 D._get_empty_arrays(10, ('frame','intensity','tof','scan'))
 
@@ -58,12 +72,9 @@ print(size)
 
 cols = {c:np.empty(shape=size, dtype=d) for c,d in c2d.items()}
 
-
 np.searchsorted([0,1,2,3], (.5, 2.6))
 np.searchsorted([0,1,2,3], [.5, 3, 3.5])
 np.searchsorted([0,1,2,3], [-1, .5, 3, 3.5])
-
 np.searchsorted([0,1,2,3], [3], side='left')-1
-
 np.searchsorted([0,1,2,3], [1], side='left')
 

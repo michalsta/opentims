@@ -42,85 +42,25 @@ class OpenTIMS:
         self.peaks_cnt = self.handle.no_peaks_total()
         self.columns = ('frame','scan','tof','intensity','mz','dt','rt')
         self.columns_dtypes = (np.uint32,np.uint32,np.uint32,np.uint32,np.double,np.double,np.double)
+        self._required_columns = ('scan','tof','intensity') # these are required for C++ code to work: changing that part is not easy.
+
+        self.ms_types = np.array([self.handle.get_frame(i).msms_type 
+                                  for i in range(self.min_frame, self.max_frame+1)])
 
     def __repr__(self):
         return f"OpenTIMS({self.peaks_cnt} peaks)"
 
+
     def __del__ (self):
         if hasattr(self, 'handle'):
             del self.handle
+
 
     def frame2rt(self, frames):
         frames = np.r_[frames]
         assert frames.min() >= self.min_frame, f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
         assert frames.max() <= self.max_frame, f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
         return np.array([self.handle.get_frame(i).time for i in frames])
-
-    def indexToMz(self, frame_number, mass_idxs):
-        """Translate mass indices (time of flight) to true mass over charge values.
-
-        Args:
-            frame_number (int): The frame number.
-            mzs (np.array): mass indices to convert.
-        Returns:
-            np.array: mass over charge values."""
-        raise NotImplementedError
-        # return self.__callConversionFunc(frame_number, mass_idxs, self.dll.tims_index_to_mz)
-
-    def mzToIndex(self, frame_number, mzs):
-        """Translate mass over charge values to mass indices (time of flight).
-
-        Args:
-            frame_number (int): The frame number.
-            mzs (np.array): Mass over charge to convert.
-        Returns:
-            np.array: Times of flight."""
-        raise NotImplementedError
-        # return self.__callConversionFunc(frame_number, mzs, self.dll.tims_mz_to_index)
-        
-    def scanNumToOneOverK0(self, frame_number, scans):
-        """Translate scan number to ion mobility 1/k0.
-
-        See 'oneOverK0ToScanNum' for invert function.
-
-        Args:
-            frame_number (int): The frame number.
-            scans (np.array): Mass over charge to convert.
-        Returns:
-            np.array: Ion mobiilities 1/k0."""
-        raise NotImplementedError
-        # return self.__callConversionFunc(frame_number, scans, self.dll.tims_scannum_to_oneoverk0)
-
-    def oneOverK0ToScanNum(self, frame_number, mobilities):
-        """Translate ion mobilities 1/k0 to scan numbers.
-
-        See 'scanNumToOneOverK0' for invert function.
-
-        Args:
-            frame_number (int): The frame number.
-            mobilities (np.array): Ion mobility values to convert.
-        Returns:
-            np.array: Scan numbers."""
-        raise NotImplementedError
-        # return self.__callConversionFunc(frame_number, mobilities, self.dll.tims_oneoverk0_to_scannum)
-
-    def frame_array(self, frame):
-        """Get a 2D array of data for a given frame.
-
-        Args:
-            frame (int, iterable, slice): Frame to output.
-
-        Returns:
-            np.array: Array with 4 columns: frame numbers, scan numbers, time of flights, and intensities in the selected frame.
-        """
-        try:
-            fr = self.handle.get_frame(frame)
-        except IndexError:
-            raise IndexError(f"Frame {frame} is not between {self.min_frame} and {self.max_frame}.")
-        X = np.empty(shape=(fr.num_peaks, 4), dtype=np.uint32, order='F')
-        if fr.num_peaks > 0:
-            fr.save_to_pybuffer(X)
-        return X
 
 
     def peaks_per_frame_cnts(self, frames, convert=True):
@@ -139,9 +79,10 @@ class OpenTIMS:
 
     def _get_empty_arrays(self, size, selected_columns):
         """Return empty numpy arrays that will be filled with delicious data."""
-        return [np.ones(shape=size if c in selected_columns else 0,
+        return [np.empty(shape=size if c in selected_columns or c in self._required_columns else 0,
                          dtype=d)
                 for c,d in zip(self.columns, self.columns_dtypes)]
+
 
     def _get_dict(self, frames, columns):
         frames = np.array(frames, dtype=np.uint32)
@@ -149,6 +90,7 @@ class OpenTIMS:
         arrays = self._get_empty_arrays(size, columns)
         self.handle.extract_frames(frames, *arrays)
         return {c:a for c,a in zip(self.columns, arrays) if c in columns}
+
 
     def _get_dict_slices(self, frames_slice, columns):
         start = self.min_frame if frames_slice.start is None else frames_slice.start
@@ -158,7 +100,6 @@ class OpenTIMS:
         arrays = self._get_empty_arrays(size, columns)
         self.handle.extract_frames_slice(start, stop, step, *arrays)
         return {c:a for c,a in zip(self.columns, arrays) if c in columns}        
-
 
     def query(self, frames, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
         """Get data from a selection of frames.
@@ -200,8 +141,29 @@ class OpenTIMS:
         return self.query(slice(min_frame, max_frame), columns)
 
 
+    def frame_array(self, frame):
+        """Get a 2D array of data for a given frame.
+
+        Args:
+            frame (int, iterable, slice): Frame to output.
+
+        Returns:
+            np.array: Array with 4 columns: frame numbers, scan numbers, time of flights, and intensities in the selected frame.
+        """
+        try:
+            fr = self.handle.get_frame(frame)
+        except IndexError:
+            raise IndexError(f"Frame {frame} is not between {self.min_frame} and {self.max_frame}.")
+        X = np.empty(shape=(fr.num_peaks, 4), dtype=np.uint32, order='F')
+        if fr.num_peaks > 0:
+            fr.save_to_pybuffer(X)
+        return X
+
+
     def frame_arrays(self, frames):
-        """Get data from a selection of frames.
+        """Get raw data from a selection of frames.
+
+        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'. 
 
         Args:
             frames (iterable): Frames to chose.
@@ -217,8 +179,11 @@ class OpenTIMS:
         except IndexError:
             raise IndexError(f"Some frames are not between {self.min_frame} and {self.max_frame}.")
 
+
     def frame_arrays_slice(self, frames_slice):
-        """Get data from a slice of frames.
+        """Get raw data from a slice of frames.
+
+        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'. 
 
         Args:
             frames_slice (slice): A slice defining which frames to chose.
@@ -265,7 +230,11 @@ class OpenTIMS:
 
 
     def __getitem__(self, frames):
-        """Get a data array for given frames and scans.
+        """Get raw data array for given frames and scans.
+
+        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
+        This function is purely syntactic sugar.
+        You should not believe this to be any faster than the query method.
 
         Args:
             frames (int, slice, iterable): Frames to be collected.
@@ -273,13 +242,6 @@ class OpenTIMS:
         Returns:
             np.array: Array with 4 columns: frame numbers, scan numbers, time of flights, and intensities in the selected frame.
         """
-        columns_to_extract = "frame scan tof intensity"
-
-        if isinstance(frames, tuple) and len(frames) == 2 and isinstance(frames[1], str):
-            # most likely what we want!
-            frames, columns_to_extract = frames 
-
-
         if isinstance(frames, int):
             return self.frame_array(frames)
         if isinstance(frames, slice):
@@ -287,17 +249,7 @@ class OpenTIMS:
         return self.frame_arrays(frames)
 
 
-
-    def frameTIC(self, frame, aggregate_scans=False):
-        """Get the total ion count for given scans in a given frame.
-
-        Args:
-            frame (int, iterable, slice): Frames to output.
-            scan_begin (int): Lower scan.
-            scan_end (int): Upper scan.
-            aggregate_scans (bool): Aggregate over scans or leave scans info.
-
-        Returns:
-            np.array or int: scans and intensities, or total intensity in selected scans.
-        """
-        raise NotImplementedError
+    @property
+    def MS1_frames(self):
+        """Get the indices of frames corresponding to precursors (unfragmented molecules)."""
+        return np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]

@@ -122,6 +122,19 @@ class OpenTIMS:
             return self._get_dict(frames, columns)
 
 
+    def query_iter(self, frames, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+        """Iterate data from a selection of frames.
+
+        Args:
+            frames (int, iterable, slice): Frames to choose. Passing an integer results in extracting that one frame.
+            columns (tuple): which columns to extract? By default supplying all possible data and their tranformations.
+
+        Yields:
+            dict: columnt to numpy array mapping.
+        """
+        for fr in frames:
+            yield self.query(fr, columns)
+
 
     def rt_query(self, min_rt, max_rt, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
         """Get data from a selection of frames based on retention times.
@@ -135,10 +148,28 @@ class OpenTIMS:
             columns (tuple): which columns to extract? By default: supplying all data.
 
         Returns:
-            dict: columnt to numpy array mapping.
+            dict: column to numpy array mapping.
         """
         min_frame, max_frame = np.searchsorted(self.rts, (min_rt, max_rt))+1 #TODO: check border conditions!!!
         return self.query(slice(min_frame, max_frame), columns)
+
+
+    def rt_query_iter(self, min_rt, max_rt, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+        """Iterate data from a selection of frames based on retention times.
+
+        Get all frames corresponding to retention times in a set "[min_rt, max_rt)".
+
+
+        Args:
+            min_rt (float): Minimal retention time.
+            max_rt (float): Maximal retention time to choose.
+            columns (tuple): which columns to extract? By default: supplying all data.
+
+        Yields:
+            dict: column to numpy array mapping.
+        """
+        min_frame, max_frame = np.searchsorted(self.rts, (min_rt, max_rt))+1 #TODO: check border conditions!!!
+        yield from self.query_iter(range(min_frame, max_frame+1), columns)
 
 
     def frame_array(self, frame):
@@ -196,7 +227,7 @@ class OpenTIMS:
         peaks_cnt = self.handle.no_peaks_in_slice(start, stop, step)
         X = np.empty(shape=(peaks_cnt, 4), order='F', dtype=np.uint32)
         self.handle.extract_frames_slice(start, stop, step, X)
-        return X
+        return X    
 
 
     def iter_arrays(self, frames):

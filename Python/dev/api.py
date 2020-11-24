@@ -8,8 +8,11 @@ pd.set_option('display.max_rows', 7)
 import matplotlib.pyplot as plt
 
 from api_opentims import OpenTIMS
+# from opentims.opentims import OpenTIMS
 
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
+
+it = D.rt_query_iter(10,20)
 
 D.frame2rt(np.arange(1, 10000, dtype=np.uint32))
 D.MS1_frames
@@ -24,9 +27,14 @@ plt.scatter(Z.scan, Z.dt)
 plt.show()
 D.frame_arrays(20)
 
+list(D.query_iter([100,200]))
+
+
 D[10:20:2]
 X = D[[10,40]]
 np.all(Z[['frame', 'scan', 'tof', 'intensity']].values == X)
+
+
 
 pd.DataFrame(D.query([10,40]))
 D.query([10,40])

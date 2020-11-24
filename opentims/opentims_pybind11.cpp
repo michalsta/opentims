@@ -49,7 +49,6 @@ PYBIND11_MODULE(opentims_cpp, m) {
 
     py::class_<TimsDataHandle>(m, "TimsDataHandle")
         .def(py::init<const std::string &>())
-        // .def(py::init<const std::string &, const std::string&, const std::string&>())
         .def("no_peaks_total", &TimsDataHandle::no_peaks_total)
         .def("min_frame_id", &TimsDataHandle::min_frame_id)
         .def("max_frame_id", &TimsDataHandle::max_frame_id)

@@ -13,6 +13,17 @@ from opentims.opentims import OpenTIMS
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
 it = D.rt_query_iter(10,20)
+next(it)
+
+try:
+	raise RuntimeError('test')
+except RuntimeError as e:
+	print(e)
+	print(e.args)
+	if e.args[0] == 'test':
+		print('dupa')
+	else:
+		print('kupa')
 
 D.frame2rt(np.arange(1, 10000, dtype=np.uint32))
 D.MS1_frames

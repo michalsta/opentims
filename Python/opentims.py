@@ -123,7 +123,7 @@ class OpenTIMS:
             else:
                 return self._get_dict(frames, columns)
         except RuntimeError as e:
-            if e.msg == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor":
+            if e.args[0] == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor":
                 raise RuntimeError("Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods.")
             else:
                 raise

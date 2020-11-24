@@ -7,8 +7,8 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', 7)
 import matplotlib.pyplot as plt
 
-from api_opentims import OpenTIMS
-# from opentims.opentims import OpenTIMS
+# from api_opentims import OpenTIMS
+from opentims.opentims import OpenTIMS
 
 D = OpenTIMS("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
@@ -16,6 +16,13 @@ it = D.rt_query_iter(10,20)
 
 D.frame2rt(np.arange(1, 10000, dtype=np.uint32))
 D.MS1_frames
+
+X = D.query(D.MS1_frames)
+X['frame'].shape
+
+# too inefficient!
+plt.hexbin(X['mz'], X['dt'])
+plt.show()
 
 Z = pd.DataFrame(D.query([10,40]))
 

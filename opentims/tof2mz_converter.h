@@ -2,8 +2,14 @@
 
 #include <memory>
 #include <dlfcn.h>
-#include "opentims.h"
 #include "bruker.h"
+#include "platform.h"
+
+#ifdef OPENTIMS_BUILDING_R
+#include "opentims_types.h"
+#else
+#include "opentims.h"
+#endif
 
 class Tof2MzConverter
 {

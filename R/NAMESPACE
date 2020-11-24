@@ -3,6 +3,7 @@
 export(MS1)
 export(MS2)
 export(OpenTIMS)
+export(explore.tdf.tables)
 export(table2df)
 export(tables_names)
 exportClasses(OpenTIMS)

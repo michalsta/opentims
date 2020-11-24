@@ -163,7 +163,7 @@ private:
     std::unique_ptr<Scan2DriftConverter> scan2drift_converter;
 
 public:
-    TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
+    // TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
 
     TimsDataHandle(const std::string& tims_data_dir);
 

@@ -20,6 +20,10 @@ D.MS1_frames
 X = D.query(D.MS1_frames)
 X['frame'].shape
 
+
+D.query([10,49])
+
+
 # too inefficient!
 plt.hexbin(X['mz'], X['dt'])
 plt.show()

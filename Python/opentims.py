@@ -42,7 +42,8 @@ class OpenTIMS:
         self.peaks_cnt = self.handle.no_peaks_total()
         self.columns = ('frame','scan','tof','intensity','mz','dt','rt')
         self.columns_dtypes = (np.uint32,np.uint32,np.uint32,np.uint32,np.double,np.double,np.double)
-        self._required_columns = ('scan','tof','intensity') # these are required for C++ code to work: changing that part is not easy.
+        # self._required_columns = ('scan','tof','intensity') # these are required for C++ code to work: changing that part is not easy.
+        self._required_columns = ('dupa',)
 
         self.ms_types = np.array([self.handle.get_frame(i).msms_type 
                                   for i in range(self.min_frame, self.max_frame+1)])
@@ -116,10 +117,16 @@ class OpenTIMS:
         if isinstance(frames, int):
             frames = [frames]
 
-        if isinstance(frames, slice):
-            return self._get_dict_slices(frames, columns)
-        else:
-            return self._get_dict(frames, columns)
+        try:
+            if isinstance(frames, slice):
+                return self._get_dict_slices(frames, columns)
+            else:
+                return self._get_dict(frames, columns)
+        except RuntimeError as e:
+            if e.msg == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor":
+                raise RuntimeError("Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods.")
+            else:
+                raise
 
 
     def query_iter(self, frames, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):

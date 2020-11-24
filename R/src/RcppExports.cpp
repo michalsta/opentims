@@ -6,15 +6,26 @@
 
 using namespace Rcpp;
 
+// setup_bruker_so
+void setup_bruker_so(const Rcpp::String& path);
+RcppExport SEXP _opentims_setup_bruker_so(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type path(pathSEXP);
+    setup_bruker_so(path);
+    return R_NilValue;
+END_RCPP
+}
 // tdf_open
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path, const Rcpp::String& db_path);
-RcppExport SEXP _opentims_tdf_open(SEXP pathSEXP, SEXP db_pathSEXP) {
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& tdf_bin_path, const Rcpp::String& path, const Rcpp::String& db_path);
+RcppExport SEXP _opentims_tdf_open(SEXP tdf_bin_pathSEXP, SEXP pathSEXP, SEXP db_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type tdf_bin_path(tdf_bin_pathSEXP);
     Rcpp::traits::input_parameter< const Rcpp::String& >::type path(pathSEXP);
     Rcpp::traits::input_parameter< const Rcpp::String& >::type db_path(db_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_open(path, db_path));
+    rcpp_result_gen = Rcpp::wrap(tdf_open(tdf_bin_path, path, db_path));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -114,7 +125,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_opentims_tdf_open", (DL_FUNC) &_opentims_tdf_open, 2},
+    {"_opentims_setup_bruker_so", (DL_FUNC) &_opentims_setup_bruker_so, 1},
+    {"_opentims_tdf_open", (DL_FUNC) &_opentims_tdf_open, 3},
     {"_opentims_tdf_open_dir", (DL_FUNC) &_opentims_tdf_open_dir, 1},
     {"_opentims_tdf_min_frame_id", (DL_FUNC) &_opentims_tdf_min_frame_id, 1},
     {"_opentims_tdf_max_frame_id", (DL_FUNC) &_opentims_tdf_max_frame_id, 1},

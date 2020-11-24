@@ -21,12 +21,26 @@
 
 #include "opentims_types.h"
 
+// adding default converters.
+#include "scan2drift_converter.h"
+#include "tof2mz_converter.h"
+
 
 // [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path, const Rcpp::String& db_path)
+void setup_bruker_so(const Rcpp::String& path)
+{
+    DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.get_cstring());
+    DefaultScan2DriftConverterFactory::setAsDefault<BrukerScan2DriftConverterFactory, const char*>(path.get_cstring());
+}
+
+
+// [[Rcpp::export]]
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& tdf_bin_path,
+                                    const Rcpp::String& path,
+                                    const Rcpp::String& db_path)
 {
     TimsDataHandle* p;
-    p = new TimsDataHandle(path, db_path);
+    p = new TimsDataHandle(tdf_bin_path, path, db_path);
     return Rcpp::XPtr<TimsDataHandle>(p, true);
 }
 

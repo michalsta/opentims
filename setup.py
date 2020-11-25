@@ -31,13 +31,16 @@ build_asan = False
 windows = platform.system() == 'Windows'
 
 # Dual-build: work-around for the fact that we have both C and C++ files in the extension, and sometimes need
-# to split it into two. Windows for now seems to need dual_build set to False, OSX to True, Linux seems fine
+# to split it into two. Windows and CYGWIN for now seems to need dual_build set to False, OSX to True, Linux seems fine
 # with either setting.
 dual_build = True
 
 if platform.system() == "Windows":
     assert not build_asan
     dual_build = False
+elif platform.system().startswith("CYGWIN"):
+    dual_build = False
+
 
 # Prefer clang if available
 if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++') != None:
@@ -66,7 +69,7 @@ else:
     ext_modules = [
         Extension(
             name='opentims_cpp',
-            sources = [join("opentims", "sqlite", "sqlite3.c"), join("opentims", "zstd", "zstddeclib.c"), join('opentims','opentims_pybind11.cpp')],
+            sources = [join("opentims", "sqlite", "sqlite3.c"), join("opentims", "zstd", "zstddeclib.c"), join('opentims','opentims_pybind11.cpp'), join("opentims", "tof2mz_converter.cpp"), join("opentims", "scan2drift_converter.cpp")],
             extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb", "-std=c++14"],
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],

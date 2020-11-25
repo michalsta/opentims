@@ -128,19 +128,23 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t*
     if(num_peaks == 0)
         return;
 
+    std::unique_ptr<uint32_t[]> scan_ids_hndl;
+    std::unique_ptr<uint32_t[]> tofs_hndl;
+    std::unique_ptr<uint32_t[]> intensities_hndl;
+
     if(scan_ids == nullptr)
     {
-        std::unique_pointer<uint32_t[]> scan_ids_hndl = std::make_unique<uint32_t>(num_peaks);
+        scan_ids_hndl = std::make_unique<uint32_t[]>(num_peaks);
         scan_ids = scan_ids_hndl.get();
     }
     if(tofs == nullptr)
     {
-        std::unique_pointer<uint32_t[]> tofs_hndl = std::make_unique<uint32_t>(num_peaks);
+        tofs_hndl = std::make_unique<uint32_t[]>(num_peaks);
         tofs = tofs_hndl.get();
     }
     if(intensities == nullptr)
     {
-        std::unique_pointer<uint32_t[]> intensities_hndl = std::make_unique<uint32_t>(num_peaks);
+        intensities_hndl = std::make_unique<uint32_t[]>(num_peaks);
         intensities = intensities_hndl.get();
     }
 

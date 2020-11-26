@@ -7,7 +7,7 @@
 
 #include "platform.h"
 
-#ifdef OPENTIMS_UNIX
+#if defined(OPENTIMS_UNIX)
 
 #include "dlfcn.h"
 
@@ -40,6 +40,43 @@ class LoadedLibraryHandle
         return reinterpret_cast<T*>(ret);
     }
 };
+
+
+
+#elif defined(OPENTIMS_WINDOWS)
+
+#include <libloaderapi.h>
+class LoadedLibraryHandle
+// RAII-style wrapper for results of LoadLibrary()
+{
+    HMODULE os_handle;
+ public:
+    LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
+    {
+        os_handle = LoadLibraryA(path);
+        if(os_handle == nullptr)
+            throw std::runtime_error(std::string("LoadLibraryA(") + path + ") failed, reason: " + GetLastError());
+    }
+
+    ~LoadedLibraryHandle()
+    {
+        if(os_handle != nullptr)
+            FreeLibrary(os_handle);
+    }
+
+    template<typename T> T* symbol_lookup(const std::string& symbol_name)
+    {
+        FARPROC ret = GetProcAddress(os_handle, symbol_name.c_str()); // nullptr might be a valid result here, got to check dlerror...
+        if(ret == nullptr)
+            throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + GetLastError());
+        return reinterpret_cast<T*>(ret);
+    }
+};
+
+
+
+
+
 #else
 // provide empty stubs
 

@@ -5,12 +5,8 @@ setup_bruker_so <- function(path) {
     invisible(.Call('_opentims_setup_bruker_so', PACKAGE = 'opentims', path))
 }
 
-tdf_open <- function(tdf_bin_path, path, db_path) {
-    .Call('_opentims_tdf_open', PACKAGE = 'opentims', tdf_bin_path, path, db_path)
-}
-
-tdf_open_dir <- function(path) {
-    .Call('_opentims_tdf_open_dir', PACKAGE = 'opentims', path)
+tdf_open <- function(path_d) {
+    .Call('_opentims_tdf_open', PACKAGE = 'opentims', path_d)
 }
 
 tdf_min_frame_id <- function(tdf) {

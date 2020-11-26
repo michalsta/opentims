@@ -4,12 +4,10 @@
 \alias{OpenTIMS}
 \title{Get OpenTIMS data representation.}
 \usage{
-OpenTIMS(path, analysis.tdf = "")
+OpenTIMS(path.d)
 }
 \arguments{
-\item{path}{Path to the TimsTOF .d folder. Otherwise direct path to .tdf_bin file containing the raw data.}
-
-\item{db_path}{Path to the sqlite database with the .tdf extension. Only supply it when 'path' corresponded to raw data file. If 'path' corresponds to the whole folder, you can skip this argument.}
+\item{path.d}{Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').}
 }
 \description{
 Get OpenTIMS data representation.

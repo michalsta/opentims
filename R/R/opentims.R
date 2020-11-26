@@ -27,30 +27,31 @@ NULL
 #'
 #' S4 class that facilitates data queries for TimsTOF data.
 #'
-#' @slot analysis.tdf_bin Path to raw data (typically *.d/analysis.tdf_bin).
-#' @slot analysis.tdf Path to sqlite database (typically *.d/analysis.tdf).
+#' @slot path.d Path to raw data folder (typically *.d).
 #' @slot handle Pointer to raw data.
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
 #' @slot windows A data.frame with information on the windows.
 #' @slot MS1 Indices of frames corresponding to MS1, i.e. precursor ions.
-#' @slot MS2 Indices of frames corresponding to MS2, i.e. fragment ions.
-#' @slot analysis.tdf.table_names Names of tables in the accompanying sqlite database.
 #' @export
 setClass('OpenTIMS',
-         slots=c(analysis.tdf_bin='character',
-                 analysis.tdf='character',
-                 handle='externalptr',
-                 min_frame='integer',
-                 max_frame='integer',
-                 frames='data.frame'),
-         validity=function(object){
-            analysis.tdf_bin_OK = file.exists(object@analysis.tdf_bin)
-            if(!analysis.tdf_bin_OK) print('Missing analysis.tdf_bin')
-            analysis.tdf_OK = file.exists(object@analysis.tdf)
-            if(!analysis.tdf_OK) print('Missing analysis.tdf')
-            analysis.tdf_bin_OK & analysis.tdf_OK
+         slots = c(path.d='character',
+                   handle='externalptr',
+                   min_frame='integer',
+                   max_frame='integer',
+                   frames='data.frame'),
+         validity = function(object){
+            d.folder = file.exists(object@path.d) 
+            if(!d.folder) print('The folder with data (typically named *.d) does not exist.')
+          
+            d.folder.analysis.tdf = file.exists(file.path(object@path.d, 'analysis.tdf'))
+            if(!d.folder.analysis.tdf) print('The .d folder does not contain the sqlite data-base called "analysis.tdf".')
+          
+            d.folder.analysis.tdf_bin = file.exists(file.path(object@path.d, 'analysis.tdf_bin'))
+            if(!d.folder.analysis.tdf_bin) print('The .d folder does not contain the raw data file called "analysis.tdf_bin".')
+
+            d.folder & d.folder.analysis.tdf & d.folder.analysis.tdf_bin
          }
 )
 
@@ -113,7 +114,8 @@ setMethod("range",
 #' @return A list of tables.
 #' @export
 table2df = function(opentims, names){
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
     DBI::dbDisconnect(sql_conn)
     return(tables)
@@ -126,7 +128,8 @@ table2df = function(opentims, names){
 #' @return Names of tables.
 #' @export
 tables_names = function(opentims, names){
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables_names = DBI::dbListTables(sql_conn)
     DBI::dbDisconnect(sql_conn)
     return(tables_names)
@@ -136,8 +139,7 @@ tables_names = function(opentims, names){
 
 #' Get OpenTIMS data representation.
 #' 
-#' @param path Path to the TimsTOF .d folder. Otherwise direct path to .tdf_bin file containing the raw data.
-#' @param db_path Path to the sqlite database with the .tdf extension. Only supply it when 'path' corresponded to raw data file. If 'path' corresponds to the whole folder, you can skip this argument.
+#' @param path.d Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS(path_to_.d_folder)
@@ -145,24 +147,16 @@ tables_names = function(opentims, names){
 #' }
 #' @importFrom methods new
 #' @export
-OpenTIMS = function(path, analysis.tdf=''){
-    if(analysis.tdf==''){
-        analysis.tdf_bin = file.path(path,'analysis.tdf_bin')
-        analysis.tdf = file.path(path,'analysis.tdf')
-    } else {
-        analysis.tdf = path
-    }
-
-    # getting necessary tables from the accompanying sqlite database. 
+OpenTIMS = function(path.d){
+    # getting tables from SQlite 
+    analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     DBI::dbDisconnect(sql_conn)
-
-    handle = tdf_open(analysis.tdf_bin, analysis.tdf)
+    handle = tdf_open(path.d)
 
     new("OpenTIMS",
-        analysis.tdf_bin=analysis.tdf_bin, 
-        analysis.tdf=analysis.tdf,
+        path.d=path.d,
         handle=handle,
         min_frame=as.integer(tdf_min_frame_id(handle)),
         max_frame=as.integer(tdf_max_frame_id(handle)),
@@ -175,15 +169,6 @@ OpenTIMS = function(path, analysis.tdf=''){
 #' @return Numbers of frames corresponding to MS1, i.e. precursor ions.
 #' @export
 MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
-
-
-# WRONG!!!
-#' Get MS2 frame numbers.
-#'
-#' @param opentims Instance of OpenTIMS
-#' @return Numbers of frames corresponding to MS2, i.e. fragment ions.
-#' @export
-MS2 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 9]
 
 
 #' Explore the contentents of the sqlite .tdf database.

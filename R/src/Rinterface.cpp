@@ -35,23 +35,13 @@ void setup_bruker_so(const Rcpp::String& path)
 
 
 // [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& tdf_bin_path,
-                                    const Rcpp::String& path,
-                                    const Rcpp::String& db_path)
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d)
 {
-    TimsDataHandle* p;
-    p = new TimsDataHandle(tdf_bin_path, path, db_path);
+    TimsDataHandle* p; 
+    p = new TimsDataHandle(path_d);
     return Rcpp::XPtr<TimsDataHandle>(p, true);
 }
 
-
-// [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open_dir(const Rcpp::String& path)
-{
-    TimsDataHandle* p;
-    p = new TimsDataHandle(path);
-    return Rcpp::XPtr<TimsDataHandle>(p, true);
-}
 
 
 // [[Rcpp::export]]

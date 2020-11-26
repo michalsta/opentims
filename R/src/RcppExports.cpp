@@ -110,6 +110,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tdf_extract_frames
+Rcpp::DataFrame tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_dts, const bool get_rts);
+RcppExport SEXP _opentims_tdf_extract_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_dtsSEXP, SEXP get_rtsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type indexes(indexesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_frames(get_framesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_scans(get_scansSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_tofs(get_tofsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_intensities(get_intensitiesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_mzs(get_mzsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_dts(get_dtsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_rts(get_rtsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames(tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tdf_extract_frames_slice
+Rcpp::DataFrame tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_dts, const bool get_rts);
+RcppExport SEXP _opentims_tdf_extract_frames_slice(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_dtsSEXP, SEXP get_rtsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const size_t >::type start(startSEXP);
+    Rcpp::traits::input_parameter< const size_t >::type end(endSEXP);
+    Rcpp::traits::input_parameter< const int32_t >::type step(stepSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_frames(get_framesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_scans(get_scansSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_tofs(get_tofsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_intensities(get_intensitiesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_mzs(get_mzsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_dts(get_dtsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_rts(get_rtsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames_slice(tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_opentims_setup_bruker_so", (DL_FUNC) &_opentims_setup_bruker_so, 1},
@@ -121,6 +161,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentims_tdf_get_range", (DL_FUNC) &_opentims_tdf_get_range, 4},
     {"_opentims_tdf_get_indexes", (DL_FUNC) &_opentims_tdf_get_indexes, 2},
     {"_opentims_tdf_get_range_noend", (DL_FUNC) &_opentims_tdf_get_range_noend, 3},
+    {"_opentims_tdf_extract_frames", (DL_FUNC) &_opentims_tdf_extract_frames, 9},
+    {"_opentims_tdf_extract_frames_slice", (DL_FUNC) &_opentims_tdf_extract_frames_slice, 11},
     {NULL, NULL, 0}
 };
 

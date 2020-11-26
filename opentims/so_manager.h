@@ -46,6 +46,8 @@ class LoadedLibraryHandle
 #elif defined(OPENTIMS_WINDOWS)
 
 #include <libloaderapi.h>
+#include <errhandlingapi.h>
+
 class LoadedLibraryHandle
 // RAII-style wrapper for results of LoadLibrary()
 {
@@ -53,9 +55,9 @@ class LoadedLibraryHandle
  public:
     LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
     {
-        os_handle = LoadLibraryA(path);
+        os_handle = LoadLibraryA(path.c_str());
         if(os_handle == nullptr)
-            throw std::runtime_error(std::string("LoadLibraryA(") + path + ") failed, reason: " + GetLastError());
+            throw std::runtime_error(std::string("LoadLibraryA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
     }
 
     ~LoadedLibraryHandle()
@@ -68,7 +70,7 @@ class LoadedLibraryHandle
     {
         FARPROC ret = GetProcAddress(os_handle, symbol_name.c_str()); // nullptr might be a valid result here, got to check dlerror...
         if(ret == nullptr)
-            throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + GetLastError());
+            throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + std::to_string(GetLastError()));
         return reinterpret_cast<T*>(ret);
     }
 };

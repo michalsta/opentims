@@ -11,6 +11,8 @@
 #include "opentims.h"
 #endif
 
+#include "so_manager.h"
+
 class Tof2MzConverter
 {
  public:
@@ -38,9 +40,8 @@ class ErrorTof2MzConverter : public Tof2MzConverter
 
 class BrukerTof2MzConverter final : public Tof2MzConverter
 {
-    void* dllhandle;
+    LoadedLibraryHandle lib_handle;
     uint64_t bruker_file_handle;
-    const std::string so_path;
 
     tims_open_fun_t* tims_open;
     tims_get_last_error_string_fun_t* tims_get_last_error_string;
@@ -56,27 +57,13 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
         return std::string(buf.get());
     }
 
-    void* symbol_lookup(const char* symbol_name)
-    {
-        void* ret = dlsym(dllhandle, symbol_name); // nullptr might be a valid result here, got to check dlerror...
-        const char* errmsg = dlerror();
-        if(errmsg != nullptr)
-            throw std::runtime_error(std::string("Symbol lookup failed for ") + symbol_name + ", reason: " + errmsg);
-        return ret;
-    };
-
  public:
-    BrukerTof2MzConverter(TimsDataHandle& TDH, const char* dll_path) : dllhandle(dlopen(dll_path, RTLD_LAZY)), bruker_file_handle(0), so_path(dll_path)
+    BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path) : lib_handle(lib_path), bruker_file_handle(0)
     {
-        // Re-dlopening the dll_path to increase refcount, so nothing horrible happens even if factory is deleted
-        if(dllhandle == nullptr)
-            throw std::runtime_error(std::string("dlopen(") + dll_path + ") failed, reason: " + dlerror());
-
-        dlerror(); // Clear errors
-        tims_open = reinterpret_cast<tims_open_fun_t*>(symbol_lookup("tims_open"));
-        tims_get_last_error_string = reinterpret_cast<tims_get_last_error_string_fun_t*>(symbol_lookup("tims_get_last_error_string"));
-        tims_close = reinterpret_cast<tims_close_fun_t*>(symbol_lookup("tims_close"));
-        tims_index_to_mz = reinterpret_cast<tims_convert_fun_t*>(symbol_lookup("tims_index_to_mz"));
+        tims_open = lib_handle.symbol_lookup<tims_open_fun_t>("tims_open");
+        tims_get_last_error_string = lib_handle.symbol_lookup<tims_get_last_error_string_fun_t>("tims_get_last_error_string");
+        tims_close = lib_handle.symbol_lookup<tims_close_fun_t>("tims_close");
+        tims_index_to_mz = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_index_to_mz");
 
         bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 0); // Recalibrated states not supported
 
@@ -84,7 +71,7 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
             throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
     }
 
-    ~BrukerTof2MzConverter() { dlclose(dllhandle); if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
+    ~BrukerTof2MzConverter() { if(bruker_file_handle != 0) tims_close(bruker_file_handle); }
 
     void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) override final
     {
@@ -99,7 +86,7 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
         tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
     }
 
-    std::string description() override final { return "BrukerTof2MzConverter, shared lib path:" + so_path; };
+    std::string description() override final { return "BrukerTof2MzConverter"; };
 };
 
 class Tof2MzConverterFactory

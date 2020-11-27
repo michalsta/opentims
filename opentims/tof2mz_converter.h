@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <dlfcn.h>
 #include "bruker.h"
 #include "platform.h"
 

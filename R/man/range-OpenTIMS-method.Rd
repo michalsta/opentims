@@ -4,17 +4,17 @@
 \alias{range,OpenTIMS-method}
 \title{Select a range of frames to extract.}
 \usage{
-\S4method{range}{OpenTIMS}(x, start, stop, step = 1L)
+\S4method{range}{OpenTIMS}(x, from, to, by = 1L)
 }
 \arguments{
 \item{x}{OpenTIMS data instance.}
 
-\item{start}{The first frame to extract.}
+\item{from}{The first frame to extract.}
 
-\item{stop}{The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.}
+\item{to}{The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.}
 
-\item{step}{The step}
+\item{by}{The by}
 }
 \description{
-This is similar to using the start:stop:step operator in Python.
+This is similar to using the from:to:by operator in Python.
 }

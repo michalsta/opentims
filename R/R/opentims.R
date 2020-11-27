@@ -87,22 +87,22 @@ setMethod("[",
 
 #' Select a range of frames to extract.
 #'
-#' This is similar to using the start:stop:step operator in Python.
+#' This is similar to using the from:to:by operator in Python.
 #'
 #' @param x OpenTIMS data instance.
-#' @param start The first frame to extract.
-#' @param stop The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
-#' @param step The step
+#' @param from The first frame to extract.
+#' @param to The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
+#' @param by The by
 setMethod("range", 
           "OpenTIMS",
-          function(x, start, stop, step=1L){ 
-            start = as.integer(start)
-            stop  = as.integer(stop)
-            step  = as.integer(step)
-            stopifnot(start >= x@min_frame,
-                      stop <= x@max_frame + 1,
-                      step >= 0)
-            tdf_get_range(x@handle, start, stop, step)
+          function(x, from, to, by=1L){ 
+            from = as.integer(from)
+            to  = as.integer(to)
+            by  = as.integer(by)
+            stopifnot(from >= x@min_frame,
+                      to <= x@max_frame + 1,
+                      by >= 0)
+            tdf_get_range(x@handle, from, to, by)
           })
 
 
@@ -191,6 +191,7 @@ explore.tdf.tables = function(opentims, ...){
 #' Get the number of peaks per frame.
 #'
 #' @param opentims Instance of OpenTIMS.
+#' @return Number of peaks in each frame.
 #' @export
 peaks_per_frame_cnts = function(opentims){
   opentims@frames$NumPeaks
@@ -200,8 +201,9 @@ peaks_per_frame_cnts = function(opentims){
 #' Get the retention time for each frame.
 #'
 #' @param opentims Instance of OpenTIMS.
+#' @return Retention times corresponding to each frame.
 #' @export
-peaks_per_frame_cnts = function(opentims){
+rts = function(opentims){
   opentims@frames$Time
 }
 
@@ -209,25 +211,30 @@ peaks_per_frame_cnts = function(opentims){
 #' Query for raw data.
 #'
 #' Get the raw data from Bruker's 'tdf_bin' format.
-#' Extract either by frame numbers ('frames') or by starting frame ('start'), ending frame (inclusive, 'end'), and step in frames ('step'), like in the 'seq' function.
+#' Extract either by frame numbers ('frames') or by starting frame ('from'), ending frame (inclusive, 'end'), and step in frames ('by'), like in the 'seq' function.
 #' If 'frames' and one of the end will not be specified, the minimal or maximal frame will be chosen instead.
-#' If both 'frames', 'start' and 'end' are left at default, all of the data will be copied into RAM. Like ALL, so don't do it, unless you have a lot of RAM.
+#' If both 'frames', 'from' and 'end' are left at default, all of the data will be copied into RAM. Like ALL, so don't do it, unless you have a lot of RAM.
 #' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
 #'
 #' @param opentims Instance of OpenTIMS.
 #' @param frames Vector of frame numbers to extract.
-#' @param start Vector of frame numbers to extract.
+#' @param from First frame to select.
+#' @param to Last frame to select.
+#' @param by Each 'by'-th frame will be selected. Default to each frame (1).
 #' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return data.frame with selected columns.
 #' @export
 query = function(opentims,
                  frames = NULL,
-                 start = NULL,
-                 stop = NULL,
-                 step = 1L,
+                 from = NULL,
+                 to = NULL,
+                 by = 1L,
                  columns = c('frame','scan','tof','intensity','mz','dt','rt')){
 
   all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
   col = all_columns %in% columns
+
+  if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
 
   if(!is.null(frames)){
 
@@ -243,13 +250,14 @@ query = function(opentims,
 
   } else {
     
-    if(is.null(start)) start = opentims@min_frame
-    if(is.null(stop)) stop = opentims@max_frame + 1
+    if(is.null(from)) from = opentims@min_frame
+    if(is.null(to)) to = opentims@max_frame 
+    to = to + 1 # For R numerations to work. 
 
     df = tdf_extract_frames_slice( opentims@handle,
-                                   start,
-                                   stop,
-                                   step,
+                                   from,
+                                   to,
+                                   by,
                                    get_frames = col[1],
                                    get_scans = col[2],
                                    get_tofs = col[3],
@@ -259,21 +267,74 @@ query = function(opentims,
                                    get_rts = col[7] )
   }
 
-  as.data.frame(df)
+  as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default???? 
 }
 
 
+get_left_frame = function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
+get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
 
 
 #' Get the retention time for each frame.
 #'
+#' Extract all frames corresponding to retention times inside [min_rt, max_rt] closed borders interval.
+#'
 #' @param opentims Instance of OpenTIMS.
-#' @param frames Vector of frame numbers to extract.
+#' @param min_rt Lower boundry on retention time.
+#' @param max_rt Upper boundry on retention time.
 #' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return data.frame with selected columns.
 #' @export
 rt_query = function(opentims,
-                 frames,
-                 columns=c('frame','scan','tof','intensity','mz','dt','rt')){
-  
+                    min_rt,
+                    max_rt,
+                    columns=c('frame','scan','tof','intensity','mz','dt','rt')){
+  RTS = rts(opentims)
 
+  min_frame = get_left_frame(min_rt, RTS)
+  max_frame = get_right_frame(max_rt, RTS)
+
+  if(is.na(min_frame) | is.na(max_frame))
+    stop("The [min_rt,max_rt] interval does not hold any data.")
+
+  query(opentims,
+        from=min_frame,
+        to=max_frame,
+        columns=columns)
+}
+
+
+#' Get Bruker's code needed for running proprietary time of flight to mass over charge and scan to drift time conversion. 
+#'
+#' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
+#' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
+#' Works on full open-source solution are on the way. 
+#'
+#' @param target.folder Folder where to store the 'dll' or 'so' file.
+#' @param net_url The url with location of all files.
+#' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
+#' @export
+download_bruker_proprietary_code = function(target.folder, 
+                                            net_url="https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"){
+  sys_info = Sys.info()
+  if(sys_info['sysname'] == "Linux"){
+    print("Welcome to a real OS.")
+    url_ending = file="libtimsdata.so"
+  }
+  if(sys_info['sysname'] == "Windows"){
+    print("Detected Windows. Like seriously?")
+    file = "timsdata.dll"
+    if(sys_info['machine'] == "x86-64"){
+      url_ending="win64/timsdata.dll"   
+    } else {
+      print("Assuming 32 bits")
+      url_ending="win32/timsdata.dll"
+    }
+  }
+  url = paste0(net_url, url_ending)
+  target.file = file.path(target.folder, file)
+  print(paste0("Downloading from: ", url))
+  download.file(url, target.file)
+
+  target.file
 }

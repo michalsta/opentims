@@ -165,7 +165,8 @@ Rcpp::DataFrame tdf_get_range_noend(Rcpp::XPtr<TimsDataHandle> tdf, size_t start
 }
 
 
-template<typename T> std::unique_ptr<T[]> R_get_ptr(size_t size, bool really)
+template<typename T> std::unique_ptr<T[]> R_get_ptr(const size_t size,
+                                                    const bool really)
 {
     if(really)
         return std::make_unique<T[]>(size);
@@ -209,9 +210,9 @@ Rcpp::DataFrame tdf_extract_frames(
     const size_t peaks_no = tdh.no_peaks_in_frames(v.get(), indexes.size()); // conts for compiler optimization.
 
     std::unique_ptr<uint32_t[]> frames = R_get_ptr<uint32_t>(peaks_no, get_frames);
-    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, get_scans);
-    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, get_tofs);
-    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, get_intensities);
+    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
     std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
     std::unique_ptr<double[]> dts = R_get_ptr<double>(peaks_no, get_dts);
     std::unique_ptr<double[]> rts = R_get_ptr<double>(peaks_no, get_rts);
@@ -231,13 +232,13 @@ Rcpp::DataFrame tdf_extract_frames(
     DataFrame result = DataFrame::create();
 
     set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scans", scans, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tofs", tofs, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensities", intensities, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
     
-    set_frame<double, Rcpp::NumericVector>(result, "mzs", mzs, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "dts", dts, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "rts", rts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
 
     return result;
 }
@@ -289,13 +290,13 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     DataFrame result = DataFrame::create();
 
     set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scans", scans, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tofs", tofs, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensities", intensities, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
     
-    set_frame<double, Rcpp::IntegerVector>(result, "mzs", mzs, peaks_no);
-    set_frame<double, Rcpp::IntegerVector>(result, "dts", dts, peaks_no);
-    set_frame<double, Rcpp::IntegerVector>(result, "rts", rts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
 
     return result;
 }

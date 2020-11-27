@@ -25,8 +25,13 @@ as.data.table(query(D, from=91, to=185, by=4, columns=c('frame', 'intensity', 's
 as.data.table(rt_query(D, 10, 20, columns=c("frame")))
 
 
-as.data.table(query(D, frames=1:10))
-tdf_extract_frames_slice(D@handle, 1,100,10, T,T,T,T,T,T,T)
+X = as.data.table(query(D, frames=1:10))
+
+for(i in 1:10000){
+	X = query(D, frames=i)
+	plot(X$scan, X$tof, pch='.')
+}
+
 
 library(devtools)
 document()

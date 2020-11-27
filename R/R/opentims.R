@@ -27,30 +27,31 @@ NULL
 #'
 #' S4 class that facilitates data queries for TimsTOF data.
 #'
-#' @slot analysis.tdf_bin Path to raw data (typically *.d/analysis.tdf_bin).
-#' @slot analysis.tdf Path to sqlite database (typically *.d/analysis.tdf).
+#' @slot path.d Path to raw data folder (typically *.d).
 #' @slot handle Pointer to raw data.
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
 #' @slot windows A data.frame with information on the windows.
 #' @slot MS1 Indices of frames corresponding to MS1, i.e. precursor ions.
-#' @slot MS2 Indices of frames corresponding to MS2, i.e. fragment ions.
-#' @slot analysis.tdf.table_names Names of tables in the accompanying sqlite database.
 #' @export
 setClass('OpenTIMS',
-         slots=c(analysis.tdf_bin='character',
-                 analysis.tdf='character',
-                 handle='externalptr',
-                 min_frame='integer',
-                 max_frame='integer',
-                 frames='data.frame'),
-         validity=function(object){
-            analysis.tdf_bin_OK = file.exists(object@analysis.tdf_bin)
-            if(!analysis.tdf_bin_OK) print('Missing analysis.tdf_bin')
-            analysis.tdf_OK = file.exists(object@analysis.tdf)
-            if(!analysis.tdf_OK) print('Missing analysis.tdf')
-            analysis.tdf_bin_OK & analysis.tdf_OK
+         slots = c(path.d='character',
+                   handle='externalptr',
+                   min_frame='integer',
+                   max_frame='integer',
+                   frames='data.frame'),
+         validity = function(object){
+            d.folder = file.exists(object@path.d) 
+            if(!d.folder) print('The folder with data (typically named *.d) does not exist.')
+          
+            d.folder.analysis.tdf = file.exists(file.path(object@path.d, 'analysis.tdf'))
+            if(!d.folder.analysis.tdf) print('The .d folder does not contain the sqlite data-base called "analysis.tdf".')
+          
+            d.folder.analysis.tdf_bin = file.exists(file.path(object@path.d, 'analysis.tdf_bin'))
+            if(!d.folder.analysis.tdf_bin) print('The .d folder does not contain the raw data file called "analysis.tdf_bin".')
+
+            d.folder & d.folder.analysis.tdf & d.folder.analysis.tdf_bin
          }
 )
 
@@ -86,22 +87,22 @@ setMethod("[",
 
 #' Select a range of frames to extract.
 #'
-#' This is similar to using the start:stop:step operator in Python.
+#' This is similar to using the from:to:by operator in Python.
 #'
 #' @param x OpenTIMS data instance.
-#' @param start The first frame to extract.
-#' @param stop The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
-#' @param step The step
+#' @param from The first frame to extract.
+#' @param to The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
+#' @param by The by
 setMethod("range", 
           "OpenTIMS",
-          function(x, start, stop, step=1L){ 
-            start = as.integer(start)
-            stop  = as.integer(stop)
-            step  = as.integer(step)
-            stopifnot(start >= x@min_frame,
-                      stop <= x@max_frame + 1,
-                      step >= 0)
-            tdf_get_range(x@handle, start, stop, step)
+          function(x, from, to, by=1L){ 
+            from = as.integer(from)
+            to  = as.integer(to)
+            by  = as.integer(by)
+            stopifnot(from >= x@min_frame,
+                      to <= x@max_frame + 1,
+                      by >= 0)
+            tdf_get_range(x@handle, from, to, by)
           })
 
 
@@ -113,7 +114,8 @@ setMethod("range",
 #' @return A list of tables.
 #' @export
 table2df = function(opentims, names){
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
     DBI::dbDisconnect(sql_conn)
     return(tables)
@@ -126,7 +128,8 @@ table2df = function(opentims, names){
 #' @return Names of tables.
 #' @export
 tables_names = function(opentims, names){
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), opentims@analysis.tdf)
+    analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables_names = DBI::dbListTables(sql_conn)
     DBI::dbDisconnect(sql_conn)
     return(tables_names)
@@ -136,8 +139,7 @@ tables_names = function(opentims, names){
 
 #' Get OpenTIMS data representation.
 #' 
-#' @param path Path to the TimsTOF .d folder. Otherwise direct path to .tdf_bin file containing the raw data.
-#' @param db_path Path to the sqlite database with the .tdf extension. Only supply it when 'path' corresponded to raw data file. If 'path' corresponds to the whole folder, you can skip this argument.
+#' @param path.d Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS(path_to_.d_folder)
@@ -145,24 +147,16 @@ tables_names = function(opentims, names){
 #' }
 #' @importFrom methods new
 #' @export
-OpenTIMS = function(path, analysis.tdf=''){
-    if(analysis.tdf==''){
-        analysis.tdf_bin = file.path(path,'analysis.tdf_bin')
-        analysis.tdf = file.path(path,'analysis.tdf')
-    } else {
-        analysis.tdf = path
-    }
-
-    # getting necessary tables from the accompanying sqlite database. 
+OpenTIMS = function(path.d){
+    # getting tables from SQlite 
+    analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     DBI::dbDisconnect(sql_conn)
-
-    handle = tdf_open(analysis.tdf_bin, analysis.tdf)
+    handle = tdf_open(path.d)
 
     new("OpenTIMS",
-        analysis.tdf_bin=analysis.tdf_bin, 
-        analysis.tdf=analysis.tdf,
+        path.d=path.d,
         handle=handle,
         min_frame=as.integer(tdf_min_frame_id(handle)),
         max_frame=as.integer(tdf_max_frame_id(handle)),
@@ -175,15 +169,6 @@ OpenTIMS = function(path, analysis.tdf=''){
 #' @return Numbers of frames corresponding to MS1, i.e. precursor ions.
 #' @export
 MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
-
-
-# WRONG!!!
-#' Get MS2 frame numbers.
-#'
-#' @param opentims Instance of OpenTIMS
-#' @return Numbers of frames corresponding to MS2, i.e. fragment ions.
-#' @export
-MS2 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 9]
 
 
 #' Explore the contentents of the sqlite .tdf database.
@@ -200,4 +185,156 @@ explore.tdf.tables = function(opentims, ...){
         readline("PRESS ENTER")
     }
     print('Get full tables using "table2df".')
+}
+
+
+#' Get the number of peaks per frame.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @return Number of peaks in each frame.
+#' @export
+peaks_per_frame_cnts = function(opentims){
+  opentims@frames$NumPeaks
+}
+
+
+#' Get the retention time for each frame.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @return Retention times corresponding to each frame.
+#' @export
+rts = function(opentims){
+  opentims@frames$Time
+}
+
+
+#' Query for raw data.
+#'
+#' Get the raw data from Bruker's 'tdf_bin' format.
+#' Extract either by frame numbers ('frames') or by starting frame ('from'), ending frame (inclusive, 'end'), and step in frames ('by'), like in the 'seq' function.
+#' If 'frames' and one of the end will not be specified, the minimal or maximal frame will be chosen instead.
+#' If both 'frames', 'from' and 'end' are left at default, all of the data will be copied into RAM. Like ALL, so don't do it, unless you have a lot of RAM.
+#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frames Vector of frame numbers to extract.
+#' @param from First frame to select.
+#' @param to Last frame to select.
+#' @param by Each 'by'-th frame will be selected. Default to each frame (1).
+#' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return data.frame with selected columns.
+#' @export
+query = function(opentims,
+                 frames = NULL,
+                 from = NULL,
+                 to = NULL,
+                 by = 1L,
+                 columns = c('frame','scan','tof','intensity','mz','dt','rt')){
+
+  all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+  col = all_columns %in% columns
+
+  if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
+
+  if(!is.null(frames)){
+
+    df = tdf_extract_frames( opentims@handle,
+                             frames,
+                             get_frames = col[1],
+                             get_scans = col[2],
+                             get_tofs = col[3],
+                             get_intensities = col[4],
+                             get_mzs = col[5],
+                             get_dts = col[6],
+                             get_rts = col[7] )
+
+  } else {
+    
+    if(is.null(from)) from = opentims@min_frame
+    if(is.null(to)) to = opentims@max_frame 
+    to = to + 1 # For R numerations to work. 
+
+    df = tdf_extract_frames_slice( opentims@handle,
+                                   from,
+                                   to,
+                                   by,
+                                   get_frames = col[1],
+                                   get_scans = col[2],
+                                   get_tofs = col[3],
+                                   get_intensities = col[4],
+                                   get_mzs = col[5],
+                                   get_dts = col[6],
+                                   get_rts = col[7] )
+  }
+
+  as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default???? 
+}
+
+
+get_left_frame = function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
+get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
+
+
+#' Get the retention time for each frame.
+#'
+#' Extract all frames corresponding to retention times inside [min_rt, max_rt] closed borders interval.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param min_rt Lower boundry on retention time.
+#' @param max_rt Upper boundry on retention time.
+#' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return data.frame with selected columns.
+#' @export
+rt_query = function(opentims,
+                    min_rt,
+                    max_rt,
+                    columns=c('frame','scan','tof','intensity','mz','dt','rt')){
+  RTS = rts(opentims)
+
+  min_frame = get_left_frame(min_rt, RTS)
+  max_frame = get_right_frame(max_rt, RTS)
+
+  if(is.na(min_frame) | is.na(max_frame))
+    stop("The [min_rt,max_rt] interval does not hold any data.")
+
+  query(opentims,
+        from=min_frame,
+        to=max_frame,
+        columns=columns)
+}
+
+
+#' Get Bruker's code needed for running proprietary time of flight to mass over charge and scan to drift time conversion. 
+#'
+#' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
+#' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
+#' Works on full open-source solution are on the way. 
+#'
+#' @param target.folder Folder where to store the 'dll' or 'so' file.
+#' @param net_url The url with location of all files.
+#' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
+#' @export
+download_bruker_proprietary_code = function(target.folder, 
+                                            net_url="https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"){
+  sys_info = Sys.info()
+  if(sys_info['sysname'] == "Linux"){
+    print("Welcome to a real OS.")
+    url_ending = file="libtimsdata.so"
+  }
+  if(sys_info['sysname'] == "Windows"){
+    print("Detected Windows. Like seriously?")
+    file = "timsdata.dll"
+    if(sys_info['machine'] == "x86-64"){
+      url_ending="win64/timsdata.dll"   
+    } else {
+      print("Assuming 32 bits")
+      url_ending="win32/timsdata.dll"
+    }
+  }
+  url = paste0(net_url, url_ending)
+  target.file = file.path(target.folder, file)
+  print(paste0("Downloading from: ", url))
+  download.file(url, target.file)
+
+  target.file
 }

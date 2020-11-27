@@ -10,9 +10,7 @@ S4 class that facilitates data queries for TimsTOF data.
 \section{Slots}{
 
 \describe{
-\item{\code{analysis.tdf_bin}}{Path to raw data (typically *.d/analysis.tdf_bin).}
-
-\item{\code{analysis.tdf}}{Path to sqlite database (typically *.d/analysis.tdf).}
+\item{\code{path.d}}{Path to raw data folder (typically *.d).}
 
 \item{\code{handle}}{Pointer to raw data.}
 
@@ -25,9 +23,5 @@ S4 class that facilitates data queries for TimsTOF data.
 \item{\code{windows}}{A data.frame with information on the windows.}
 
 \item{\code{MS1}}{Indices of frames corresponding to MS1, i.e. precursor ions.}
-
-\item{\code{MS2}}{Indices of frames corresponding to MS2, i.e. fragment ions.}
-
-\item{\code{analysis.tdf.table_names}}{Names of tables in the accompanying sqlite database.}
 }}
 

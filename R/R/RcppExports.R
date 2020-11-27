@@ -5,12 +5,8 @@ setup_bruker_so <- function(path) {
     invisible(.Call('_opentims_setup_bruker_so', PACKAGE = 'opentims', path))
 }
 
-tdf_open <- function(tdf_bin_path, path, db_path) {
-    .Call('_opentims_tdf_open', PACKAGE = 'opentims', tdf_bin_path, path, db_path)
-}
-
-tdf_open_dir <- function(path) {
-    .Call('_opentims_tdf_open_dir', PACKAGE = 'opentims', path)
+tdf_open <- function(path_d) {
+    .Call('_opentims_tdf_open', PACKAGE = 'opentims', path_d)
 }
 
 tdf_min_frame_id <- function(tdf) {
@@ -39,5 +35,13 @@ tdf_get_indexes <- function(tdf, indexes) {
 
 tdf_get_range_noend <- function(tdf, start, step = 1L) {
     .Call('_opentims_tdf_get_range_noend', PACKAGE = 'opentims', tdf, start, step)
+}
+
+tdf_extract_frames <- function(tdf, indexes, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_dts = TRUE, get_rts = TRUE) {
+    .Call('_opentims_tdf_extract_frames', PACKAGE = 'opentims', tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts)
+}
+
+tdf_extract_frames_slice <- function(tdf, start, end, step = 1L, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_dts = TRUE, get_rts = TRUE) {
+    .Call('_opentims_tdf_extract_frames_slice', PACKAGE = 'opentims', tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts)
 }
 

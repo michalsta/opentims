@@ -35,23 +35,13 @@ void setup_bruker_so(const Rcpp::String& path)
 
 
 // [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& tdf_bin_path,
-                                    const Rcpp::String& path,
-                                    const Rcpp::String& db_path)
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d)
 {
-    TimsDataHandle* p;
-    p = new TimsDataHandle(tdf_bin_path, path, db_path);
+    TimsDataHandle* p; 
+    p = new TimsDataHandle(path_d);
     return Rcpp::XPtr<TimsDataHandle>(p, true);
 }
 
-
-// [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open_dir(const Rcpp::String& path)
-{
-    TimsDataHandle* p;
-    p = new TimsDataHandle(path);
-    return Rcpp::XPtr<TimsDataHandle>(p, true);
-}
 
 
 // [[Rcpp::export]]
@@ -174,3 +164,139 @@ Rcpp::DataFrame tdf_get_range_noend(Rcpp::XPtr<TimsDataHandle> tdf, size_t start
     return tdf_get_range(tdf, start, std::numeric_limits<size_t>::max(), step);
 }
 
+
+template<typename T> std::unique_ptr<T[]> R_get_ptr(const size_t size,
+                                                    const bool really)
+{
+    if(really)
+        return std::make_unique<T[]>(size);
+    else
+        return std::unique_ptr<T[]>();
+}
+
+
+template<typename T, typename U> void set_frame(Rcpp::DataFrame& df,
+                                                const std::string& name,
+                                                const std::unique_ptr<T[]>& tbl,
+                                                size_t size)
+{
+    if(tbl){
+        U vec = U::import(tbl.get(), tbl.get() + size);
+        df[name] = vec;
+    } 
+}
+
+
+// [[Rcpp::export]]
+Rcpp::DataFrame tdf_extract_frames(
+    const Rcpp::XPtr<TimsDataHandle> tdf,
+    const Rcpp::IntegerVector indexes,
+    const bool get_frames = true,
+    const bool get_scans = true,
+    const bool get_tofs = true,
+    const bool get_intensities = true,
+    const bool get_mzs = true,
+    const bool get_dts = true,
+    const bool get_rts = true)
+{
+    using namespace Rcpp;
+
+    TimsDataHandle& tdh = *tdf;
+
+    std::unique_ptr<uint32_t[]> v = std::make_unique<uint32_t[]>(indexes.size());
+
+    for(size_t ii=0; ii < indexes.size(); ++ii) v[ii] = indexes[ii];
+
+    const size_t peaks_no = tdh.no_peaks_in_frames(v.get(), indexes.size()); // conts for compiler optimization.
+
+    std::unique_ptr<uint32_t[]> frames = R_get_ptr<uint32_t>(peaks_no, get_frames);
+    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
+    std::unique_ptr<double[]> dts = R_get_ptr<double>(peaks_no, get_dts);
+    std::unique_ptr<double[]> rts = R_get_ptr<double>(peaks_no, get_rts);
+
+    tdh.extract_frames(
+        v.get(),
+        indexes.size(),
+        frames.get(),
+        scans.get(),
+        tofs.get(),
+        intensities.get(),
+        mzs.get(),
+        dts.get(),
+        rts.get()
+    );
+
+    DataFrame result = DataFrame::create();
+
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
+    
+    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
+
+    return result;
+}
+
+
+
+// [[Rcpp::export]]
+Rcpp::DataFrame tdf_extract_frames_slice(
+    const Rcpp::XPtr<TimsDataHandle> tdf,
+    const size_t start,
+    const size_t end,
+    const int32_t step = 1,
+    const bool get_frames = true,
+    const bool get_scans = true,
+    const bool get_tofs = true,
+    const bool get_intensities = true,
+    const bool get_mzs = true,
+    const bool get_dts = true,
+    const bool get_rts = true)
+{
+    using namespace Rcpp;
+
+    TimsDataHandle& tdh = *tdf;
+
+    const size_t peaks_no = tdh.no_peaks_in_slice(start, end, step);
+
+    //scan tof intensity always returned and only sometimes cut away
+    std::unique_ptr<uint32_t[]> frames = R_get_ptr<uint32_t>(peaks_no, get_frames);
+    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, true);  
+    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
+    std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
+    std::unique_ptr<double[]> dts = R_get_ptr<double>(peaks_no, get_dts);
+    std::unique_ptr<double[]> rts = R_get_ptr<double>(peaks_no, get_rts);
+
+    tdh.extract_frames_slice(
+        start, 
+        end,
+        step,
+        frames.get(),
+        scans.get(),
+        tofs.get(),
+        intensities.get(),
+        mzs.get(),
+        dts.get(),
+        rts.get()
+    );
+
+    DataFrame result = DataFrame::create();
+
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
+    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
+    
+    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
+
+    return result;
+}

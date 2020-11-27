@@ -14,24 +14,22 @@ path = '/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_H
 
 # setup_bruker_so(path_dll_old)
 # setup_bruker_so(path_dll_2.7.0)
-# path_dll = download_bruker_proprietary_code('/home/matteo/Projects/opentims')
-path_dll = "/home/matteo/Projects/opentims/libtimsdata.so"
+path_dll = download_bruker_proprietary_code('/home/matteo/Projects/opentims')
 
-setup_bruker_so(path_dll)
+setup_bruker_so(path_dll_2.8.7)
 D = OpenTIMS(path)
 
-as.data.table(query(D, from=91, to=185))
-as.data.table(query(D, from=91, to=185, by=4, columns=c('frame', 'intensity', 'scan')))
-as.data.table(rt_query(D, 10, 20, columns=c("frame")))
+# Z.old = as.data.table(query(D, frames=1:10))
+# save(Z.old, file='/home/matteo/Projects/opentims/Z.old')
 
+# Z.2.7.0 = as.data.table(query(D, frames=1:10))
+# save(Z.2.7.0, file='/home/matteo/Projects/opentims/Z.2.7.0')
 
-as.data.table(query(D, frames=1:10))
-tdf_extract_frames_slice(D@handle, 1,100,10, T,T,T,T,T,T,T)
+# Z.2.8.7 = as.data.table(query(D, frames=1:10))
+# save(Z.2.8.7, file='/home/matteo/Projects/opentims/Z.2.8.7')
 
-library(devtools)
-document()
-document()
-build()
-install()
-load_all()
+# load('/home/matteo/Projects/opentims/Z.old')
+# load('/home/matteo/Projects/opentims/Z.2.7.0')
+# load('/home/matteo/Projects/opentims/Z.2.8.7')
 
+# all.equal(Z.old, Z.2.8.7)

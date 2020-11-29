@@ -47,6 +47,9 @@ class OpenTIMS:
                                   for i in range(self.min_frame, self.max_frame+1)])
         self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
 
+    def __len__(self):
+        return self.peaks_cnt
+
 
     def __repr__(self):
         return f"OpenTIMS({self.peaks_cnt} peaks)"

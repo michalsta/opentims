@@ -42,10 +42,18 @@ from pprint import pprint
 
 from opentims.opentims import OpenTIMS
 
-
-
 path = pathlib.Path('path_to_your_data.d')
 D = OpenTIMS(path) # get data handle
+print(D)
+print(len(D)) # The number of peaks.
+
+# Attention:
+# to get tof-mz and scan-dt conversion, you must accept Bruker license aggreement.
+# If you are OK with it, you will get the full output.
+# If not, you have to subselect only columns ('frame','scan','tof','intensity','rt').
+# To have additionally 'mz' and 'dt', you have to install
+# opentims_bruker_bridge with
+# pip install opentims_bruker_bridge
 
 # Get a dict with data from frames 1, 5, and 67.
 pprint(D.query(frames=[1,5,67]))
@@ -78,13 +86,70 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 pprint(D[1:10])
 ```
 
+## R
+
+```{R}
+library(opentims)
+
+path = pathlib.Path('path_to_your_data.d')
+
+# Do you want to have access only to 'frame', 'scan', 'time of flight', and 'intensity'?
+accept_Bruker_EULA_and_on_Windows_or_Linux = TRUE
+
+if(accept_Bruker_EULA_and_on_Windows_or_Linux){
+    folder_to_stode_priopriatary_code = "/home/matteo"
+    path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
+    setup_bruker_so(path_to_bruker_dll)
+}
+
+D = OpenTIMS(path) # get data handle
+
+print(D) 
+print(length(D)) # The number of peaks.
+
+
+pprint = function(x,...){ print(head(x,...)); print(tail(x,...)) }
+
+# Get a data,frame with data from frames 1, 5, and 67.
+pprint(query(D, frames=c(1,5,67)))
+
+# Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
+pprint(query(D, frames=seq(2,1000,10)))
+
+# Get all MS1 frames 
+# print(query(D, frames=MS1(D)))
+# ATTENTION: that's quite a lot of data!!! And R will first make a stupid copy, because it's bad. You might exceed your RAM.
+
+# Getting subset of columns: simply specify 'columns':
+pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
+# this is also the only way to get data without accepting Bruker terms of service and on MacOS (for time being).
+
+# R has no proper in-built iterators :(
+
+# All MS1 frames, but one at a time:
+for(fr in MS1(D)){
+    print(query(D, fr))
+}
+
+
+# Syntactic sugar: only the real bruker data can also be extracted this way:
+pprint(head(D[100])) 
+X = D[10:200]
+pprint(X)
+
+```
+
 Do observe, that you must know which values: to put there.
 If you don't, consider [TimsPy](https://github.com/MatteoLacki/timspy).
+
+## Development
+Download with git.
+Follow Makefile.
 
 
 ## Plans for future
 
-We will gradually introduce cppyy to the project and fill up numpy arrays in C++.
+Together with Bruker we are working on openning up the tof-mz and scan-dt conversions.
 
 
 ## Law

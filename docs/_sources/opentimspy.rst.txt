@@ -1,0 +1,21 @@
+opentimspy package
+==================
+
+Submodules
+----------
+
+opentimspy.opentims module
+--------------------------
+
+.. automodule:: opentimspy.opentims
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: opentimspy
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -2,30 +2,42 @@
 # and is not meant for use by end-users.
 
 reinstall: pyclean pipclean
-#	pip install . --verbose
 	pip install . --user --verbose --no-cache
-matteo:
-	rm -rf build
-	pip uninstall opentims -y || true
+reinstall_ve: pyclean pipclean
 	pip install . --verbose --no-cache 
-cached:
-	pip uninstall timsdata -y || pip uninstall opentims -y || true
-	pip install . --verbose > log
 rprep: rclean
-	R CMD build R
+	R CMD build opentimsr
 rcheck: rprep
-	R CMD check opentims_*.tar.gz
+	R CMD check opentimsr_*.tar.gz
 rinst: rprep
-	R CMD INSTALL opentims_*.tar.gz
-ipython:
+	R CMD INSTALL opentimsr_*.tar.gz
+ipy:
 	python -m IPython
 clean: pyclean rclean hereclean
 rclean:
-	rm -rf opentims_*.tar.gz  opentims.Rcheck
+	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck
 pyclean:
-	rm -rf build dist opentims.egg-info
+	rm -rf build dist opentimspy.egg-info
 hereclean:
 	rm -f *.so a.out
 pipclean:
-	pip uninstall opentims -y || true
-	pip uninstall opentims -y || true
+	pip uninstall opentimspy -y || true
+	pip uninstall opentimspy -y || true
+docs: clean_docs
+	git branch gh-pages || true
+	git checkout gh-pages
+	pip install sphinx || true
+	pip install recommonmark || true
+	mkdir -p sphinx
+	mkdir -p docs || True
+	touch docs/.nojekyll
+	sphinx-quickstart sphinx --sep --project OpenTIMS --author Lacki_and_Startek -v 0.0.1 --ext-autodoc --ext-githubpages --extensions sphinx.ext.napoleon --extensions recommonmark --makefile -q --no-batchfile
+	sphinx-apidoc -f -o sphinx/source opentimspy
+	cd sphinx && make html
+	cp -r sphinx/build/html/* docs
+	git checkout master
+clean_docs:
+	git checkout gh-pages
+	rm -rf sphinx
+	rm -rf docs
+	git checkout master

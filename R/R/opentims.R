@@ -22,6 +22,9 @@ NULL
   library.dynam.unload("opentims", libpath)
 }
 
+# The order of these matters!!!
+all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+
 
 #' TimsTOF data accessor.
 #'
@@ -40,7 +43,8 @@ setClass('OpenTIMS',
                    handle='externalptr',
                    min_frame='integer',
                    max_frame='integer',
-                   frames='data.frame'),
+                   frames='data.frame',
+                   all_columns='character'),
          validity = function(object){
             d.folder = file.exists(object@path.d) 
             if(!d.folder) print('The folder with data (typically named *.d) does not exist.')
@@ -160,7 +164,8 @@ OpenTIMS = function(path.d){
         handle=handle,
         min_frame=as.integer(tdf_min_frame_id(handle)),
         max_frame=as.integer(tdf_max_frame_id(handle)),
-        frames=frames)
+        frames=frames,
+        all_columns=all_columns)
 }
 
 #' Get MS1 frame numbers.
@@ -211,63 +216,66 @@ rts = function(opentims){
 #' Query for raw data.
 #'
 #' Get the raw data from Bruker's 'tdf_bin' format.
-#' Extract either by frame numbers ('frames') or by starting frame ('from'), ending frame (inclusive, 'end'), and step in frames ('by'), like in the 'seq' function.
-#' If 'frames' and one of the end will not be specified, the minimal or maximal frame will be chosen instead.
-#' If both 'frames', 'from' and 'end' are left at default, all of the data will be copied into RAM. Like ALL, so don't do it, unless you have a lot of RAM.
 #' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
 #'
 #' @param opentims Instance of OpenTIMS.
 #' @param frames Vector of frame numbers to extract.
-#' @param from First frame to select.
-#' @param to Last frame to select.
-#' @param by Each 'by'-th frame will be selected. Default to each frame (1).
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export
 query = function(opentims,
-                 frames = NULL,
-                 from = NULL,
-                 to = NULL,
-                 by = 1L,
-                 columns = c('frame','scan','tof','intensity','mz','dt','rt')){
-
-  all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
-  col = all_columns %in% columns
+                 frames,
+                 columns=all_columns){
+  col = opentims@all_columns %in% columns
 
   if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
 
-  if(!is.null(frames)){
-
-    df = tdf_extract_frames( opentims@handle,
-                             frames,
-                             get_frames = col[1],
-                             get_scans = col[2],
-                             get_tofs = col[3],
-                             get_intensities = col[4],
-                             get_mzs = col[5],
-                             get_dts = col[6],
-                             get_rts = col[7] )
-
-  } else {
-    
-    if(is.null(from)) from = opentims@min_frame
-    if(is.null(to)) to = opentims@max_frame 
-    to = to + 1 # For R numerations to work. 
-
-    df = tdf_extract_frames_slice( opentims@handle,
-                                   from,
-                                   to,
-                                   by,
-                                   get_frames = col[1],
-                                   get_scans = col[2],
-                                   get_tofs = col[3],
-                                   get_intensities = col[4],
-                                   get_mzs = col[5],
-                                   get_dts = col[6],
-                                   get_rts = col[7] )
-  }
+  df = tdf_extract_frames( opentims@handle,
+                           frames,
+                           get_frames = col[1],
+                           get_scans = col[2],
+                           get_tofs = col[3],
+                           get_intensities = col[4],
+                           get_mzs = col[5],
+                           get_dts = col[6],
+                           get_rts = col[7] )
 
   as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default???? 
+}
+
+
+#' Query for raw data.
+#'
+#' Get the raw data from Bruker's 'tdf_bin' format.
+#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
+#'
+#' We assume 'from' <= 'to'.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param from First frame to extract.
+#' @param to Last frame to extract.
+#' @param step Every step-th frame gets extracted (starting from the first one).
+#' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return data.frame with selected columns.
+#' @export
+query_slice = function(opentims, from=NULL, to=NULL, step=1L, columns=all_columns){
+
+  # Border conditions.
+  if(is.null(from)) from = opentims@min_frame
+  if(is.null(to)) to = opentims@max_frame 
+
+  df = tdf_extract_frames_slice( opentims@handle,
+                                 from,
+                                 to + 1, # For R numerations to work. 
+                                 by,
+                                 get_frames = col[1],
+                                 get_scans = col[2],
+                                 get_tofs = col[3],
+                                 get_intensities = col[4],
+                                 get_mzs = col[5],
+                                 get_dts = col[6],
+                                 get_rts = col[7] )
+  as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default????
 }
 
 
@@ -338,3 +346,15 @@ download_bruker_proprietary_code = function(target.folder,
 
   target.file
 }
+
+
+#' Dynamically link Bruker's DLL to enable tof-mz and scan-dt conversion.
+#'
+#' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
+#' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
+#' Works on full open-source solution are on the way. 
+#'
+#' @param path Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.
+#' @export
+setup_bruker_so = function(path) .setup_bruker_so(path)
+

@@ -6,6 +6,16 @@ from opentims.opentims import OpenTIMS
 path = pathlib.Path('path_to_your_data.d')
 # path = pathlib.Path("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 D = OpenTIMS(path) # get data handle
+print(D)
+print(len(D)) # The number of peaks.
+
+# Attention:
+# to get tof-mz and scan-dt conversion, you must accept Bruker license aggreement.
+# If you are OK with it, you will get the full output.
+# If not, you have to subselect only columns ('frame','scan','tof','intensity','rt').
+# To have additionally 'mz' and 'dt', you have to install
+# opentims_bruker_bridge with
+# pip install opentims_bruker_bridge
 
 # Get a dict with data from frames 1, 5, and 67.
 pprint(D.query(frames=[1,5,67]))

@@ -26,7 +26,7 @@
 #include "tof2mz_converter.h"
 
 
-// [[Rcpp::export]]
+// [[Rcpp::export(.setup_bruker_so)]]
 void setup_bruker_so(const Rcpp::String& path)
 {
     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.get_cstring());

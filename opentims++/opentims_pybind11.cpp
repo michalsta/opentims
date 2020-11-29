@@ -30,7 +30,7 @@ template<typename T> T* get_ptr(py::buffer& buf)
     return static_cast<T*>(buf_info.ptr);
 }
 
-PYBIND11_MODULE(opentims_cpp, m) {
+PYBIND11_MODULE(opentimspy_cpp, m) {
     py::class_<TimsFrame>(m, "TimsFrame")
         .def_readonly("id", &TimsFrame::id)
         .def_readonly("num_scans", &TimsFrame::num_scans)

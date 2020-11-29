@@ -50,15 +50,18 @@ if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++')
 if dual_build:
     ext_modules = [
         Extension(
-            name='opentims_support',
-            sources = [join("opentims", "sqlite", "sqlite3.c"), join("opentims", "zstd", "zstddeclib.c")],
+            name='opentimspy_support',
+            sources = [join("opentims++", "sqlite", "sqlite3.c"),
+                       join("opentims++", "zstd", "zstddeclib.c")],
             extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb"],
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         ),
         Extension(
-            name='opentims_cpp',
-            sources=[join('opentims','opentims_pybind11.cpp'), join("opentims", "tof2mz_converter.cpp"), join("opentims", "scan2drift_converter.cpp"),],
+            name='opentimspy_cpp',
+            sources=[join("opentims++","opentims_pybind11.cpp"),
+                     join("opentims++", "tof2mz_converter.cpp"),
+                     join("opentims++", "scan2drift_converter.cpp"),],
             extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split() if not build_asan else "-Og -g -std=c++14 -fsanitize=address".split(),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -68,8 +71,12 @@ if dual_build:
 else:
     ext_modules = [
         Extension(
-            name='opentims_cpp',
-            sources = [join("opentims", "sqlite", "sqlite3.c"), join("opentims", "zstd", "zstddeclib.c"), join('opentims','opentims_pybind11.cpp'), join("opentims", "tof2mz_converter.cpp"), join("opentims", "scan2drift_converter.cpp")],
+            name='opentimspy_cpp',
+            sources = [join("opentims++", "sqlite", "sqlite3.c"),
+                       join("opentims++", "zstd", "zstddeclib.c"),
+                       join("opentims++", "opentims_pybind11.cpp"),
+                       join("opentims++", "tof2mz_converter.cpp"),
+                       join("opentims++", "scan2drift_converter.cpp")],
             extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb", "-std=c++14"],
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -77,13 +84,13 @@ else:
 
 
 setup(
-    name='opentims',
-    packages=['opentims'],
-    version='0.9.0',
-    author='MatteoLacki, Michał Startek',
+    name='opentimspy',
+    packages=['opentimspy'],
+    version='0.9.1',
+    author='Mateusz Krzysztof Łącki (MatteoLacki), Michał Startek (michalsta)',
     author_email='matteo.lacki@gmail.com, michal.startek@mimuw.edu.pl',
-    description='OpenTIMS: A fully open-source parser of Bruker Tims Data File (.tdf)',
-    long_description='OpenTIMS: A fully open-source parser of Bruker Tims Data File (.tdf)',
+    description='opentimspy: An open-source parser of Bruker Tims Data File (.tdf).',
+    long_description='opentimspy: An open-source parser of Bruker Tims Data File (.tdf).',
     keywords=['timsTOFpro', 'Bruker TDF', 'data science', 'mass spectrometry'],
     classifiers=["Development Status :: 4 - Beta",
              'Intended Audience :: Science/Research',
@@ -94,5 +101,5 @@ setup(
     setup_requires=['pybind11'],
     install_requires=['pybind11','numpy'],
     ext_modules=ext_modules,
-    package_dir={'opentims':'Python'} 
+    package_dir={'opentimspy':'opentimspy'} 
 )

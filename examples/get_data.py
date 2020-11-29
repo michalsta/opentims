@@ -1,7 +1,7 @@
 import pathlib
 from pprint import pprint
 
-from opentims.opentims import OpenTIMS
+from opentimspy.opentims import OpenTIMS
 
 path = pathlib.Path('path_to_your_data.d')
 # path = pathlib.Path("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")

@@ -1,4 +1,4 @@
-#    OpenTIMS: a fully open-source library for opening Bruker's TimsTOF data files.
+#    OpenTIMS: an open-source library for opening Bruker's TimsTOF data files.
 #    Copyright (C) 2020 Michał Startek and Mateusz Łącki
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,7 @@ import numpy as np
 import pathlib
 import collections
 
-import opentims
-from opentims.iterators import ComfyIter
-from opentims.slice_ops import parse_idx
+import opentimspy
 
 
 all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
@@ -35,7 +33,7 @@ class OpenTIMS:
         """
         analysis_directory = pathlib.Path(analysis_directory)
         assert analysis_directory.exists(), f"There is no such location: {analysis_directory}"
-        self.handle = opentims.opentims_cpp.TimsDataHandle(str(analysis_directory))
+        self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
 
         self.min_frame = self.handle.min_frame_id()
         self.max_frame = self.handle.max_frame_id()

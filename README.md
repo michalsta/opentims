@@ -141,12 +141,13 @@ for(fr in MS1(D)){
 # Syntactic sugar: only the real bruker data can also be extracted this way:
 pprint(head(D[100])) 
 X = D[10:200]
-pprint(X)
-
+pprint(X) 
 ```
 
-Do observe, that you must know which values: to put there.
-If you don't, consider [TimsPy](https://github.com/MatteoLacki/timspy).
+# More options?
+
+Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://github.com/MatteoLacki/timsr) for more user-friendly options.
+
 
 # Development
 
@@ -164,8 +165,19 @@ R CMD INSTALL opentims_*
 Together with Bruker we are working on openning up the tof-mz and scan-dt conversions.
 
 
-## Law
-Please read THIRD-PARTY-LICENSE-README.txt for legal aspects of using the software.
+## Licence
+
+OpenTIMS is released under the terms of GNU GPL v3 licence, as
+published by the Free Software Foundation. Full text below.
+If you require other licensing terms please contact the authors.
+
+OpenTIMS contains built-in versions of the following software:
+- sqlite3, public domain
+- ZSTD, BSD licence
+- mio, MIT licence
+
+See the respective files for details.
+Consider [TimsPy](https://github.com/MatteoLacki/opentims_bruker_bridge) for Bruker proprietary time of flight to mass to charge ratio and scan to drift time transformations, which are shipped under separate license. 
 
 ## Special thanks
 We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from Bruker Daltonik GmbH, for their magnificent work in developing tfd-sdk.

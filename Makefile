@@ -35,9 +35,9 @@ docs: clean_docs
 	sphinx-apidoc -f -o sphinx/source opentimspy
 	cd sphinx && make html
 	cp -r sphinx/build/html/* docs
-	git checkout renaming
+	git checkout master
 clean_docs:
 	git checkout gh-pages
 	rm -rf sphinx
 	rm -rf docs
-	git checkout renaming
+	git checkout master

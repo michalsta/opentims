@@ -123,7 +123,14 @@ void TimsFrame::close()
     back_buffer.reset(nullptr);
 }
 
-void TimsFrame::save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times, ZSTD_DCtx* decomp_ctx)
+void TimsFrame::save_to_buffs(uint32_t* frame_ids,
+                              uint32_t* scan_ids,
+                              uint32_t* tofs,
+                              uint32_t* intensities,
+                              double* mzs,
+                              double* drift_times,
+                              double* retention_times,
+                              ZSTD_DCtx* decomp_ctx)
 {
     if(num_peaks == 0)
         return;

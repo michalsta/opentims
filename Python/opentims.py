@@ -23,6 +23,9 @@ from opentims.iterators import ComfyIter
 from opentims.slice_ops import parse_idx
 
 
+all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
+all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
+
 class OpenTIMS:
     def __init__ (self, analysis_directory):
         """Initialize TimsData.
@@ -37,16 +40,13 @@ class OpenTIMS:
         self.min_frame = self.handle.min_frame_id()
         self.max_frame = self.handle.max_frame_id()
         self.rts = self.frame2rt(range(self.min_frame, self.max_frame+1))
-
-        # self.iter = ComfyIter(self.iter_arrays)
         self.peaks_cnt = self.handle.no_peaks_total()
-        self.columns = ('frame','scan','tof','intensity','mz','dt','rt')
-        self.columns_dtypes = (np.uint32,np.uint32,np.uint32,np.uint32,np.double,np.double,np.double)
-        # self._required_columns = ('scan','tof','intensity') # these are required for C++ code to work: changing that part is not easy.
-        self._required_columns = ('dupa',)
-
+        self.all_columns = all_columns
+        self.all_columns_dtypes = all_columns_dtype
         self.ms_types = np.array([self.handle.get_frame(i).msms_type 
                                   for i in range(self.min_frame, self.max_frame+1)])
+        self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
+
 
     def __repr__(self):
         return f"OpenTIMS({self.peaks_cnt} peaks)"
@@ -78,68 +78,52 @@ class OpenTIMS:
         return self.handle.no_peaks_in_frames(frames)
 
 
-    def _get_empty_arrays(self, size, selected_columns):
-        """Return empty numpy arrays that will be filled with delicious data."""
-        return [np.empty(shape=size if c in selected_columns or c in self._required_columns else 0,
-                         dtype=d)
-                for c,d in zip(self.columns, self.columns_dtypes)]
+    def _get_empty_arrays(self, size, selected_columns=all_columns):
+        """Return a dictionary of empty numpy arrays to be filled with delicious data. Some are left empty and thus not filled."""
+
+        return {col: np.empty(shape=size if col in selected_columns else 0,
+                              dtype=dtype) 
+                for col, dtype in zip(self.all_columns, 
+                                      self.all_columns_dtypes)}
 
 
-    def _get_dict(self, frames, columns):
-        frames = np.array(frames, dtype=np.uint32)
-        size   = self.peaks_per_frame_cnts(frames, convert=False)
-        arrays = self._get_empty_arrays(size, columns)
-        self.handle.extract_frames(frames, *arrays)
-        return {c:a for c,a in zip(self.columns, arrays) if c in columns}
-
-
-    def _get_dict_slices(self, frames_slice, columns):
-        start = self.min_frame if frames_slice.start is None else frames_slice.start
-        stop  = self.max_frame if frames_slice.stop is None else frames_slice.stop 
-        step  = 1 if frames_slice.step is None else frames_slice.step
-        size = self.handle.no_peaks_in_slice(start, stop, step)
-        arrays = self._get_empty_arrays(size, columns)
-        self.handle.extract_frames_slice(start, stop, step, *arrays)
-        return {c:a for c,a in zip(self.columns, arrays) if c in columns}        
-
-    def query(self, frames, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+    def query(self, frames, columns=all_columns):
         """Get data from a selection of frames.
 
         Args:
-            frames (int, iterable, slice): Frames to choose. Passing an integer results in extracting that one frame.
-            columns (tuple): which columns to extract? By default supplying all possible data and their tranformations.
-
+            frames (int, iterable): Frames to choose. Passing an integer results in extracting that one frame.
+            columns (tuple): which columns to extract? Defaults to all possible columns.
         Returns:
             dict: columnt to numpy array mapping.
         """
-        assert all(c in self.columns for c in columns), f"Accepted column names: {self.columns}"
-
-        if isinstance(frames, int):
-            frames = [frames]
+        assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
 
         try:
-            if isinstance(frames, slice):
-                return self._get_dict_slices(frames, columns)
-            else:
-                return self._get_dict(frames, columns)
+            frames = np.r_[frames].astype(np.uint32)
+            size   = self.peaks_per_frame_cnts(frames, convert=False)
+            arrays = self._get_empty_arrays(size, columns)
+            # now, pack the arrays with data
+            self.handle.extract_frames(frames, **arrays)
         except RuntimeError as e:
             if e.args[0] == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor":
                 raise RuntimeError("Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods.")
             else:
                 raise
+        return {c: arrays[c] for c in columns}
 
 
-    def query_iter(self, frames, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+    def query_iter(self,
+                   frames,
+                   columns=all_columns):
         """Iterate data from a selection of frames.
 
         Args:
             frames (int, iterable, slice): Frames to choose. Passing an integer results in extracting that one frame.
-            columns (tuple): which columns to extract? By default supplying all possible data and their tranformations.
-
+            columns (tuple): which columns to extract? Defaults to all possible columns.
         Yields:
             dict: columnt to numpy array mapping.
         """
-        for fr in frames:
+        for fr in np.r_[frames]:
             yield self.query(fr, columns)
 
 
@@ -152,7 +136,7 @@ class OpenTIMS:
         Args:
             min_rt (float): Minimal retention time.
             max_rt (float): Maximal retention time to choose.
-            columns (tuple): which columns to extract? By default: supplying all data.
+            columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Returns:
             dict: column to numpy array mapping.
@@ -170,7 +154,7 @@ class OpenTIMS:
         Args:
             min_rt (float): Minimal retention time.
             max_rt (float): Maximal retention time to choose.
-            columns (tuple): which columns to extract? By default: supplying all data.
+            columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Yields:
             dict: column to numpy array mapping.
@@ -237,36 +221,6 @@ class OpenTIMS:
         return X    
 
 
-    def iter_arrays(self, frames):
-        """Iterate over arrays.
-
-        You can call this method explicitly, but it is more comfortable to use the equivalent self.iter class.
-
-        Args:
-            frames (slice,iterable,range): Selection of arrays to extract, specified by: frame and scan numbers.  
-        
-        Yields:
-            np.array: Long representation of the underlying data. The four columns contain: the frame number,
-            the scan number, the time of flight index, and the intensity of the selected data-points.
-        """
-        if isinstance(frames, slice):
-            start = 1 if frames.start is None else frames.start
-            if frames.stop is None:
-                raise IndexError('Need to provide the number of the last frame. Otherwise, use "timspy".')
-            if frames.step is None:
-                frames = range(start, frames.stop)
-            else:
-                frames = range(start, frames.stop, frames.step)
-        elif isinstance(frames, collections.abc.Iterable):
-            pass
-        else:
-            raise TypeError("x is not a 'slice', nor anything 'iterable'.")
-        for f in frames:
-            frame = self.frame_array(f)
-            if len(frame): 
-                yield frame
-
-
     def __getitem__(self, frames):
         """Get raw data array for given frames and scans.
 
@@ -287,7 +241,3 @@ class OpenTIMS:
         return self.frame_arrays(frames)
 
 
-    @property
-    def MS1_frames(self):
-        """Get the indices of frames corresponding to precursors (unfragmented molecules)."""
-        return np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]

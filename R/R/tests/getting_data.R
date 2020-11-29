@@ -21,6 +21,8 @@ setup_bruker_so(path_dll)
 D = OpenTIMS(path)
 
 as.data.table(query(D, from=91, to=185))
+
+as.data.table(query(D, from=91, to=185))
 as.data.table(query(D, from=91, to=185, by=4, columns=c('frame', 'intensity', 'scan')))
 as.data.table(rt_query(D, 10, 20, columns=c("frame")))
 

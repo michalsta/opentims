@@ -92,14 +92,14 @@ PYBIND11_MODULE(opentims_cpp, m) {
                     get_ptr<double>(retention_times)
                 );
             },
-            py::arg("tims_data_handle"),
             py::arg("frames"),
-            py::arg("scans"),
-            py::arg("tofs"),
-            py::arg("intensities"),
-            py::arg("mzs"),
-            py::arg("dts"),
-            py::arg("rts")
+            py::arg("frame"),
+            py::arg("scan"),
+            py::arg("tof"),
+            py::arg("intensity"),
+            py::arg("mz"),
+            py::arg("dt"),
+            py::arg("rt")
         )
         .def("extract_frames_slice",
             [](TimsDataHandle& dh, size_t start, size_t end, size_t step, py::buffer& result_b)
@@ -133,7 +133,18 @@ PYBIND11_MODULE(opentims_cpp, m) {
                 get_ptr<double>(drift_times),
                 get_ptr<double>(retention_times)
             );
-             });
+        },
+            py::arg("start"),
+            py::arg("end"),
+            py::arg("step"),
+            py::arg("frame"),
+            py::arg("scan"),
+            py::arg("tof"),
+            py::arg("intensity"),
+            py::arg("mz"),
+            py::arg("dt"),
+            py::arg("rt")
+        );
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {

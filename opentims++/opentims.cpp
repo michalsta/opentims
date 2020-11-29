@@ -29,7 +29,7 @@
 
 #ifdef OPENTIMS_BUILDING_R
 #include "mio.h"
-#include "opentims_types.h"
+#include "opentimsr_types.h"
 #else
 #include "mio.hpp"
 #include "opentims.h"

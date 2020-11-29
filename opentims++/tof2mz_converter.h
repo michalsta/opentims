@@ -5,7 +5,7 @@
 #include "platform.h"
 
 #ifdef OPENTIMS_BUILDING_R
-#include "opentims_types.h"
+#include "opentimsr_types.h"
 #else
 #include "opentims.h"
 #endif

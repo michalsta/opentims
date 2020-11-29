@@ -37,7 +37,5 @@ docs: clean_docs
 	cp -r sphinx/build/html/* docs
 	git checkout master
 clean_docs:
-	git checkout gh-pages
 	rm -rf sphinx
 	rm -rf docs
-	git checkout master

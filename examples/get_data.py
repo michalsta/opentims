@@ -9,22 +9,24 @@ D = OpenTIMS(path) # get data handle
 print(D)
 print(len(D)) # The number of peaks.
 
-# Attention:
-# to get tof-mz and scan-dt conversion, you must accept Bruker license aggreement.
-# If you are OK with it, you will get the full output.
-# If not, you have to subselect only columns ('frame','scan','tof','intensity','rt').
-# To have additionally 'mz' and 'dt', you have to install
-# opentims_bruker_bridge with
-# pip install opentims_bruker_bridge
+try:
+	import opentims_bruker_bridge
+	all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
+except ModuleNotFoundError:
+	print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
+	print("Download 'opentims_bruker_bridge' if you are on Linux or Windows.")
+	print("Otherwise, you will be able to use only these columns:")
+	all_columns = ('frame','scan','tof','intensity','rt')
+	print(all_columns)
 
 # Get a dict with data from frames 1, 5, and 67.
-pprint(D.query(frames=[1,5,67]))
+pprint(D.query(frames=[1,5,67], columns=all_columns))
 
 # Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
-pprint(D.query(frames=slice(2,1000,10)))
+pprint(D.query(frames=slice(2,1000,10), columns=all_columns))
 
 # Get all MS1 frames 
-# pprint(D.query(frames=D.ms1_frames))
+# pprint(D.query(frames=D.ms1_frames, columns=all_columns))
 # ATTENTION: that's quite a lot of data!!! You might exceed your RAM.
 
 # If you want to extract not every possible columnt, but a subset, use the columns argument:
@@ -32,12 +34,12 @@ pprint(D.query(frames=slice(2,1000,10), columns=('tof','intensity',)))
 # this will reduce your memory usage.
 
 # Still too much memory used up? You can also iterate over frames:
-it = D.query_iter(slice(10,100,10))
+it = D.query_iter(slice(10,100,10), columns=all_columns)
 pprint(next(it))
 pprint(next(it))
 
 # All MS1 frames, but one at a time
-iterator_over_MS1 = D.query_iter(D.ms1_frames)
+iterator_over_MS1 = D.query_iter(D.ms1_frames, columns=all_columns)
 pprint(next(it))
 pprint(next(it))
 # or in a loop, only getting intensities

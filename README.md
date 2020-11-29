@@ -47,22 +47,24 @@ D = OpenTIMS(path) # get data handle
 print(D)
 print(len(D)) # The number of peaks.
 
-# Attention:
-# to get tof-mz and scan-dt conversion, you must accept Bruker license aggreement.
-# If you are OK with it, you will get the full output.
-# If not, you have to subselect only columns ('frame','scan','tof','intensity','rt').
-# To have additionally 'mz' and 'dt', you have to install
-# opentims_bruker_bridge with
-# pip install opentims_bruker_bridge
+try:
+	import opentims_bruker_bridge
+	all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
+except ModuleNotFoundError:
+	print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
+	print("Download 'opentims_bruker_bridge' if you are on Linux or Windows.")
+	print("Otherwise, you will be able to use only these columns:")
+	all_columns = ('frame','scan','tof','intensity','rt')
+	print(all_columns)
 
 # Get a dict with data from frames 1, 5, and 67.
-pprint(D.query(frames=[1,5,67]))
+pprint(D.query(frames=[1,5,67], columns=all_columns))
 
 # Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
-pprint(D.query(frames=slice(2,1000,10)))
+pprint(D.query(frames=slice(2,1000,10), columns=all_columns))
 
 # Get all MS1 frames 
-# pprint(D.query(frames=D.ms1_frames))
+# pprint(D.query(frames=D.ms1_frames, columns=all_columns))
 # ATTENTION: that's quite a lot of data!!! You might exceed your RAM.
 
 # If you want to extract not every possible columnt, but a subset, use the columns argument:
@@ -70,12 +72,12 @@ pprint(D.query(frames=slice(2,1000,10), columns=('tof','intensity',)))
 # this will reduce your memory usage.
 
 # Still too much memory used up? You can also iterate over frames:
-it = D.query_iter(slice(10,100,10))
+it = D.query_iter(slice(10,100,10), columns=all_columns)
 pprint(next(it))
 pprint(next(it))
 
 # All MS1 frames, but one at a time
-iterator_over_MS1 = D.query_iter(D.ms1_frames)
+iterator_over_MS1 = D.query_iter(D.ms1_frames, columns=all_columns)
 pprint(next(it))
 pprint(next(it))
 # or in a loop, only getting intensities
@@ -91,7 +93,8 @@ pprint(D[1:10])
 ```{R}
 library(opentims)
 
-path = pathlib.Path('path_to_your_data.d')
+# path = pathlib.Path('path_to_your_data.d')
+path = "/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d"
 
 # Do you want to have access only to 'frame', 'scan', 'time of flight', and 'intensity'?
 accept_Bruker_EULA_and_on_Windows_or_Linux = TRUE
@@ -100,6 +103,9 @@ if(accept_Bruker_EULA_and_on_Windows_or_Linux){
     folder_to_stode_priopriatary_code = "/home/matteo"
     path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
     setup_bruker_so(path_to_bruker_dll)
+    all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+} else {
+	all_columns = c('frame','scan','tof','intensity','rt')
 }
 
 D = OpenTIMS(path) # get data handle
@@ -111,10 +117,10 @@ print(length(D)) # The number of peaks.
 pprint = function(x,...){ print(head(x,...)); print(tail(x,...)) }
 
 # Get a data,frame with data from frames 1, 5, and 67.
-pprint(query(D, frames=c(1,5,67)))
+pprint(query(D, frames=c(1,5,67), columns=all_columns))
 
 # Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
-pprint(query(D, frames=seq(2,1000,10)))
+pprint(query(D, frames=seq(2,1000,10), columns=all_columns))
 
 # Get all MS1 frames 
 # print(query(D, frames=MS1(D)))
@@ -128,7 +134,7 @@ pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 
 # All MS1 frames, but one at a time:
 for(fr in MS1(D)){
-    print(query(D, fr))
+    print(query(D, fr, columns=all_columns))
 }
 
 
@@ -142,10 +148,16 @@ pprint(X)
 Do observe, that you must know which values: to put there.
 If you don't, consider [TimsPy](https://github.com/MatteoLacki/timspy).
 
-## Development
-Download with git.
-Follow Makefile.
+# Development
 
+## R Installation 
+Download with git.
+Navigate into 'opentims'.
+Open terminal there and run:
+```{bash}
+R CMD build R
+R CMD INSTALL opentims_*
+```
 
 ## Plans for future
 

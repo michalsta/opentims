@@ -10,6 +10,9 @@ if(accept_Bruker_EULA_and_on_Windows_or_Linux){
     folder_to_stode_priopriatary_code = "/home/matteo"
     path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
     setup_bruker_so(path_to_bruker_dll)
+    all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+} else {
+	all_columns = c('frame','scan','tof','intensity','rt')
 }
 
 D = OpenTIMS(path) # get data handle
@@ -21,10 +24,10 @@ print(length(D)) # The number of peaks.
 pprint = function(x,...){ print(head(x,...)); print(tail(x,...)) }
 
 # Get a data,frame with data from frames 1, 5, and 67.
-pprint(query(D, frames=c(1,5,67)))
+pprint(query(D, frames=c(1,5,67), columns=all_columns))
 
 # Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
-pprint(query(D, frames=seq(2,1000,10)))
+pprint(query(D, frames=seq(2,1000,10), columns=all_columns))
 
 # Get all MS1 frames 
 # print(query(D, frames=MS1(D)))
@@ -38,7 +41,7 @@ pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 
 # All MS1 frames, but one at a time:
 for(fr in MS1(D)){
-    print(query(D, fr))
+    print(query(D, fr, columns=all_columns))
 }
 
 

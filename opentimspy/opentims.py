@@ -284,8 +284,6 @@ class OpenTIMS:
 
         Defaults to raw data that are all uint32.
 
-        Defaults to raw data that are all uint32.
-
         Args:
             columns (list): Columns for which to calculate the hash.
             algo (object): Class with a call method for restarting hash calculations and an update method that accepts data. 

@@ -37,6 +37,9 @@ pip3 install .
 
 ## Python
 
+All the functions are documented with doc-strings.
+The resulting automatic API documentation is available [here](https://michalsta.github.io/opentims/).
+
 ```{python}
 import pathlib
 from pprint import pprint

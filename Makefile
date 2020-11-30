@@ -29,12 +29,12 @@ docs: clean_docs
 	pip install sphinx || true
 	pip install recommonmark || true
 	mkdir -p sphinx
-	mkdir -p docs || True
-	touch docs/.nojekyll
+
 	sphinx-quickstart sphinx --sep --project OpenTIMS --author Lacki_and_Startek -v 0.0.1 --ext-autodoc --ext-githubpages --extensions sphinx.ext.napoleon --extensions recommonmark --makefile -q --no-batchfile
 	sphinx-apidoc -f -o sphinx/source opentimspy
 	cd sphinx && make html
-	cp -r sphinx/build/html/* docs
+	cp -r sphinx/build/html docs
+	touch docs/.nojekyll
 update_docs:
 	rm -rf docs
 	mkdir -p docs

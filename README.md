@@ -5,33 +5,43 @@
 In general, the software should work on Linux, Windows, or MacOS.
 Python3.6 or higher versions are tested.
 
-## Python bindings
+On Windows, install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) to make use of C++ or Python code.
+On Linux, have gcc installed.
+On macOS, [install x-tools command line tools](https://www.godo.dev/tutorials/xcode-command-line-tools-installation-faq/).
+Due to a lack of a M1 chip, we cannot guarantee that all works on new M1 chips.
 
-## Windows installation
-
-* Install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
-* From terminal (assuming you have python and pip included in the system PATH) write
+## Python
+ 
+From terminal (assuming you have python and pip included in the system PATH) write
 ```bash
 pip install opentims
 ```
-* We have noticed issues with the numpy==1.19.4 under windows due to changes in Intel's fmod function, which are unrelated to our work. 
-If you keep on experiencing these issues later on, please install numpy==1.19.3.
-
-## R bindings
-
-* Installation:
-
-For fresher versions:
+For a direct installation from github:
 ```bash
 pip install git+https://github.com/michalsta/opentims
 ```
 
-For development:
+**OnWindows**: we have noticed issues with the numpy==1.19.4 due to changes in Intel's fmod function, unrelated to our work. 
+If you keep on experiencing these issues, install numpy==1.19.3.
 ```bash
-github clone https://github.com/michalsta/opentims
-cd opentims
-pip3 install .
+pip uninstall numpy
+pip install numpy==1.19.3
 ```
+
+## R
+
+From R terminal (opened either in powershell or in RStudio and similar):
+```bash
+install.packages('opentimsr')
+```
+If that does not work, first clone the repository and then install manually with:
+```bash
+git clone https://github.com/michalsta/opentims
+R CMD build opentimsr
+R CDM INSTALL opentims_*.tar.gz
+```
+On windows, replace `R` with `R.exe`.
+You can download git [from here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 # Usage
 
@@ -152,20 +162,10 @@ pprint(X)
 
 Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://github.com/MatteoLacki/timsr) for more user-friendly options.
 
-
 # Development
-
-## R Installation 
-Download with git.
-Navigate into 'opentims'.
-Open terminal there and run:
-```bash
-R CMD build R
-R CMD INSTALL opentims_*
-```
+We will be happy to accept any contributions.
 
 ## Plans for future
-
 Together with Bruker we are working on openning up the tof-mz and scan-dt conversions.
 
 

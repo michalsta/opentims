@@ -13,16 +13,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import collections
 import functools
+import hashlib
 import numpy as np
 import pathlib
-import collections
 
 import opentimspy
 
 
 all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
 all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
+
+def hash_frame(X,
+               columns=('frame','scan','tof','intensity'),
+               algo=hashlib.blake2b):
+    hashes = []
+    for c in columns:
+        h = algo()
+        h.update(X[c])
+        hashes.append(h.digest())
+    return hashes
+
+
 
 class OpenTIMS:
     def __init__ (self, analysis_directory):
@@ -242,3 +255,42 @@ class OpenTIMS:
         return self.frame_arrays(frames)
 
 
+    def get_hash(self,
+                 columns=('frame','scan','tof','intensity'),
+                 algo=hashlib.blake2b):
+        """Calculate a data-set-wide hash.
+
+        Defaults to raw data that are all uint32.
+
+        Args:
+            columns (list): Columns for which to calculate the hash.
+            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data. 
+        Returns:
+            binary str: A hash. 
+        """
+        h = algo()
+        for X in self.query_iter(frames=slice(self.min_frame,
+                                              self.max_frame+1),
+                                 columns=columns):
+            for c in columns:
+                h.update(X[c])
+        return h.digest()
+
+
+    def get_hashes(self,
+                   columns=('frame','scan','tof','intensity'),
+                   algo=hashlib.blake2b):
+        """Calculate a hashes for each frame.
+
+        Defaults to raw data that are all uint32.
+
+        Args:
+            columns (list): Columns for which to calculate the hash.
+            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data. 
+        Returns:
+            list: Frame specifc hashes. 
+        """
+        return [hash_frame(X, columns, algo)
+                for X in self.query_iter(frames=slice(self.min_frame,
+                                                      self.max_frame+1),
+                                         columns=columns)]

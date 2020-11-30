@@ -1,20 +1,25 @@
-%load_ext autoreload
-%autoreload 2
 import numpy as np
 import pathlib
-from collections import Counter
 import itertools
 from collections import Counter
 import hashlib
 
 import opentims
-from test_dir.test import OpenTIMS
 from test_dir.hashing import hash_frame, hash_dataset
 
 path = pathlib.Path('~/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d').expanduser().resolve()
 
 path = pathlib.Path('~/Projects/bruker/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d').expanduser().resolve()
 path.exists()
+
+def hash_frame(X):
+    hashes = []
+    for i in range(1,4):
+        h = hashlib.blake2b()
+        h.update(X[:,i])
+        hashes.append(h.digest())
+    return hashes
+
 
 D = OpenTIMS(path)
 X = D[2]

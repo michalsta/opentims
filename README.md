@@ -11,7 +11,7 @@ Python3.6 or higher versions are tested.
 
 * Install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 * From terminal (assuming you have python and pip included in the system PATH) write
-```{python}
+```bash
 pip install opentims
 ```
 * We have noticed issues with the numpy==1.19.4 under windows due to changes in Intel's fmod function, which are unrelated to our work. 
@@ -22,12 +22,12 @@ If you keep on experiencing these issues later on, please install numpy==1.19.3.
 * Installation:
 
 For fresher versions:
-```{python}
+```bash
 pip install git+https://github.com/michalsta/opentims
 ```
 
 For development:
-```{bash}
+```bash
 github clone https://github.com/michalsta/opentims
 cd opentims
 pip3 install .
@@ -40,7 +40,7 @@ pip3 install .
 All the functions are documented with doc-strings.
 The resulting automatic API documentation is available [here](https://michalsta.github.io/opentims/).
 
-```{python}
+```python
 import pathlib
 from pprint import pprint
 
@@ -94,7 +94,7 @@ pprint(D[1:10])
 
 ## R
 
-```{R}
+```R
 library(opentims)
 
 # path = pathlib.Path('path_to_your_data.d')
@@ -159,7 +159,7 @@ Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://git
 Download with git.
 Navigate into 'opentims'.
 Open terminal there and run:
-```{bash}
+```bash
 R CMD build R
 R CMD INSTALL opentims_*
 ```

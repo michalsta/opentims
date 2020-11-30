@@ -9,41 +9,24 @@ from opentimspy.opentims import OpenTIMS
 
 path = pathlib.Path("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 
-def hash_frame(X, columns=('frame','scan','tof','intensity')):
-    hashes = []
-    for c in columns:
-        h = hashlib.blake2b()
-        h.update(X[c])
-        hashes.append(h.digest())
-    return hashes
-
-def hashes_dataset(D):
-    return [hash_frame(X) 
+def hashes_dataset(D, **kwds):
+    return [hash_frame(X, **kwds) 
             for X in D.query_iter(frames=slice(D.min_frame,
                                                D.max_frame+1))]
 
-def hash_dataset(D, columns=('frame','scan','tof','intensity')):
-    h = hashlib.blake2b()
-    for X in D.query_iter(frames=slice(D.min_frame,
-                                       D.max_frame+1),
-                          columns=columns):
-        for c in columns:
-            h = hashlib.blake2b()
-            h.update(X[c])
-    return h.digest()
-
 D = OpenTIMS(path)
-data_set_hash = hash_dataset(D)
-# b'-3?\x8e\x12&\xcbYd\xb0\xd6\x82MV)\xe7\xfc\x07Z\xa3\xf8\xe8\x0e\x9d\xda;\x13=\tt\x0fY\xea\x92e\x9e\x14\x90\xfb\x17{\x1e\xb3J\xd8\xf2&\x05I\x8c\xfbM: \x13\xbddJ\xf7\x9b\xc4x\\4'
+integer_based_hash = D.get_hash()
+# b'\xad\xb3j\x88E\xd5c\xb5B\x93CZ\x0bJn\t\xfa\x90\x8dy\xe0?\x82\xb7\xbeQ\xfceH\xd9X\xd9\xf1&\x8d\x84-\\\x9f\x9a0\xcc6\xee\xe3M\xe5\xdb\xb5\x03A\xba\xb7\xea\xa2n>\x112y\x11\xb8[\x87'
 
-data_set_hash_all_cols = hash_dataset(D,('frame','scan','tof','intensity','mz','dt','rt'))
-# b'\xf2\x04\x07K\xdd\x97"c>\x94xQ\xdb\xb4\x9b\xb9\xd1\xaf/\x98x\x7fc\x07\x7f\x94\xcb\xdf;\xba\xac\xa5\xbdv\xbf\xf9\xc1\xaf\xe4\xde\xcc\xd4NiW\x8b\x8fl\x1b\x81\xa3\xa49v\x90\xac\x81{\xc8\xab\xd4\x90S\n'
+data_set_hash_all_cols = D.get_hash(columns=('frame','scan','tof','intensity','mz','dt','rt'))
+# b'\xd7\xb4\xcc\x10|\x06\x84y\xcdW\x83x\x98\xafS\xe9B?i\x17r\xea\xe9\x961\x9e\x94A$1\xc6z\x97]\xec\x1d\xb7D\x9b\xba\xe5\xe0\xcdr\x98\xbe\x85#(\t\xd6\x90&.o\xa9\xd5\x98$\xec\xaa\xa8\xad\x9d'
 
 
-def diff_hashes(H0, H1):
-    assert H0.shape == H1.shape, "The elements dimensions differ."
-    for i, (r0, r1) in enumerate(zip(H0, H1)):
-        for j, (a0, a1) in enumerate(zip(r0, r1)):
-            if a0 != a1:
-                yield i,j
+
+# def diff_hashes(H0, H1):
+#     assert H0.shape == H1.shape, "The elements dimensions differ."
+#     for i, (r0, r1) in enumerate(zip(H0, H1)):
+#         for j, (a0, a1) in enumerate(zip(r0, r1)):
+#             if a0 != a1:
+#                 yield i,j
 

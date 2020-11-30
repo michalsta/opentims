@@ -14,11 +14,12 @@ Python3.6 or higher versions are tested.
 ```{python}
 pip install opentims
 ```
+* We have noticed issues with the numpy==1.19.4 under windows due to changes in Intel's fmod function, which are unrelated to our work. 
+If you keep on experiencing these issues later on, please install numpy==1.19.3.
 
 ## R bindings
 
-* Install 
-
+* Installation:
 
 For fresher versions:
 ```{python}

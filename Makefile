@@ -25,7 +25,7 @@ pipclean:
 	pip uninstall opentimspy -y || true
 docs: clean_docs
 	git branch gh-pages || true
-	git checkout gh-pages
+	git checkout gh-pages || true
 	pip install sphinx || true
 	pip install recommonmark || true
 	mkdir -p sphinx
@@ -35,7 +35,13 @@ docs: clean_docs
 	sphinx-apidoc -f -o sphinx/source opentimspy
 	cd sphinx && make html
 	cp -r sphinx/build/html/* docs
-	git checkout master
+update_docs:
+	rm -rf docs
+	mkdir -p docs
+	cd sphinx && make html
+	cp -r sphinx/build/html/* docs
+show_docs:
+	firefox docs/index.html
 clean_docs:
 	rm -rf sphinx
 	rm -rf docs

@@ -101,6 +101,49 @@
 </dd></dl>
 
 <dl class="py method">
+<dt id="opentimspy.opentims.OpenTIMS.get_hash">
+<code class="sig-name descname">get_hash</code><span class="sig-paren">(</span><em class="sig-param">columns=('frame'</em>, <em class="sig-param">'scan'</em>, <em class="sig-param">'tof'</em>, <em class="sig-param">'intensity')</em>, <em class="sig-param">algo=&lt;class '_blake2.blake2b'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#opentimspy.opentims.OpenTIMS.get_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a data-set-wide hash.</p>
+<p>Defaults to raw data that are all uint32.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> (<em>list</em>) – Columns for which to calculate the hash.</p></li>
+<li><p><strong>algo</strong> (<em>object</em>) – Class with an update method that accepts data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A hash.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>binary str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="opentimspy.opentims.OpenTIMS.get_hashes">
+<code class="sig-name descname">get_hashes</code><span class="sig-paren">(</span><em class="sig-param">columns=('frame'</em>, <em class="sig-param">'scan'</em>, <em class="sig-param">'tof'</em>, <em class="sig-param">'intensity')</em>, <em class="sig-param">algo=&lt;_blake2.blake2b object&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#opentimspy.opentims.OpenTIMS.get_hashes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a hashes for each frame.</p>
+<p>Defaults to raw data that are all uint32.</p>
+<p>Defaults to raw data that are all uint32.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> (<em>list</em>) – Columns for which to calculate the hash.</p></li>
+<li><p><strong>algo</strong> (<em>object</em>) – Class with an update method that accepts data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Frame specifc hashes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="opentimspy.opentims.OpenTIMS.peaks_per_frame_cnts">
 <code class="sig-name descname">peaks_per_frame_cnts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">frames</span></em>, <em class="sig-param"><span class="n">convert</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#opentimspy.opentims.OpenTIMS.peaks_per_frame_cnts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the numbers of peaks in chosen frames.</p>
@@ -194,6 +237,11 @@
 </dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt id="opentimspy.opentims.hash_frame">
+<code class="sig-prename descclassname">opentimspy.opentims.</code><code class="sig-name descname">hash_frame</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">columns=('frame'</em>, <em class="sig-param">'scan'</em>, <em class="sig-param">'tof'</em>, <em class="sig-param">'intensity')</em>, <em class="sig-param">algo=&lt;_blake2.blake2b object&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#opentimspy.opentims.hash_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="module-opentimspy">

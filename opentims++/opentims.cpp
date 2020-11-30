@@ -236,7 +236,7 @@ void Peak::print()
 }
 
 
-int tims_sql_callback(void* out, int cols, char** row, [[maybe_unused]] char** colnames)
+int tims_sql_callback(void* out, int cols, char** row, char**)
 {
     assert(cols == 7);
     assert(row != NULL);

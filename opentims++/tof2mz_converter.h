@@ -24,13 +24,13 @@ class Tof2MzConverter
 class ErrorTof2MzConverter : public Tof2MzConverter
 {
  public:
-    ErrorTof2MzConverter([[maybe_unused]] TimsDataHandle& TDH) {};
-    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]]double* mzs, [[maybe_unused]] const double* tofs, [[maybe_unused]] uint32_t size) override final
+    ErrorTof2MzConverter(TimsDataHandle&) {};
+    void convert(uint32_t, double*, const double*, uint32_t) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
 
-    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* mzs, [[maybe_unused]] const uint32_t* tofs, [[maybe_unused]] uint32_t size) override final
+    void convert(uint32_t, double*, const uint32_t*, uint32_t) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }

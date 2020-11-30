@@ -24,12 +24,12 @@ class Scan2DriftConverter
 class ErrorScan2DriftConverter : public Scan2DriftConverter
 {
  public:
-    ErrorScan2DriftConverter([[maybe_unused]] TimsDataHandle& TDH) {};
-    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* drifts, [[maybe_unused]] const double* scans, [[maybe_unused]] uint32_t size) override final
+    ErrorScan2DriftConverter(TimsDataHandle&) {};
+    void convert(uint32_t, double*, const double*, uint32_t) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }
-    void convert([[maybe_unused]] uint32_t frame_id, [[maybe_unused]] double* drifts, [[maybe_unused]] const uint32_t* scans, [[maybe_unused]] uint32_t size) override final
+    void convert(uint32_t, double*, const uint32_t*, uint32_t) override final
     {
         throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
     }

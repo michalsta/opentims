@@ -4,4 +4,8 @@ dist
 timsdata_ve
 .python-version
 timsVE
-opentims/R/src/*.{o,h}
+**/*.o
+**/*.so
+.RData
+*.tar.gz
+sphinx

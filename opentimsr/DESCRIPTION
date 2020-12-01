@@ -2,7 +2,7 @@ Encoding: UTF-8
 Package: opentimsr
 Type: Package
 Title: An Open-Source Loader for Bruker's timsTOF Data Files
-Version: 0.9.1
+Version: 1.0.0
 Date: 2020-07-14
 Author: Michal Startek and Mateusz Krzysztof Lacki
 Maintainer: Michal Startek <michal.startek@mimuw.edu.pl>

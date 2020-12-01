@@ -15,5 +15,5 @@ table2df(opentims, names)
 A list of tables.
 }
 \description{
-Extract tables from sqlite database analysis.tdf.
+Export a table from sqlite.
 }

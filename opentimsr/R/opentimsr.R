@@ -35,8 +35,7 @@ all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
-#' @slot windows A data.frame with information on the windows.
-#' @slot MS1 Indices of frames corresponding to MS1, i.e. precursor ions.
+#' @slot all_columns Names of available columns.
 #' @export
 setClass('OpenTIMS',
          slots = c(path.d='character',
@@ -113,6 +112,8 @@ setMethod("range",
 
 #' Extract tables from sqlite database analysis.tdf.
 #'
+#' Export a table from sqlite.
+#'
 #' @param opentims Instance of OpenTIMS
 #' @param names Names to extract from the sqlite database.
 #' @return A list of tables.
@@ -131,7 +132,7 @@ table2df = function(opentims, names){
 #' @param opentims Instance of OpenTIMS
 #' @return Names of tables.
 #' @export
-tables_names = function(opentims, names){
+tables_names = function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables_names = DBI::dbListTables(sql_conn)
@@ -180,11 +181,12 @@ MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 #'
 #' @param opentims Instance of OpenTIMS
 #' @param ... Parameters passed to head and tail functions.
+#' @importFrom utils head tail
 #' @export
 explore.tdf.tables = function(opentims, ...){
     for(table_name in tables_names(opentims)){
         print(table_name)
-        df=table2dt(opentims, table_name)
+        df = table2df(opentims, table_name)
         print(head(df,...))
         print(tail(df,...))
         readline("PRESS ENTER")
@@ -321,6 +323,7 @@ rt_query = function(opentims,
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
 #' @param net_url The url with location of all files.
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
+#' @importFrom utils download.file
 #' @export
 download_bruker_proprietary_code = function(target.folder, 
                                             net_url="https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"){

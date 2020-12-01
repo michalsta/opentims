@@ -101,5 +101,8 @@ setup(
     setup_requires=['pybind11'],
     install_requires=['pybind11','numpy'],
     ext_modules=ext_modules,
-    package_dir={'opentimspy':'opentimspy'} 
+    package_dir={'opentimspy':'opentimspy'},
+    extras_require = {
+        'bruker_proprietary': ['opentims_bruker_bridge']
+    }
 )

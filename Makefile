@@ -9,6 +9,8 @@ rprep: rclean
 	R CMD build opentimsr
 rcheck: rprep
 	R CMD check opentimsr_*.tar.gz
+rcheck_as_CRAN: rprep
+	R CMD check --as-cran opentimsr_*.tar.gz
 rinst: rprep
 	R CMD INSTALL opentimsr_*.tar.gz
 ipy:

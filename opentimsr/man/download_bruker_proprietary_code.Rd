@@ -6,8 +6,8 @@
 \usage{
 download_bruker_proprietary_code(
   target.folder,
- 
-    net_url = "https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"
+  net_url = paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
+    "raw/main/opentims_bruker_bridge/")
 )
 }
 \arguments{

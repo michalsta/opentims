@@ -326,7 +326,8 @@ rt_query = function(opentims,
 #' @importFrom utils download.file
 #' @export
 download_bruker_proprietary_code = function(target.folder, 
-                                            net_url="https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"){
+                                            net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
+                                                           "raw/main/opentims_bruker_bridge/")){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
     print("Welcome to a real OS.")

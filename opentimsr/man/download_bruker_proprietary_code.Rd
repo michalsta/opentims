@@ -7,13 +7,19 @@
 download_bruker_proprietary_code(
   target.folder,
   net_url = paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
-    "raw/main/opentims_bruker_bridge/")
+    "raw/main/opentims_bruker_bridge/"),
+  mode = "wb",
+  ...
 )
 }
 \arguments{
 \item{target.folder}{Folder where to store the 'dll' or 'so' file.}
 
 \item{net_url}{The url with location of all files.}
+
+\item{mode}{Which mode to use when downloading a file?}
+
+\item{...}{Other parameters to 'download.file'.}
 }
 \value{
 Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.

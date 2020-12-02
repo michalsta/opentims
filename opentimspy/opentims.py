@@ -39,10 +39,10 @@ def hash_frame(X,
 
 class OpenTIMS:
     def __init__ (self, analysis_directory):
-        """Initialize TimsData.
+        """Initialize OpenTIMS.
 
             Args:
-                analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf'
+                analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
         analysis_directory = pathlib.Path(analysis_directory)
         assert analysis_directory.exists(), f"There is no such location: {analysis_directory}"

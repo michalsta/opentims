@@ -322,12 +322,16 @@ rt_query = function(opentims,
 #'
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
 #' @param net_url The url with location of all files.
+#' @param mode Which mode to use when downloading a file?
+#' @param ... Other parameters to 'download.file'.
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
 #' @importFrom utils download.file
 #' @export
 download_bruker_proprietary_code = function(target.folder, 
                                             net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
-                                                           "raw/main/opentims_bruker_bridge/")){
+                                                           "raw/main/opentims_bruker_bridge/"),
+                                            mode="wb",
+                                            ...){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
     print("Welcome to a real OS.")
@@ -346,7 +350,7 @@ download_bruker_proprietary_code = function(target.folder,
   url = paste0(net_url, url_ending)
   target.file = file.path(target.folder, file)
   print(paste0("Downloading from: ", url))
-  download.file(url, target.file)
+  download.file(url, target.file, mode="wb", ...)
 
   target.file
 }

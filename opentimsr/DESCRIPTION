@@ -7,8 +7,9 @@ Date: 2020-11-30
 Author: Michal Startek and Mateusz Krzysztof Lacki
 Maintainer: Michal Startek <michal.startek@mimuw.edu.pl>
 Description: A free, open-source package designed for
-    handling .tdf data files produced by Bruker's timsTOF mass
-    spectrometers. Fast, free, crossplatform, with no reading through
+    handling .tdf data files produced by Bruker's 'timsTOF' mass
+    spectrometers, as described <https://www.bruker.com/service/support-upgrades/software-downloads/mass-spectrometry.html> (after registering). 
+    Fast, free, crossplatform, with no reading through
     EULAs or messing with binary .dll files involved.
 License: GPL-3
 URL: https://github.com/michalsta/opentims

@@ -4,10 +4,13 @@ from pprint import pprint
 from opentimspy.opentims import OpenTIMS
 
 path = pathlib.Path('path_to_your_data.d')
-# path = pathlib.Path("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
 D = OpenTIMS(path) # get data handle
 print(D)
+#>>> OpenTIMS(404183877 peaks)
+
 print(len(D)) # The number of peaks.
+#>>> 404183877
+
 
 try:
 	import opentims_bruker_bridge
@@ -17,7 +20,10 @@ except ModuleNotFoundError:
 	print("Download 'opentims_bruker_bridge' if you are on Linux or Windows.")
 	print("Otherwise, you will be able to use only these columns:")
 	all_columns = ('frame','scan','tof','intensity','rt')
-	print(all_columns)
+
+
+# We consider the following columns:
+print(all_columns)
 
 # Get a dict with data from frames 1, 5, and 67.
 pprint(D.query(frames=[1,5,67], columns=all_columns))

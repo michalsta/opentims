@@ -9,3 +9,4 @@ timsVE
 .RData
 *.tar.gz
 sphinx
+*Rcheck

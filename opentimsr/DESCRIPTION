@@ -3,10 +3,10 @@ Package: opentimsr
 Type: Package
 Title: An Open-Source Loader for Bruker's timsTOF Data Files
 Version: 1.0.0
-Date: 2020-07-14
+Date: 2020-11-30
 Author: Michal Startek and Mateusz Krzysztof Lacki
 Maintainer: Michal Startek <michal.startek@mimuw.edu.pl>
-Description: A free, open-source library designed for
+Description: A free, open-source package designed for
     handling .tdf data files produced by Bruker's timsTOF mass
     spectrometers. Fast, free, crossplatform, with no reading through
     EULAs or messing with binary .dll files involved.

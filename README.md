@@ -6,9 +6,8 @@ In general, the software should work on Linux, Windows, or MacOS.
 Python3.6 or higher versions are tested.
 
 On Windows, install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) to make use of C++ or Python code.
-On Linux, have gcc installed.
+On Linux, have clang++ or g++ installed (clang is better).
 On macOS, [install x-tools command line tools](https://www.godo.dev/tutorials/xcode-command-line-tools-installation-faq/).
-Due to a lack of a M1 chip, we cannot guarantee that all works on new M1 chips.
 
 ## Python
  

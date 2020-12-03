@@ -108,7 +108,7 @@ class OpenTIMS:
             frames (int, iterable): Frames to choose. Passing an integer results in extracting that one frame.
             columns (tuple): which columns to extract? Defaults to all possible columns.
         Returns:
-            dict: columnt to numpy array mapping.
+            dict: columns to numpy array mapping.
         """
         assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
 
@@ -294,3 +294,19 @@ class OpenTIMS:
                 for X in self.query_iter(frames=slice(self.min_frame,
                                                       self.max_frame+1),
                                          columns=columns)]
+
+    #TODO: port to C++
+    @functools.lru_cache(maxsize=1)
+    def framesTIC(self):
+        """Get the Total Ion Current for each frame.
+
+        Returns:
+            np.array: Total Ion Current values per each frame (sums of intensities for each frame).
+        """
+        I = (d['intensity'].sum()
+             for d in self.query_iter(slice(self.min_frame,
+                                            self.max_frame+1),
+                                      columns=('intensity',)))
+        return np.fromiter(I,
+                           dtype=int,
+                           count=self.max_frame-self.min_frame+1)

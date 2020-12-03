@@ -9,7 +9,10 @@ print(D)
 # OpenTIMS(404183877 peaks)
 
 print(len(D)) # The number of peaks.
-# 404183877
+# 404183877	
+
+D.framesTIC() # Return combined intensity for each frame.
+# array([ 95910, 579150, 906718, ..., 406317,   8093,   8629])
 
 
 try:

@@ -327,11 +327,12 @@ rt_query = function(opentims,
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
 #' @importFrom utils download.file
 #' @export
-download_bruker_proprietary_code = function(target.folder, 
-                                            net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
-                                                           "raw/main/opentims_bruker_bridge/"),
-                                            mode="wb",
-                                            ...){
+download_bruker_proprietary_code = function(
+  target.folder, 
+  net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
+                 "raw/main/opentims_bruker_bridge/"),
+  mode="wb",
+  ...){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
     print("Welcome to a real OS.")

@@ -63,6 +63,9 @@ print(D)
 print(len(D)) # The number of peaks.
 # 404183877
 
+D.framesTIC() # Return combined intensity for each frame.
+# array([ 95910, 579150, 906718, ..., 406317,   8093,   8629])
+
 
 try:
 	import opentims_bruker_bridge

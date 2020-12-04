@@ -152,6 +152,6 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
     m.def("setup_bruker_so", [](const std::string& path)
                                 {
                                     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
-                                    DefaultScan2DriftConverterFactory::setAsDefault<BrukerScan2DriftConverterFactory, const char*>(path.c_str());
+                                    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
                                 });
 }

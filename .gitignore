@@ -10,3 +10,4 @@ timsVE
 *.tar.gz
 sphinx
 *Rcheck
+*Rhistory

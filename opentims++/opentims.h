@@ -85,20 +85,21 @@ class TimsFrame
                                      bool scan_ids_present,
                                      bool intensities_present,
                                      bool mzs_present,
-                                     bool drift_times_present,
+                                     bool inv_ion_mobilities_present,
                                      bool retention_times_present,
                                      > (uint32_t* frame_ids,
                                         uint32_t* scan_ids,
                                         uint32_t* tofs,
                                         uint32_t* intensities,
                                         double* mzs,
-                                        double* drift_times,
+                                        double* inv_ion_mobilities,
                                         double* retention_times,
                                         ZSTD_DCtx* decomp_ctx = nullptr);
     */
 
 public:
-    static TimsFrame TimsFrameFromSql(char** sql_row, TimsDataHandle& parent_handle);
+    static TimsFrame TimsFrameFromSql(char** sql_row, 
+                                      TimsDataHandle& parent_handle);
 
     const uint32_t id;
     const uint32_t num_scans;
@@ -117,9 +118,18 @@ public:
 
     inline size_t data_size_bytes() const { return data_size_ints() * 4; };
 
-    void save_to_buffs(uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times, ZSTD_DCtx* decomp_ctx = nullptr);
+    void save_to_buffs(uint32_t* frame_ids,
+                       uint32_t* scan_ids,
+                       uint32_t* tofs,
+                       uint32_t* intensities,
+                       double* mzs,
+                       double* inv_ion_mobilities,
+                       double* retention_times,
+                       ZSTD_DCtx* decomp_ctx = nullptr);
 
-    void save_to_matrix_buffer(uint32_t* buf, ZSTD_DCtx* decomp_ctx = nullptr) { save_to_buffs(buf, buf+num_peaks, buf+2*num_peaks, buf+3*num_peaks, nullptr, nullptr, nullptr, decomp_ctx); };
+    void save_to_matrix_buffer(uint32_t* buf,
+                               ZSTD_DCtx* decomp_ctx = nullptr)
+    { save_to_buffs(buf, buf+num_peaks, buf+2*num_peaks, buf+3*num_peaks, nullptr, nullptr, nullptr, decomp_ctx); };
 };
 
 struct Peak
@@ -133,13 +143,13 @@ struct Peak
 
 class BrukerTof2MzConverter;
 class Tof2MzConverter;
-class BrukerScan2DriftConverter;
-class Scan2DriftConverter;
+class BrukerScan2InvIonMobilityConverter;
+class Scan2InvIonMobilityConverter;
 
 class TimsDataHandle
 {
 friend class BrukerTof2MzConverter;
-friend class BrukerScan2DriftConverter;
+friend class BrukerScan2InvIonMobilityConverter;
 
 private:
     const std::string tims_dir_path;
@@ -160,10 +170,12 @@ private:
     sqlite3* db_conn;
 
     std::unique_ptr<Tof2MzConverter> tof2mz_converter;
-    std::unique_ptr<Scan2DriftConverter> scan2drift_converter;
+    std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 
 public:
-    TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir);
+    TimsDataHandle(const std::string& tims_tdf_bin_path,
+                   const std::string& tims_tdf_path,
+                   const std::string& tims_data_dir);
 
     TimsDataHandle(const std::string& tims_data_dir);
 
@@ -175,11 +187,15 @@ public:
 
     size_t no_peaks_total() const;
 
-    size_t no_peaks_in_frames(const uint32_t* indexes, size_t no_indexes);
+    size_t no_peaks_in_frames(const uint32_t* indexes,
+                              size_t no_indexes);
 
-    size_t no_peaks_in_frames(const std::vector<uint32_t>& indexes) { return no_peaks_in_frames(indexes.data(), indexes.size()); };
+    size_t no_peaks_in_frames(const std::vector<uint32_t>& indexes)
+    { return no_peaks_in_frames(indexes.data(), indexes.size()); };
 
-    size_t no_peaks_in_slice(uint32_t start, uint32_t end, uint32_t step);
+    size_t no_peaks_in_slice(uint32_t start,
+                             uint32_t end,
+                             uint32_t step);
 
     uint32_t min_frame_id() const { return _min_frame_id; };
 
@@ -188,19 +204,60 @@ public:
     bool has_frame(uint32_t frame_id) const { return frame_descs.count(frame_id) > 0; };
 
     void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
-    void set_converter(std::unique_ptr<Scan2DriftConverter>&& converter);
+    void set_converter(std::unique_ptr<Scan2InvIonMobilityConverter>&& converter);
 
-    void extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result);
+    void extract_frames(const uint32_t* indexes,
+                        size_t no_indexes,
+                        uint32_t* result);
 
-    void extract_frames(const std::vector<uint32_t>& indexes, uint32_t* result) { extract_frames(indexes.data(), indexes.size(), result); };
+    void extract_frames(const std::vector<uint32_t>& indexes,
+                        uint32_t* result)
+    { extract_frames(indexes.data(), indexes.size(), result); };
 
-    void extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* result);
+    void extract_frames_slice(uint32_t start,
+                              uint32_t end,
+                              uint32_t step,
+                              uint32_t* result);
 
-    void extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times);
-    void extract_frames(const std::vector<uint32_t>& indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
-                                { extract_frames(indexes.data(), indexes.size(), frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times); };
+    void extract_frames(const uint32_t* indexes,
+                        size_t no_indexes,
+                        uint32_t* frame_ids,
+                        uint32_t* scan_ids,
+                        uint32_t* tofs,
+                        uint32_t* intensities,
+                        double* mzs,
+                        double* inv_ion_mobilities,
+                        double* retention_times);
 
-    void extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times);
+
+    void extract_frames(const std::vector<uint32_t>& indexes,
+                        uint32_t* frame_ids,
+                        uint32_t* scan_ids,
+                        uint32_t* tofs,
+                        uint32_t* intensities,
+                        double* mzs,
+                        double* inv_ion_mobilities,
+                        double* retention_times)
+    { extract_frames(indexes.data(),
+                     indexes.size(),
+                     frame_ids,
+                     scan_ids,
+                     tofs,
+                     intensities,
+                     mzs,
+                     inv_ion_mobilities,
+                     retention_times); };
+
+    void extract_frames_slice(uint32_t start,
+                              uint32_t end, 
+                              uint32_t step,
+                              uint32_t* frame_ids,
+                              uint32_t* scan_ids,
+                              uint32_t* tofs,
+                              uint32_t* intensities,
+                              double* mzs,
+                              double* inv_ion_mobilities,
+                              double* retention_times);
 
     void allocate_buffers();
 

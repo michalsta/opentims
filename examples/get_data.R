@@ -10,7 +10,7 @@ if(accept_Bruker_EULA_and_on_Windows_or_Linux){
     folder_to_stode_priopriatary_code = "/home/matteo"
     path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
     setup_bruker_so(path_to_bruker_dll)
-    all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+    all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','rt')
 } else {
 	all_columns = c('frame','scan','tof','intensity','rt')
 }
@@ -26,14 +26,14 @@ pprint = function(x,...){ print(head(x,...)); print(tail(x,...)) }
 
 # Get a data,frame with data from frames 1, 5, and 67.
 pprint(query(D, frames=c(1,5,67), columns=all_columns))
-#   frame scan    tof intensity        mz       dt        rt
+#   frame scan    tof intensity    mz  inv_ion_mobility rt
 # 1     1   33 312260         9 1174.6558 1.601142 0.3264921
 # 2     1   34 220720         9  733.4809 1.600000 0.3264921
 # 3     1   34 261438         9  916.9524 1.600000 0.3264921
 # 4     1   36  33072         9  152.3557 1.597716 0.3264921
 # 5     1   36 242110         9  827.3114 1.597716 0.3264921
 # 6     1   38 204868        62  667.5863 1.595433 0.3264921
-#        frame scan    tof intensity        mz        dt       rt
+#        frame scan    tof intensity        mz        inv_ion_mobility       rt
 # 224732    67  917 135191       189  414.7175 0.6007742 7.405654
 # 224733    67  917 192745        51  619.2850 0.6007742 7.405654
 # 224734    67  917 201838        54  655.3439 0.6007742 7.405654
@@ -45,7 +45,7 @@ pprint(query(D, frames=c(1,5,67), columns=all_columns))
 
 # Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
 pprint(query(D, frames=seq(2,1000,10), columns=all_columns))
-#   frame scan    tof intensity        mz       dt        rt
+#   frame scan    tof intensity        mz       inv_ion_mobility        rt
 # 1     1   33 312260         9 1174.6558 1.601142 0.3264921
 # 2     1   34 220720         9  733.4809 1.600000 0.3264921
 # 3     1   34 261438         9  916.9524 1.600000 0.3264921

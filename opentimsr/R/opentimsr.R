@@ -23,7 +23,7 @@ NULL
 }
 
 # The order of these matters!!!
-all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
+all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
 
 #' TimsTOF data accessor.
@@ -35,8 +35,7 @@ all_columns = c('frame','scan','tof','intensity','mz','dt','rt')
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
-#' @slot windows A data.frame with information on the windows.
-#' @slot MS1 Indices of frames corresponding to MS1, i.e. precursor ions.
+#' @slot all_columns Names of available columns.
 #' @export
 setClass('OpenTIMS',
          slots = c(path.d='character',
@@ -113,6 +112,8 @@ setMethod("range",
 
 #' Extract tables from sqlite database analysis.tdf.
 #'
+#' Export a table from sqlite.
+#'
 #' @param opentims Instance of OpenTIMS
 #' @param names Names to extract from the sqlite database.
 #' @return A list of tables.
@@ -131,7 +132,7 @@ table2df = function(opentims, names){
 #' @param opentims Instance of OpenTIMS
 #' @return Names of tables.
 #' @export
-tables_names = function(opentims, names){
+tables_names = function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables_names = DBI::dbListTables(sql_conn)
@@ -180,11 +181,12 @@ MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 #'
 #' @param opentims Instance of OpenTIMS
 #' @param ... Parameters passed to head and tail functions.
+#' @importFrom utils head tail
 #' @export
 explore.tdf.tables = function(opentims, ...){
     for(table_name in tables_names(opentims)){
         print(table_name)
-        df=table2dt(opentims, table_name)
+        df = table2df(opentims, table_name)
         print(head(df,...))
         print(tail(df,...))
         readline("PRESS ENTER")
@@ -208,7 +210,7 @@ peaks_per_frame_cnts = function(opentims){
 #' @param opentims Instance of OpenTIMS.
 #' @return Retention times corresponding to each frame.
 #' @export
-rts = function(opentims){
+retention_times = function(opentims){
   opentims@frames$Time
 }
 
@@ -216,7 +218,7 @@ rts = function(opentims){
 #' Query for raw data.
 #'
 #' Get the raw data from Bruker's 'tdf_bin' format.
-#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
+#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','inv_ion_mobility','retention_time').
 #'
 #' @param opentims Instance of OpenTIMS.
 #' @param frames Vector of frame numbers to extract.
@@ -237,8 +239,8 @@ query = function(opentims,
                            get_tofs = col[3],
                            get_intensities = col[4],
                            get_mzs = col[5],
-                           get_dts = col[6],
-                           get_rts = col[7] )
+                           get_inv_ion_mobilities = col[6],
+                           get_retention_times = col[7] )
 
   as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default???? 
 }
@@ -247,7 +249,7 @@ query = function(opentims,
 #' Query for raw data.
 #'
 #' Get the raw data from Bruker's 'tdf_bin' format.
-#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
+#' Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','inv_ion_mobility','retention_time').
 #'
 #' We assume 'from' <= 'to'.
 #'
@@ -273,8 +275,8 @@ query_slice = function(opentims, from=NULL, to=NULL, step=1L, columns=all_column
                                  get_tofs = col[3],
                                  get_intensities = col[4],
                                  get_mzs = col[5],
-                                 get_dts = col[6],
-                                 get_rts = col[7] )
+                                 get_inv_ion_mobilities = col[6],
+                                 get_retention_times = col[7] )
   as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default????
 }
 
@@ -285,25 +287,25 @@ get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.ope
 
 #' Get the retention time for each frame.
 #'
-#' Extract all frames corresponding to retention times inside [min_rt, max_rt] closed borders interval.
+#' Extract all frames corresponding to retention times inside [min_retention_time, max_retention_time] closed borders interval.
 #'
 #' @param opentims Instance of OpenTIMS.
-#' @param min_rt Lower boundry on retention time.
-#' @param max_rt Upper boundry on retention time.
+#' @param min_retention_time Lower boundry on retention time.
+#' @param max_retention_time Upper boundry on retention time.
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export
 rt_query = function(opentims,
-                    min_rt,
-                    max_rt,
-                    columns=c('frame','scan','tof','intensity','mz','dt','rt')){
-  RTS = rts(opentims)
+                    min_retention_time,
+                    max_retention_time,
+                    columns=all_columns){
+  RTS = retention_times(opentims)
 
-  min_frame = get_left_frame(min_rt, RTS)
-  max_frame = get_right_frame(max_rt, RTS)
+  min_frame = get_left_frame(min_retention_time, RTS)
+  max_frame = get_right_frame(max_retention_time, RTS)
 
   if(is.na(min_frame) | is.na(max_frame))
-    stop("The [min_rt,max_rt] interval does not hold any data.")
+    stop("The [min_retention_time,max_retention_time] interval does not hold any data.")
 
   query_slice(opentims,
               from=min_frame,
@@ -320,10 +322,17 @@ rt_query = function(opentims,
 #'
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
 #' @param net_url The url with location of all files.
+#' @param mode Which mode to use when downloading a file?
+#' @param ... Other parameters to 'download.file'.
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
+#' @importFrom utils download.file
 #' @export
-download_bruker_proprietary_code = function(target.folder, 
-                                            net_url="https://github.com/MatteoLacki/opentims_bruker_bridge/raw/main/opentims_bruker_bridge/"){
+download_bruker_proprietary_code = function(
+  target.folder, 
+  net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
+                 "raw/main/opentims_bruker_bridge/"),
+  mode="wb",
+  ...){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
     print("Welcome to a real OS.")
@@ -342,13 +351,13 @@ download_bruker_proprietary_code = function(target.folder,
   url = paste0(net_url, url_ending)
   target.file = file.path(target.folder, file)
   print(paste0("Downloading from: ", url))
-  download.file(url, target.file)
+  download.file(url, target.file, mode="wb", ...)
 
   target.file
 }
 
 
-#' Dynamically link Bruker's DLL to enable tof-mz and scan-dt conversion.
+#' Dynamically link Bruker's DLL to enable tof-mz and scan-inv_ion_mobility conversion.
 #'
 #' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
 #' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.

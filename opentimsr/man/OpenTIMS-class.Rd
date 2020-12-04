@@ -20,8 +20,6 @@ S4 class that facilitates data queries for TimsTOF data.
 
 \item{\code{frames}}{A data.frame with information on the frames (contents of the Frames table in the sqlite db).}
 
-\item{\code{windows}}{A data.frame with information on the windows.}
-
-\item{\code{MS1}}{Indices of frames corresponding to MS1, i.e. precursor ions.}
+\item{\code{all_columns}}{Names of available columns.}
 }}
 

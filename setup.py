@@ -61,7 +61,7 @@ if dual_build:
             name='opentimspy_cpp',
             sources=[join("opentims++","opentims_pybind11.cpp"),
                      join("opentims++", "tof2mz_converter.cpp"),
-                     join("opentims++", "scan2drift_converter.cpp"),],
+                     join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
             extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split() if not build_asan else "-Og -g -std=c++14 -fsanitize=address".split(),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -76,7 +76,7 @@ else:
                        join("opentims++", "zstd", "zstddeclib.c"),
                        join("opentims++", "opentims_pybind11.cpp"),
                        join("opentims++", "tof2mz_converter.cpp"),
-                       join("opentims++", "scan2drift_converter.cpp")],
+                       join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
             extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb", "-std=c++14"],
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -86,7 +86,7 @@ else:
 setup(
     name='opentimspy',
     packages=['opentimspy'],
-    version='0.9.1',
+    version='1.0.1',
     author='Mateusz Krzysztof Łącki (MatteoLacki), Michał Startek (michalsta)',
     author_email='matteo.lacki@gmail.com, michal.startek@mimuw.edu.pl',
     description='opentimspy: An open-source parser of Bruker Tims Data File (.tdf).',
@@ -101,5 +101,8 @@ setup(
     setup_requires=['pybind11'],
     install_requires=['pybind11','numpy'],
     ext_modules=ext_modules,
-    package_dir={'opentimspy':'opentimspy'} 
+    package_dir={'opentimspy':'opentimspy'},
+    extras_require = {
+        'bruker_proprietary': ['opentims_bruker_bridge']
+    }
 )

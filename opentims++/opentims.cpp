@@ -36,7 +36,7 @@
 #endif
 
 #include "tof2mz_converter.h"
-#include "scan2drift_converter.h"
+#include "scan2inv_ion_mobility_converter.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -128,7 +128,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
                               uint32_t* tofs,
                               uint32_t* intensities,
                               double* mzs,
-                              double* drift_times,
+                              double* inv_ion_mobilities,
                               double* retention_times,
                               ZSTD_DCtx* decomp_ctx)
 {
@@ -220,8 +220,8 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         for(size_t idx = 0; idx < nnum_peaks; idx++)
             retention_times[idx] = time;
 
-    if(drift_times != nullptr)
-        parent_tdh.scan2drift_converter->convert(id, drift_times, scan_ids, nnum_peaks);
+    if(inv_ion_mobilities != nullptr)
+        parent_tdh.scan2inv_ion_mobility_converter->convert(id, inv_ion_mobilities, scan_ids, nnum_peaks);
 
     if(needs_closure)
         close();
@@ -236,7 +236,7 @@ void Peak::print()
 }
 
 
-int tims_sql_callback(void* out, int cols, char** row, [[maybe_unused]] char** colnames)
+int tims_sql_callback(void* out, int cols, char** row, char**)
 {
     assert(cols == 7);
     assert(row != NULL);
@@ -288,7 +288,7 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
     zstd_dctx = ZSTD_createDCtx();
 
     tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
-    scan2drift_converter = DefaultScan2DriftConverterFactory::produceDefaultConverterInstance(*this);
+    scan2inv_ion_mobility_converter = DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this);
 }
 
 
@@ -350,15 +350,17 @@ void TimsDataHandle::set_converter(std::unique_ptr<Tof2MzConverter>&& converter)
         tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
 }
 
-void TimsDataHandle::set_converter(std::unique_ptr<Scan2DriftConverter>&& converter)
+void TimsDataHandle::set_converter(std::unique_ptr<Scan2InvIonMobilityConverter>&& converter)
 {
     if(converter)
-        scan2drift_converter = std::move(converter);
+        scan2inv_ion_mobility_converter = std::move(converter);
     else
-        scan2drift_converter = DefaultScan2DriftConverterFactory::produceDefaultConverterInstance(*this);
+        scan2inv_ion_mobility_converter = DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this);
 }
 
-void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* result)
+void TimsDataHandle::extract_frames(const uint32_t* indexes,
+                                    size_t no_indexes,
+                                    uint32_t* result)
 {
     size_t no_peaks = no_peaks_in_frames(indexes, no_indexes);
 
@@ -379,7 +381,10 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, 
 }
 
 
-void TimsDataHandle::extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* result)
+void TimsDataHandle::extract_frames_slice(uint32_t start,
+                                          uint32_t end,
+                                          uint32_t step,
+                                          uint32_t* result)
 {
     size_t no_peaks = no_peaks_in_slice(start, end, step);
 
@@ -401,36 +406,53 @@ void TimsDataHandle::extract_frames_slice(uint32_t start, uint32_t end, uint32_t
 
 #define move_ptr(ptr) if(ptr) ptr += n;
 
-void TimsDataHandle::extract_frames(const uint32_t* indexes, size_t no_indexes, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
+void TimsDataHandle::extract_frames(const uint32_t* indexes,
+                                    size_t no_indexes,
+                                    uint32_t* frame_ids,
+                                    uint32_t* scan_ids,
+                                    uint32_t* tofs,
+                                    uint32_t* intensities,
+                                    double* mzs,
+                                    double* inv_ion_mobilities,
+                                    double* retention_times)
 {
     for(size_t ii = 0; ii < no_indexes; ii++)
     {
         TimsFrame& frame = frame_descs.at(indexes[ii]);
         const size_t n = frame.num_peaks;
-        frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times, zstd_dctx);
+        frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
         move_ptr(frame_ids);
         move_ptr(scan_ids);
         move_ptr(tofs);
         move_ptr(intensities);
         move_ptr(mzs);
-        move_ptr(drift_times);
+        move_ptr(inv_ion_mobilities);
         move_ptr(retention_times);
     }
 }
 
-void TimsDataHandle::extract_frames_slice(uint32_t start, uint32_t end, uint32_t step, uint32_t* frame_ids, uint32_t* scan_ids, uint32_t* tofs, uint32_t* intensities, double* mzs, double* drift_times, double* retention_times)
+void TimsDataHandle::extract_frames_slice(uint32_t start,
+                                          uint32_t end,
+                                          uint32_t step, 
+                                          uint32_t* frame_ids,
+                                          uint32_t* scan_ids,
+                                          uint32_t* tofs,
+                                          uint32_t* intensities,
+                                          double* mzs,
+                                          double* inv_ion_mobilities,
+                                          double* retention_times)
 {
     for(uint32_t ii = start; ii < end; ii += step)
     {
         TimsFrame& frame = frame_descs.at(ii);
         const size_t n = frame.num_peaks;
-        frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, drift_times, retention_times, zstd_dctx);
+        frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
         move_ptr(frame_ids);
         move_ptr(scan_ids);
         move_ptr(tofs);
         move_ptr(intensities);
         move_ptr(mzs);
-        move_ptr(drift_times);
+        move_ptr(inv_ion_mobilities);
         move_ptr(retention_times);
     }
 }

@@ -196,8 +196,8 @@ Rcpp::DataFrame tdf_extract_frames(
     const bool get_tofs = true,
     const bool get_intensities = true,
     const bool get_mzs = true,
-    const bool get_dts = true,
-    const bool get_rts = true)
+    const bool get_inv_ion_mobilities = true,
+    const bool get_retention_times = true)
 {
     using namespace Rcpp;
 
@@ -214,8 +214,8 @@ Rcpp::DataFrame tdf_extract_frames(
     std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
     std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
     std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
-    std::unique_ptr<double[]> dts = R_get_ptr<double>(peaks_no, get_dts);
-    std::unique_ptr<double[]> rts = R_get_ptr<double>(peaks_no, get_rts);
+    std::unique_ptr<double[]> inv_ion_mobilities = R_get_ptr<double>(peaks_no, get_inv_ion_mobilities);
+    std::unique_ptr<double[]> retention_times = R_get_ptr<double>(peaks_no, get_retention_times);
 
     tdh.extract_frames(
         v.get(),
@@ -225,8 +225,8 @@ Rcpp::DataFrame tdf_extract_frames(
         tofs.get(),
         intensities.get(),
         mzs.get(),
-        dts.get(),
-        rts.get()
+        inv_ion_mobilities.get(),
+        retention_times.get()
     );
 
     DataFrame result = DataFrame::create();
@@ -237,8 +237,8 @@ Rcpp::DataFrame tdf_extract_frames(
     set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
     
     set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "inv_ion_mobility", inv_ion_mobilities, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "retention_time", retention_times, peaks_no);
 
     return result;
 }
@@ -256,8 +256,8 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     const bool get_tofs = true,
     const bool get_intensities = true,
     const bool get_mzs = true,
-    const bool get_dts = true,
-    const bool get_rts = true)
+    const bool get_inv_ion_mobilities = true,
+    const bool get_retention_times = true)
 {
     using namespace Rcpp;
 
@@ -271,8 +271,8 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
     std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
     std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
-    std::unique_ptr<double[]> dts = R_get_ptr<double>(peaks_no, get_dts);
-    std::unique_ptr<double[]> rts = R_get_ptr<double>(peaks_no, get_rts);
+    std::unique_ptr<double[]> inv_ion_mobilities = R_get_ptr<double>(peaks_no, get_inv_ion_mobilities);
+    std::unique_ptr<double[]> retention_times = R_get_ptr<double>(peaks_no, get_retention_times);
 
     tdh.extract_frames_slice(
         start, 
@@ -283,8 +283,8 @@ Rcpp::DataFrame tdf_extract_frames_slice(
         tofs.get(),
         intensities.get(),
         mzs.get(),
-        dts.get(),
-        rts.get()
+        inv_ion_mobilities.get(),
+        retention_times.get()
     );
 
     DataFrame result = DataFrame::create();
@@ -295,8 +295,8 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
     
     set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "dt", dts, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "rt", rts, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "inv_ion_mobility", inv_ion_mobilities, peaks_no);
+    set_frame<double, Rcpp::NumericVector>(result, "retention_time", retention_times, peaks_no);
 
     return result;
 }

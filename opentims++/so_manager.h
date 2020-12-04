@@ -86,7 +86,7 @@ class LoadedLibraryHandle
 // RAII-style wrapper for results of dlopen()
 {
  public:
-    LoadedLibraryHandle([[maybe_unused]] const std::string& path) {}
+    LoadedLibraryHandle(const std::string&) {}
 
     ~LoadedLibraryHandle() {}
 

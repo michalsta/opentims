@@ -22,7 +22,7 @@ import pathlib
 import opentimspy
 
 
-all_columns = ('frame','scan','tof','intensity','mz','dt','rt')
+all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
 
 def hash_frame(X,
@@ -39,18 +39,17 @@ def hash_frame(X,
 
 class OpenTIMS:
     def __init__ (self, analysis_directory):
-        """Initialize TimsData.
+        """Initialize OpenTIMS.
 
             Args:
-                analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf'
+                analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
-        analysis_directory = pathlib.Path(analysis_directory)
-        assert analysis_directory.exists(), f"There is no such location: {analysis_directory}"
+        self.analysis_directory = pathlib.Path(analysis_directory)
+        assert self.analysis_directory.exists(), f"There is no such location: {self.analysis_directory}"
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
-
         self.min_frame = self.handle.min_frame_id()
         self.max_frame = self.handle.max_frame_id()
-        self.rts = self.frame2rt(range(self.min_frame, self.max_frame+1))
+        self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))
         self.peaks_cnt = self.handle.no_peaks_total()
         self.all_columns = all_columns
         self.all_columns_dtypes = all_columns_dtype
@@ -71,7 +70,7 @@ class OpenTIMS:
             del self.handle
 
 
-    def frame2rt(self, frames):
+    def frame2retention_time(self, frames):
         frames = np.r_[frames]
         assert frames.min() >= self.min_frame, f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
         assert frames.max() <= self.max_frame, f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
@@ -93,7 +92,7 @@ class OpenTIMS:
 
 
     def _get_empty_arrays(self, size, selected_columns=all_columns):
-        """Return a dictionary of empty numpy arrays to be filled with delicious data. Some are left empty and thus not filled."""
+        """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
 
         return {col: np.empty(shape=size if col in selected_columns else 0,
                               dtype=dtype) 
@@ -108,7 +107,7 @@ class OpenTIMS:
             frames (int, iterable): Frames to choose. Passing an integer results in extracting that one frame.
             columns (tuple): which columns to extract? Defaults to all possible columns.
         Returns:
-            dict: columnt to numpy array mapping.
+            dict: columns to numpy array mapping.
         """
         assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
 
@@ -141,39 +140,49 @@ class OpenTIMS:
             yield self.query(fr, columns)
 
 
-    def rt_query(self, min_rt, max_rt, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+    def rt_query(self,
+                 min_retention_time,
+                 max_retention_time,
+                 columns=all_columns):
         """Get data from a selection of frames based on retention times.
 
-        Get all frames corresponding to retention times in a set "[min_rt, max_rt)".
+        Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
 
 
         Args:
-            min_rt (float): Minimal retention time.
-            max_rt (float): Maximal retention time to choose.
+            min_retention_time (float): Minimal retention time.
+            max_retention_time (float): Maximal retention time to choose.
             columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Returns:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = np.searchsorted(self.rts, (min_rt, max_rt))+1 #TODO: check border conditions!!!
+        min_frame, max_frame = np.searchsorted(self.retention_times,
+                                               (min_retention_time,
+                                                max_retention_time)) + 1 #TODO: check border conditions!!!
         return self.query(slice(min_frame, max_frame), columns)
 
 
-    def rt_query_iter(self, min_rt, max_rt, columns=("rt", "frame", "dt", "scan", "mz", "tof", "intensity")):
+    def rt_query_iter(self,
+                      min_retention_time,
+                      max_retention_time,
+                      columns=all_columns):
         """Iterate data from a selection of frames based on retention times.
 
-        Get all frames corresponding to retention times in a set "[min_rt, max_rt)".
+        Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
 
 
         Args:
-            min_rt (float): Minimal retention time.
-            max_rt (float): Maximal retention time to choose.
+            min_retention_time (float): Minimal retention time.
+            max_retention_time (float): Maximal retention time to choose.
             columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Yields:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = np.searchsorted(self.rts, (min_rt, max_rt))+1 #TODO: check border conditions!!!
+        min_frame, max_frame = np.searchsorted(self.retention_times,
+                                               (min_retention_time,
+                                                max_retention_time)) + 1 #TODO: check border conditions!!!
         yield from self.query_iter(range(min_frame, max_frame+1), columns)
 
 
@@ -294,3 +303,19 @@ class OpenTIMS:
                 for X in self.query_iter(frames=slice(self.min_frame,
                                                       self.max_frame+1),
                                          columns=columns)]
+
+    #TODO: port to C++
+    @functools.lru_cache(maxsize=1)
+    def framesTIC(self):
+        """Get the Total Ion Current for each frame.
+
+        Returns:
+            np.array: Total Ion Current values per each frame (sums of intensities for each frame).
+        """
+        I = (d['intensity'].sum()
+             for d in self.query_iter(slice(self.min_frame,
+                                            self.max_frame+1),
+                                      columns=('intensity',)))
+        return np.fromiter(I,
+                           dtype=int,
+                           count=self.max_frame-self.min_frame+1)

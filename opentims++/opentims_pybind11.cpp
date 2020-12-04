@@ -19,8 +19,8 @@
 #include "opentims.cpp"
 
 namespace py = pybind11;
-
 using namespace pybind11::literals;
+
 
 template<typename T> T* get_ptr(py::buffer& buf)
 {
@@ -29,6 +29,7 @@ template<typename T> T* get_ptr(py::buffer& buf)
         return nullptr;
     return static_cast<T*>(buf_info.ptr);
 }
+
 
 PYBIND11_MODULE(opentimspy_cpp, m) {
     py::class_<TimsFrame>(m, "TimsFrame")
@@ -65,7 +66,9 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             {
                 py::buffer_info indexes_info = indexes_b.request();
                 py::buffer_info result_info  = result_b.request();
-                dh.extract_frames(static_cast<uint32_t*>(indexes_info.ptr), indexes_info.size, static_cast<uint32_t*>(result_info.ptr));
+                dh.extract_frames(static_cast<uint32_t*>(indexes_info.ptr),
+                                  indexes_info.size,
+                                  static_cast<uint32_t*>(result_info.ptr));
             })
         .def("extract_frames",
             [](
@@ -76,7 +79,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 py::buffer& tofs,
                 py::buffer& intensities,
                 py::buffer& mzs,
-                py::buffer& drift_times,
+                py::buffer& inv_ion_mobilities,
                 py::buffer& retention_times)
                 {
                         py::buffer_info indexes_info = indexes_b.request();
@@ -88,7 +91,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                     get_ptr<uint32_t>(tofs),
                     get_ptr<uint32_t>(intensities),
                     get_ptr<double>(mzs),
-                    get_ptr<double>(drift_times),
+                    get_ptr<double>(inv_ion_mobilities),
                     get_ptr<double>(retention_times)
                 );
             },
@@ -98,8 +101,8 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             py::arg("tof"),
             py::arg("intensity"),
             py::arg("mz"),
-            py::arg("dt"),
-            py::arg("rt")
+            py::arg("inv_ion_mobility"),
+            py::arg("retention_time")
         )
         .def("extract_frames_slice",
             [](TimsDataHandle& dh, size_t start, size_t end, size_t step, py::buffer& result_b)
@@ -118,7 +121,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             py::buffer& tofs,
             py::buffer& intensities,
             py::buffer& mzs,
-            py::buffer& drift_times,
+            py::buffer& inv_ion_mobilities,
             py::buffer& retention_times)
             {
             dh.extract_frames_slice(
@@ -130,7 +133,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 get_ptr<uint32_t>(tofs),
                 get_ptr<uint32_t>(intensities),
                 get_ptr<double>(mzs),
-                get_ptr<double>(drift_times),
+                get_ptr<double>(inv_ion_mobilities),
                 get_ptr<double>(retention_times)
             );
         },
@@ -142,13 +145,13 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             py::arg("tof"),
             py::arg("intensity"),
             py::arg("mz"),
-            py::arg("dt"),
-            py::arg("rt")
+            py::arg("inv_ion_mobility"),
+            py::arg("retention_time")
         );
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {
                                     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
-                                    DefaultScan2DriftConverterFactory::setAsDefault<BrukerScan2DriftConverterFactory, const char*>(path.c_str());
+                                    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
                                 });
 }

@@ -4,7 +4,7 @@
 \alias{tables_names}
 \title{Extract tables from sqlite database analysis.tdf.}
 \usage{
-tables_names(opentims, names)
+tables_names(opentims)
 }
 \arguments{
 \item{opentims}{Instance of OpenTIMS}

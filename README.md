@@ -345,3 +345,30 @@ Consider [TimsPy](https://github.com/MatteoLacki/opentims_bruker_bridge) for Bru
 ## Special thanks
 We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from Bruker Daltonik GmbH, for their magnificent work in developing tfd-sdk.
 
+
+## Knowns Issues:
+
+*pybind11* causes an error upon installation:
+
+```bash
+  Building wheel for opentimspy (setup.py) ... error
+  ERROR: Command errored out with exit status 1:
+   command: /home/matteo/Projects/opentims/timspy/timspyVE/bin/python -u -c 'import sys, setuptools, tokenize; sys.argv[0] = '"'"'/tmp/pip-req-build-06parpqo/setup.py'"'"'; __file__='"'"'/tmp/pip-req-build-06parpqo/setup.py'"'"';f=getattr(tokenize, '"'"'open'"'"', open)(__file__);code=f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, __file__, '"'"'exec'"'"'))' bdist_wheel -d /tmp/pip-wheel-rq1ll2m4
+       cwd: /tmp/pip-req-build-06parpqo/
+  Complete output (11 lines):
+  running bdist_wheel
+  running build
+  running build_py
+  creating build
+  creating build/lib.linux-x86_64-3.8
+  creating build/lib.linux-x86_64-3.8/opentimspy
+  copying opentimspy/opentims.py -> build/lib.linux-x86_64-3.8/opentimspy
+  copying opentimspy/__init__.py -> build/lib.linux-x86_64-3.8/opentimspy
+  running build_ext
+  building 'opentimspy_support' extension
+  pybind11 not found. Please either install it manually, or install via pip rather than through setuptools directly.
+  ----------------------------------------
+  ERROR: Failed building wheel for opentimspy
+```
+
+Ignore it: it is pip-related and does not influence the intallation.

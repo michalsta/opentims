@@ -6,17 +6,17 @@
 \usage{
 rt_query(
   opentims,
-  min_rt,
-  max_rt,
-  columns = c("frame", "scan", "tof", "intensity", "mz", "dt", "rt")
+  min_retention_time,
+  max_retention_time,
+  columns = all_columns
 )
 }
 \arguments{
 \item{opentims}{Instance of OpenTIMS.}
 
-\item{min_rt}{Lower boundry on retention time.}
+\item{min_retention_time}{Lower boundry on retention time.}
 
-\item{max_rt}{Upper boundry on retention time.}
+\item{max_retention_time}{Upper boundry on retention time.}
 
 \item{columns}{Vector of columns to extract. Defaults to all columns.}
 }
@@ -24,5 +24,5 @@ rt_query(
 data.frame with selected columns.
 }
 \description{
-Extract all frames corresponding to retention times inside [min_rt, max_rt] closed borders interval.
+Extract all frames corresponding to retention times inside [min_retention_time, max_retention_time] closed borders interval.
 }

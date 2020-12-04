@@ -22,7 +22,7 @@ data.frame with selected columns.
 }
 \description{
 Get the raw data from Bruker's 'tdf_bin' format.
-Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','dt','rt').
+Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','inv_ion_mobility','retention_time').
 }
 \details{
 We assume 'from' <= 'to'.

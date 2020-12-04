@@ -37,11 +37,11 @@ tdf_get_range_noend <- function(tdf, start, step = 1L) {
     .Call('_opentimsr_tdf_get_range_noend', PACKAGE = 'opentimsr', tdf, start, step)
 }
 
-tdf_extract_frames <- function(tdf, indexes, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_dts = TRUE, get_rts = TRUE) {
-    .Call('_opentimsr_tdf_extract_frames', PACKAGE = 'opentimsr', tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts)
+tdf_extract_frames <- function(tdf, indexes, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_inv_ion_mobilities = TRUE, get_retention_times = TRUE) {
+    .Call('_opentimsr_tdf_extract_frames', PACKAGE = 'opentimsr', tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times)
 }
 
-tdf_extract_frames_slice <- function(tdf, start, end, step = 1L, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_dts = TRUE, get_rts = TRUE) {
-    .Call('_opentimsr_tdf_extract_frames_slice', PACKAGE = 'opentimsr', tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts)
+tdf_extract_frames_slice <- function(tdf, start, end, step = 1L, get_frames = TRUE, get_scans = TRUE, get_tofs = TRUE, get_intensities = TRUE, get_mzs = TRUE, get_inv_ion_mobilities = TRUE, get_retention_times = TRUE) {
+    .Call('_opentimsr_tdf_extract_frames_slice', PACKAGE = 'opentimsr', tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times)
 }
 

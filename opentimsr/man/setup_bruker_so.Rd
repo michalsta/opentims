@@ -2,7 +2,7 @@
 % Please edit documentation in R/opentimsr.R
 \name{setup_bruker_so}
 \alias{setup_bruker_so}
-\title{Dynamically link Bruker's DLL to enable tof-mz and scan-dt conversion.}
+\title{Dynamically link Bruker's DLL to enable tof-mz and scan-inv_ion_mobility conversion.}
 \usage{
 setup_bruker_so(path)
 }

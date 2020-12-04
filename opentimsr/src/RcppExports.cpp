@@ -111,8 +111,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_extract_frames
-Rcpp::DataFrame tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_dts, const bool get_rts);
-RcppExport SEXP _opentimsr_tdf_extract_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_dtsSEXP, SEXP get_rtsSEXP) {
+Rcpp::DataFrame tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+RcppExport SEXP _opentimsr_tdf_extract_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -123,15 +123,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type get_tofs(get_tofsSEXP);
     Rcpp::traits::input_parameter< const bool >::type get_intensities(get_intensitiesSEXP);
     Rcpp::traits::input_parameter< const bool >::type get_mzs(get_mzsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type get_dts(get_dtsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type get_rts(get_rtsSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames(tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts));
+    Rcpp::traits::input_parameter< const bool >::type get_inv_ion_mobilities(get_inv_ion_mobilitiesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_retention_times(get_retention_timesSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames(tdf, indexes, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times));
     return rcpp_result_gen;
 END_RCPP
 }
 // tdf_extract_frames_slice
-Rcpp::DataFrame tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_dts, const bool get_rts);
-RcppExport SEXP _opentimsr_tdf_extract_frames_slice(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_dtsSEXP, SEXP get_rtsSEXP) {
+Rcpp::DataFrame tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+RcppExport SEXP _opentimsr_tdf_extract_frames_slice(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -144,9 +144,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type get_tofs(get_tofsSEXP);
     Rcpp::traits::input_parameter< const bool >::type get_intensities(get_intensitiesSEXP);
     Rcpp::traits::input_parameter< const bool >::type get_mzs(get_mzsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type get_dts(get_dtsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type get_rts(get_rtsSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames_slice(tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_dts, get_rts));
+    Rcpp::traits::input_parameter< const bool >::type get_inv_ion_mobilities(get_inv_ion_mobilitiesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type get_retention_times(get_retention_timesSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_frames_slice(tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times));
     return rcpp_result_gen;
 END_RCPP
 }

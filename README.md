@@ -350,7 +350,13 @@ Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://git
 # Development
 We will be happy to accept any contributions.
 
-## Plans for future
+# Current limitations
+Due to patent restrictions, open source calibration functions used by Bruker cannot be revealed.
+For this reason, we have to use the original Bruker TDF-SDK for time of flight to mass over charge and scan to inverse ion mobility transformations.
+To make it as easy at can be, we have prepared a `Python` module called (opentims_bruker_bridge)[https://github.com/MatteoLacki/opentims_bruker_bridge] that ships the necessary `dll` and `so` files.
+Please visit the project and follow language-specific instructions for its installation.
+
+# Plans for future
 
 * Together with Bruker we are working on openning up the tof-mz and scan-dt conversions which is scheduled for the next release of the acquisition software.
 * This way open source access will be available on all of the commonly used platforms. 

@@ -1,12 +1,26 @@
-# Quick intro
-**opentims** is a module that wraps Bruker's tdf-sdk into a module, for convenience of not having to copy it in all possible projects.
+# OpenTIMS
+
+`OpenTIMS` is a C++ library for accessing timsTOF Pro data format (TDF).
+It replaces (to a large extent) Bruker's SDK for purposes of data access and provides convenient layer for integration into higher level computer languages.
+It comes with bindings to `Python` (through `opentimspy`) and `R` languages (through `opentimsr`).
+In `Python`, we extract data into `NumPy` arrays that are optimized for speed and come with a universe of useful methods for their quick manipulation.
+In `R`, we extract data into the native `data.frame` object.
+
+With `OpenTIMS` you can access data contained in the `analysis.tdf_raw` file hapilly produced by your mass spectrometer of choice (as long as it is timsTOF Pro).
+It also parses some of the information out of the `SQLite` data base contained in the `analysis.raw` file.
+You should have both of these files in one folder to start using our software.
+
+We can also get your data faster in `C++` (and so to `Python` and `R`):
+![](https://github.com/michalsta/opentims/blob/master/speed.png "TIC per frame")
+
+Prefer userfriendliness over raw power?
+We have you covered! Check out the children projects (`TimsR`)[https://github.com/MatteoLacki/timsr] and (`TimsPy`)[https://github.com/MatteoLacki/timspy].
 
 # Requirements
-In general, the software should work on Linux, Windows, or MacOS.
-Python3.6 or higher versions are tested.
 
+The software was tested on Linux, Windows, and MacOS.
 On Windows, install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) to make use of C++ or Python code.
-On Linux, have clang++ or g++ installed (clang is better).
+On Linux, have `clang++` or `g++` installed (`clang` produces slightly faster code).
 On macOS, [install x-tools command line tools](https://www.godo.dev/tutorials/xcode-command-line-tools-installation-faq/).
 
 ## Python
@@ -33,6 +47,14 @@ From R terminal (opened either in powershell or in RStudio and similar):
 ```bash
 install.packages('opentimsr')
 ```
+or using devtools
+```bash
+install.packages('devtools')
+library(devtools)
+
+install_github("MatteoLacki/opentimsr")
+```
+
 If that does not work, first clone the repository and then install manually with:
 ```bash
 git clone https://github.com/michalsta/opentims
@@ -172,6 +194,26 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # [  9   9   9 ... 117   9  64]
 # [ 20 147  69 ...  58   9   9]
 # [ 9  9  9 ...  9 91  9]
+
+
+# The frame lasts a convenient time unit that well suits chromatography peak elution.
+# What if you were interested instead in finding out which frames eluted in a given time 
+# time of the experiment?
+# For this reasone, we have prepared a retention time based query:
+# suppose you are interested in all frames corresponding to all that eluted between 10 and 12
+# minute of the experiment.
+# Well, here goes nothing:
+D.rt_query(10,12)
+# {'frame': array([ 92,  92,  92, ..., 109, 109, 109], dtype=uint32),
+#  'scan': array([ 33,  36,  41, ..., 914, 916, 917], dtype=uint32),
+#  'tof': array([361758,  65738, 308330, ..., 144566, 138933, 373182], dtype=uint32),
+#  'intensity': array([ 9,  9,  9, ..., 58, 91,  9], dtype=uint32),
+#  'mz': array([1456.28349866,  222.28224757, 1153.59087822, ...,  445.25277042,
+#          426.77550441, 1525.57652881]),
+#  'inv_ion_mobility': array([1.60114183, 1.5977164 , 1.59200782, ..., 0.60413889, 0.60189576,
+#         0.60077422]),
+#  'retention_time': array([10.08689891, 10.08689891, 10.08689891, ..., 11.91001388,
+#         11.91001388, 11.91001388])}
 
 
 # Get numpy array with raw data in a given range 1:10
@@ -319,6 +361,26 @@ pprint(X)
 # 3331317   200  903 375375         9
 # 3331318   200  905 358594         9
 # 3331319   200  911 146843         9
+
+
+# Simple access to 'analysis.tdf'? Sure:
+tables_names(D)
+#  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
+#  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     
+#  [5] "ErrorLog"                 "FrameMsMsInfo"           
+#  [7] "FrameProperties"          "Frames"                  
+#  [9] "GlobalMetadata"           "GroupProperties"         
+# [11] "MzCalibration"            "Properties"              
+# [13] "PropertyDefinitions"      "PropertyGroups"          
+# [15] "Segments"                 "TimsCalibration"         
+ 
+
+# Just choose a table now:
+table2df(D, 'TimsCalibration')
+#   Id ModelType C0  C1       C2       C3 C4 C5           C6       C7       C8
+# 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
+#         C9
+# 1 1663.341
 ```
 
 # More options?
@@ -328,9 +390,17 @@ Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://git
 # Development
 We will be happy to accept any contributions.
 
-## Plans for future
-Together with Bruker we are working on openning up the tof-mz and scan-dt conversions.
+# Current limitations
+Due to patent restrictions, open source calibration functions used by Bruker cannot be revealed.
+For this reason, we have to use the original Bruker TDF-SDK for time of flight to mass over charge and scan to inverse ion mobility transformations.
+To make it as easy at can be, we have prepared a `Python` module called (opentims_bruker_bridge)[https://github.com/MatteoLacki/opentims_bruker_bridge] that ships the necessary `dll` and `so` files.
+Please visit the project and follow language-specific instructions for its installation.
 
+# Plans for future
+
+* Together with Bruker we are working on openning up the tof-mz and scan-dt conversions which is scheduled for the next release of the acquisition software.
+* This way open source access will be available on all of the commonly used platforms. 
+* Adding bindings to other languages.
 
 ## Licence
 

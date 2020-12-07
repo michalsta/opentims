@@ -10,6 +10,9 @@ With `OpenTIMS` you can access data contained in the `analysis.tdf_raw` file hap
 It also parses some of the information out of the `SQLite` data base contained in the `analysis.raw` file.
 You should have both of these files in one folder to start using our software.
 
+We can also get your data faster in `C++` (and so to `Python` and `R`):
+![](https://github.com/michalsta/opentims/blob/master/speed.png "TIC per frame")
+
 Prefer userfriendliness over raw power?
 We have you covered! Check out the children projects (`TimsR`)[https://github.com/MatteoLacki/timsr] and (`TimsPy`)[https://github.com/MatteoLacki/timspy].
 

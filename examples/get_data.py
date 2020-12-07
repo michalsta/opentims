@@ -122,6 +122,26 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # [ 9  9  9 ...  9 91  9]
 
 
+# The frame lasts a convenient time unit that well suits chromatography peak elution.
+# What if you were interested instead in finding out which frames eluted in a given time 
+# time of the experiment?
+# For this reasone, we have prepared a retention time based query:
+# suppose you are interested in all frames corresponding to all that eluted between 10 and 12
+# minute of the experiment.
+# Well, here goes nothing:
+D.rt_query(10,12)
+# {'frame': array([ 92,  92,  92, ..., 109, 109, 109], dtype=uint32),
+#  'scan': array([ 33,  36,  41, ..., 914, 916, 917], dtype=uint32),
+#  'tof': array([361758,  65738, 308330, ..., 144566, 138933, 373182], dtype=uint32),
+#  'intensity': array([ 9,  9,  9, ..., 58, 91,  9], dtype=uint32),
+#  'mz': array([1456.28349866,  222.28224757, 1153.59087822, ...,  445.25277042,
+#          426.77550441, 1525.57652881]),
+#  'inv_ion_mobility': array([1.60114183, 1.5977164 , 1.59200782, ..., 0.60413889, 0.60189576,
+#         0.60077422]),
+#  'retention_time': array([10.08689891, 10.08689891, 10.08689891, ..., 11.91001388,
+#         11.91001388, 11.91001388])}
+
+
 # Get numpy array with raw data in a given range 1:10
 pprint(D[1:10])
 # array([[     1,     33, 312260,      9],
@@ -131,5 +151,3 @@ pprint(D[1:10])
 #        [     9,    913, 204042,     10],
 #        [     9,    914, 358144,      9],
 #        [     9,    915, 354086,      9]], dtype=uint32)
-
-

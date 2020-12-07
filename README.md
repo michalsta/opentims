@@ -174,6 +174,26 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # [ 9  9  9 ...  9 91  9]
 
 
+# The frame lasts a convenient time unit that well suits chromatography peak elution.
+# What if you were interested instead in finding out which frames eluted in a given time 
+# time of the experiment?
+# For this reasone, we have prepared a retention time based query:
+# suppose you are interested in all frames corresponding to all that eluted between 10 and 12
+# minute of the experiment.
+# Well, here goes nothing:
+D.rt_query(10,12)
+# {'frame': array([ 92,  92,  92, ..., 109, 109, 109], dtype=uint32),
+#  'scan': array([ 33,  36,  41, ..., 914, 916, 917], dtype=uint32),
+#  'tof': array([361758,  65738, 308330, ..., 144566, 138933, 373182], dtype=uint32),
+#  'intensity': array([ 9,  9,  9, ..., 58, 91,  9], dtype=uint32),
+#  'mz': array([1456.28349866,  222.28224757, 1153.59087822, ...,  445.25277042,
+#          426.77550441, 1525.57652881]),
+#  'inv_ion_mobility': array([1.60114183, 1.5977164 , 1.59200782, ..., 0.60413889, 0.60189576,
+#         0.60077422]),
+#  'retention_time': array([10.08689891, 10.08689891, 10.08689891, ..., 11.91001388,
+#         11.91001388, 11.91001388])}
+
+
 # Get numpy array with raw data in a given range 1:10
 pprint(D[1:10])
 # array([[     1,     33, 312260,      9],
@@ -319,6 +339,26 @@ pprint(X)
 # 3331317   200  903 375375         9
 # 3331318   200  905 358594         9
 # 3331319   200  911 146843         9
+
+
+# Simple access to 'analysis.tdf'? Sure:
+tables_names(D)
+#  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
+#  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     
+#  [5] "ErrorLog"                 "FrameMsMsInfo"           
+#  [7] "FrameProperties"          "Frames"                  
+#  [9] "GlobalMetadata"           "GroupProperties"         
+# [11] "MzCalibration"            "Properties"              
+# [13] "PropertyDefinitions"      "PropertyGroups"          
+# [15] "Segments"                 "TimsCalibration"         
+ 
+
+# Just choose a table now:
+table2df(D, 'TimsCalibration')
+#   Id ModelType C0  C1       C2       C3 C4 C5           C6       C7       C8
+# 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
+#         C9
+# 1 1663.341
 ```
 
 # More options?

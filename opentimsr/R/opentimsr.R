@@ -22,7 +22,6 @@ NULL
   library.dynam.unload("opentimsr", libpath)
 }
 
-# The order of these matters!!!
 all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
 

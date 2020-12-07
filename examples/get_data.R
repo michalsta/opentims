@@ -1,7 +1,6 @@
 library(opentims)
 
-# path = pathlib.Path('path_to_your_data.d')
-path = "/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d"
+path = 'path/to/your/data.d'
 
 # Do you want to have access only to 'frame', 'scan', 'time of flight', and 'intensity'?
 accept_Bruker_EULA_and_on_Windows_or_Linux = TRUE
@@ -12,11 +11,10 @@ if(accept_Bruker_EULA_and_on_Windows_or_Linux){
     setup_bruker_so(path_to_bruker_dll)
     all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 } else {
-	all_columns = c('frame','scan','tof','intensity','retention_time')
+    all_columns = c('frame','scan','tof','intensity','retention_time')
 }
 
 D = OpenTIMS(path) # get data handle
-D@all_columns
 
 print(D) 
 print(length(D)) # The number of peaks.
@@ -129,3 +127,23 @@ pprint(X)
 # 3331317   200  903 375375         9
 # 3331318   200  905 358594         9
 # 3331319   200  911 146843         9
+
+
+# Simple access to 'analysis.tdf'? Sure:
+tables_names(D)
+#  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
+#  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     
+#  [5] "ErrorLog"                 "FrameMsMsInfo"           
+#  [7] "FrameProperties"          "Frames"                  
+#  [9] "GlobalMetadata"           "GroupProperties"         
+# [11] "MzCalibration"            "Properties"              
+# [13] "PropertyDefinitions"      "PropertyGroups"          
+# [15] "Segments"                 "TimsCalibration"         
+ 
+
+# Just choose a table now:
+table2df(D, 'TimsCalibration')
+#   Id ModelType C0  C1       C2       C3 C4 C5           C6       C7       C8
+# 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
+#         C9
+# 1 1663.341

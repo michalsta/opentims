@@ -183,7 +183,7 @@ public:
 
     TimsFrame& get_frame(uint32_t frame_no);
 
-    const std::unordered_map<uint32_t, TimsFrame>& get_frame_descs() const;
+    std::unordered_map<uint32_t, TimsFrame>& get_frame_descs();
 
     size_t no_peaks_total() const;
 

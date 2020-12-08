@@ -1,8 +1,14 @@
+// A small example demonstrating the basic usage of OpenTIMS in C++.
+// Compile by issuing the "make" command.
+
 #include <string>
 #include "../opentims++/opentims_all.cpp"
 
 const std::string data_path = "/path/to/your/data.d";
 
+// If conversion of tof to MZ and scan_id to ion mobility is needed
+// then you need to set use_bruker_code to true, and provide a path to
+// timsdata.so/dll (as appropriate from your OS) from Bruker's SDK below
 const bool use_bruker_code = false;
 const std::string bruker_binary_lib_path = "";
 

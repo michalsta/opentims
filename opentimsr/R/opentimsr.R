@@ -70,6 +70,11 @@ setMethod('show',
 #' Get the overall number of peaks.
 #'
 #' @param x OpenTIMS data instance.
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(length(D))
+#' }
 setMethod('length', 
           'OpenTIMS', 
           function(x) tdf_no_peaks_total(x@handle))
@@ -77,7 +82,13 @@ setMethod('length',
 #' Get some frames of data.
 #'
 #' @param x OpenTIMS data instance.
-#' @param i An array of nonzero indices to extract. 
+#' @param i An array of nonzero indices to extract.
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(head(D[10]))
+#' print(head(D[10:100]))
+#' }
 setMethod("[", 
           signature(x = "OpenTIMS", i = "ANY"),
           function(x, i){
@@ -94,7 +105,12 @@ setMethod("[",
 #' @param x OpenTIMS data instance.
 #' @param from The first frame to extract.
 #' @param to The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
-#' @param by The by
+#' @param by Extract each by-th frame
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(head(range(D, 10,100,3))) # each third frame from 10 to 100.
+#' }
 setMethod("range", 
           "OpenTIMS",
           function(x, from, to, by=1L){ 
@@ -117,6 +133,11 @@ setMethod("range",
 #' @param names Names to extract from the sqlite database.
 #' @return A list of tables.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(head(table2df(D, "Frames"))) # Extract table "Frames".
+#' }
 table2df = function(opentims, names){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
@@ -131,6 +152,11 @@ table2df = function(opentims, names){
 #' @param opentims Instance of OpenTIMS
 #' @return Names of tables.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(tables_names(D)) 
+#' }
 tables_names = function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
@@ -173,6 +199,11 @@ OpenTIMS = function(path.d){
 #' @param opentims Instance of OpenTIMS
 #' @return Numbers of frames corresponding to MS1, i.e. precursor ions.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(MS1(D)) 
+#' }
 MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 
 
@@ -182,6 +213,11 @@ MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 #' @param ... Parameters passed to head and tail functions.
 #' @importFrom utils head tail
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' explore.tdf.tables(D) 
+#' }
 explore.tdf.tables = function(opentims, ...){
     for(table_name in tables_names(opentims)){
         print(table_name)
@@ -199,6 +235,11 @@ explore.tdf.tables = function(opentims, ...){
 #' @param opentims Instance of OpenTIMS.
 #' @return Number of peaks in each frame.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(peaks_per_frame_cnts(D)) 
+#' }
 peaks_per_frame_cnts = function(opentims){
   opentims@frames$NumPeaks
 }
@@ -209,6 +250,11 @@ peaks_per_frame_cnts = function(opentims){
 #' @param opentims Instance of OpenTIMS.
 #' @return Retention times corresponding to each frame.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(retention_times(D)) 
+#' }
 retention_times = function(opentims){
   opentims@frames$Time
 }
@@ -224,6 +270,12 @@ retention_times = function(opentims){
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(query(D, c(1,20, 53)) # extract all columns
+#' print(query(D, c(1,20, 53), columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' }
 query = function(opentims,
                  frames,
                  columns=all_columns){
@@ -259,6 +311,12 @@ query = function(opentims,
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
+#' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' }
 query_slice = function(opentims, from=NULL, to=NULL, step=1L, columns=all_columns){
 
   # Border conditions.
@@ -294,6 +352,12 @@ get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.ope
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
+#' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' }
 rt_query = function(opentims,
                     min_retention_time,
                     max_retention_time,
@@ -326,6 +390,10 @@ rt_query = function(opentims,
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
 #' @importFrom utils download.file
 #' @export
+#' @examples
+#' \dontrun{
+#' download_bruker_proprietary_code("your/prefered/destination/folder")
+#' }
 download_bruker_proprietary_code = function(
   target.folder, 
   net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
@@ -364,5 +432,10 @@ download_bruker_proprietary_code = function(
 #'
 #' @param path Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.
 #' @export
+#' @examples
+#' \dontrun{
+#' so_path = download_bruker_proprietary_code("your/prefered/destination/folder")
+#' setup_bruker_so(so_path)
+#' }
 setup_bruker_so = function(path) .setup_bruker_so(path)
 

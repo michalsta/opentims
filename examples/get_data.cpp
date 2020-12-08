@@ -1,7 +1,10 @@
 // A small example demonstrating the basic usage of OpenTIMS in C++.
-// Compile by issuing the "make" command.
+// Edit to fill in the path to your TIMS data directory (below),
+// then compile by issuing the "make" command.
 
 #include <string>
+#include <iostream>
+#include <cstdlib>
 #include "../opentims++/opentims_all.cpp"
 
 const std::string data_path = "/path/to/your/data.d";
@@ -14,6 +17,13 @@ const std::string bruker_binary_lib_path = "";
 
 int main()
 {
+    // Quick sanity check to make sure the user didn't try to run this exmaple without providing path to data
+    if(data_path == "/path/to/your/data.d")
+    {
+        std::cerr << "You must edit the get_data.cpp file and provide the path to your data folder before trying to run the example." << std::endl;
+        std::abort();
+    }
+
     // If we're using Bruker's conversion functions, they must be set up before opening the TimsDataHandle
     if(use_bruker_code)
     {

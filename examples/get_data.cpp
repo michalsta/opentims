@@ -8,14 +8,16 @@ const std::string bruker_binary_lib_path = "";
 
 int main()
 {
-    // Open the dataset
-    TimsDataHandle TDH(data_path);
-
+    // If we're using Bruker's conversion functions, they must be set up before opening the TimsDataHandle
     if(use_bruker_code)
     {
         DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(bruker_binary_lib_path.c_str());
         DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(bruker_binary_lib_path.c_str());
     }
+
+    // Open the dataset
+    TimsDataHandle TDH(data_path);
+
 
     // Allocate buffers for data: instead of reallocating for every frame, we just allocate a buffer that will fit all
     // and reuse it.
@@ -48,7 +50,7 @@ int main()
             std::cout << frame_ids[peak_id] << "\t" << scan_ids[peak_id] << "\t" << tofs[peak_id] << "\t" << intensities[peak_id] << "\t";
             if(use_bruker_code)
                 std::cout << mzs[peak_id] << "\t" << inv_ion_mobilities[peak_id] << "\t";
-            std::cout << retention_times[peak_id];
+            std::cout << retention_times[peak_id] << std::endl;
         }
     }
 

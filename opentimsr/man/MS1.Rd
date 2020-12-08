@@ -15,3 +15,9 @@ Numbers of frames corresponding to MS1, i.e. precursor ions.
 \description{
 Get MS1 frame numbers.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(MS1(D)) 
+}
+}

@@ -17,3 +17,9 @@ A list of tables.
 \description{
 Export a table from sqlite.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(head(table2df(D, "Frames"))) # Extract table "Frames".
+}
+}

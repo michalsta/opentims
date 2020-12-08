@@ -14,3 +14,10 @@
 \description{
 Get some frames of data.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(head(D[10]))
+print(head(D[10:100]))
+}
+}

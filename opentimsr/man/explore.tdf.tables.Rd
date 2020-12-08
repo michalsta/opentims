@@ -14,3 +14,9 @@ explore.tdf.tables(opentims, ...)
 \description{
 Explore the contentents of the sqlite .tdf database.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+explore.tdf.tables(D) 
+}
+}

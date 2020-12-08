@@ -5,7 +5,9 @@ reinstall: pyclean pipclean
 	pip install . --user --verbose --no-cache
 reinstall_ve: pyclean pipclean
 	pip install . --verbose --no-cache 
-rprep: rclean
+rdoc:
+	Rscript rdocs.R
+rprep: rclean rdoc
 	R CMD build opentimsr
 rcheck: rprep
 	R CMD check opentimsr_*.tar.gz

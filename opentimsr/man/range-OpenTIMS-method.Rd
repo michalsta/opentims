@@ -13,8 +13,14 @@
 
 \item{to}{The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.}
 
-\item{by}{The by}
+\item{by}{Extract each by-th frame}
 }
 \description{
 This is similar to using the from:to:by operator in Python.
+}
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(head(range(D, 10,100,3))) # each third frame from 10 to 100.
+}
 }

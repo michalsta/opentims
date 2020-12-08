@@ -12,3 +12,9 @@
 \description{
 Get the overall number of peaks.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(length(D))
+}
+}

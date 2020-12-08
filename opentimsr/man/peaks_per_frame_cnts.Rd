@@ -15,3 +15,9 @@ Number of peaks in each frame.
 \description{
 Get the number of peaks per frame.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(peaks_per_frame_cnts(D)) 
+}
+}

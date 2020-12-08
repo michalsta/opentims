@@ -26,3 +26,10 @@ data.frame with selected columns.
 \description{
 Extract all frames corresponding to retention times inside [min_retention_time, max_retention_time] closed borders interval.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
+print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+}
+}

@@ -29,3 +29,8 @@ By using this function you aggree to terms of license precised in "https://githu
 The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
 Works on full open-source solution are on the way.
 }
+\examples{
+\dontrun{
+download_bruker_proprietary_code("your/prefered/destination/folder")
+}
+}

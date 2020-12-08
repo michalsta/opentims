@@ -27,3 +27,10 @@ Defaults to both raw data ('frame','scan','tof','intensity') and its tranformati
 \details{
 We assume 'from' <= 'to'.
 }
+\examples{
+\dontrun{
+D = OpenTIMS('path/to/your/folder.d')
+print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
+print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+}
+}

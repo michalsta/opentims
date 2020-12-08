@@ -4,7 +4,17 @@ Type: Package
 Title: An Open-Source Loader for Bruker's timsTOF Data Files
 Version: 1.0.2
 Date: 2020-11-30
-Author: Michal Startek and Mateusz Krzysztof Lacki
+Authors@R:
+    c(person(given="Michał Piotr",
+             family="Startek",
+             role=c("aut","cre","cph"),
+             email="michal.startek@mimuw.edu.pl",
+             comment=c(ORCID="0000-0001-5227-3447")),
+      person(given="Mateusz Krzysztof",
+             family="Lacki",
+             role=c("aut","cph"),
+             comment=c(ORCID="0000-0001-7415-4748"))
+    )
 Maintainer: Michal Startek <michal.startek@mimuw.edu.pl>
 Description: A free, open-source package designed for
     handling .tdf data files produced by Bruker's 'timsTOF' mass

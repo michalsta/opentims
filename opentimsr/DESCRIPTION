@@ -11,7 +11,7 @@ Authors@R:
              email="michal.startek@mimuw.edu.pl",
              comment=c(ORCID="0000-0001-5227-3447")),
       person(given="Mateusz Krzysztof",
-             family="Lacki",
+             family="Łącki",
              role=c("aut","cph"),
              comment=c(ORCID="0000-0001-7415-4748"))
     )

@@ -52,7 +52,7 @@ or using devtools
 install.packages('devtools')
 library(devtools)
 
-install_github("MatteoLacki/opentimsr")
+install_github("michalsta/opentims", subdir="opentimsr")
 ```
 
 If that does not work, first clone the repository and then install manually with:

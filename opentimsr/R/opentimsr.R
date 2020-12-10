@@ -317,11 +317,16 @@ query = function(opentims,
 #' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
 #' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
 #' }
-query_slice = function(opentims, from=NULL, to=NULL, step=1L, columns=all_columns){
+query_slice = function(opentims,
+                       from=NULL,
+                       to=NULL,
+                       by=1,
+                       columns=all_columns){
+  col = opentims@all_columns %in% columns
 
   # Border conditions.
   if(is.null(from)) from = opentims@min_frame
-  if(is.null(to)) to = opentims@max_frame 
+  if(is.null(to)) to = opentims@max_frame
 
   df = tdf_extract_frames_slice( opentims@handle,
                                  from,

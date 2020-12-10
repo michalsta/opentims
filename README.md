@@ -320,6 +320,30 @@ pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 # 
 # this is also the only way to get data without accepting Bruker terms of service and on MacOS (for time being).
 
+
+# The frame lasts a convenient time unit that well suits chromatography peak elution.
+# What if you were interested instead in finding out which frames eluted in a given time 
+# time of the experiment?
+# For this reasone, we have prepared a retention time based query:
+# suppose you are interested in all frames corresponding to all that eluted between 10 and 12
+# second of the experiment.
+pprint(rt_query(opentims, 10, 12))
+#   frame scan    tof intensity        mz inv_ion_mobility retention_time
+# 1    92   33 361758         9 1456.2835         1.601142        10.0869
+# 2    92   36  65738         9  222.2822         1.597716        10.0869
+# 3    92   41 308330         9 1153.5909         1.592008        10.0869
+# 4    92   43 123618         9  378.5190         1.589725        10.0869
+# 5    92   48  65346         9  221.3651         1.584017        10.0869
+# 6    92   53 183172         9  582.4251         1.578310        10.0869
+#        frame scan    tof intensity        mz inv_ion_mobility retention_time
+# 128129   109  913  38170         9  162.4016        0.6052605       11.91001
+# 128130   109  914 138760        65  426.2142        0.6041389       11.91001
+# 128131   109  914 142129        69  437.2109        0.6041389       11.91001
+# 128132   109  914 144566        58  445.2528        0.6041389       11.91001
+# 128133   109  916 138933        91  426.7755        0.6018958       11.91001
+# 128134   109  917 373182         9 1525.5765        0.6007742       11.91001
+
+
 # R has no proper in-built iterators :(
 
 # All MS1 frames, but one at a time:

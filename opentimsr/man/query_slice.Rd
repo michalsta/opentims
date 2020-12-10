@@ -4,7 +4,7 @@
 \alias{query_slice}
 \title{Query for raw data.}
 \usage{
-query_slice(opentims, from = NULL, to = NULL, step = 1L, columns = all_columns)
+query_slice(opentims, from = NULL, to = NULL, by = 1, columns = all_columns)
 }
 \arguments{
 \item{opentims}{Instance of OpenTIMS.}
@@ -13,9 +13,9 @@ query_slice(opentims, from = NULL, to = NULL, step = 1L, columns = all_columns)
 
 \item{to}{Last frame to extract.}
 
-\item{step}{Every step-th frame gets extracted (starting from the first one).}
-
 \item{columns}{Vector of columns to extract. Defaults to all columns.}
+
+\item{step}{Every step-th frame gets extracted (starting from the first one).}
 }
 \value{
 data.frame with selected columns.

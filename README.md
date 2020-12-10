@@ -451,7 +451,7 @@ We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from
 
 ## Knowns Issues:
 
-*pybind11* causes an error upon installation:
+### *pybind11* causes an error upon installation:
 
 ```bash
   Building wheel for opentimspy (setup.py) ... error
@@ -475,3 +475,30 @@ We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from
 ```
 
 Ignore it: it is pip-related and does not influence the intallation.
+
+### R function rt_query
+
+If you see error:
+`Error in col[1] : object of type 'closure' is not subsettable`
+then interpret the following set of functions:
+```R
+get_left_frame = function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
+get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
+
+rt_query = function(opentims,
+                    min_retention_time,
+                    max_retention_time,
+                    columns=c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
+){
+  RTS = retention_times(opentims)
+  
+  min_frame = get_left_frame(min_retention_time, RTS)
+  max_frame = get_right_frame(max_retention_time, RTS)
+  
+  if(is.na(min_frame) | is.na(max_frame))
+    stop("The [min_retention_time,max_retention_time] interval does not hold any data.")
+  
+  query(opentims, min_frame:max_frame, columns=columns)
+}
+```
+

@@ -14,7 +14,7 @@ We can also get your data faster in `C++` (and so to `Python` and `R`):
 ![](https://github.com/michalsta/opentims/blob/master/speed.png "TIC per frame")
 
 Prefer userfriendliness over raw power?
-We have you covered! Check out the children projects (`TimsR`)[https://github.com/MatteoLacki/timsr] and (`TimsPy`)[https://github.com/MatteoLacki/timspy].
+We have you covered! Check out the children projects [`TimsR`](https://github.com/MatteoLacki/timsr) and [`TimsPy`](https://github.com/MatteoLacki/timspy).
 
 # Requirements
 

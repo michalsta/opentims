@@ -38,3 +38,6 @@ try:
             pass
 except ImportError:
     pass
+
+
+__version__ = "1.0.3"

@@ -229,6 +229,8 @@ pprint(D[1:10])
 
 ## R
 
+For a detailed documentation of the `R` package, consult the [CRAN webpage of the project](https://cran.r-project.org/web/packages/opentimsr/index.html).
+
 ```R
 library(opentims)
 
@@ -383,6 +385,10 @@ table2df(D, 'TimsCalibration')
 # 1 1663.341
 ```
 
+# C++
+To check out how to use the `C++` code, check out [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp).
+The `C++` code is, as for now, only self-documenting.
+
 # More options?
 
 Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://github.com/MatteoLacki/timsr) for more user-friendly options.
@@ -393,7 +399,7 @@ We will be happy to accept any contributions.
 # Current limitations
 Due to patent restrictions, open source calibration functions used by Bruker cannot be revealed.
 For this reason, we have to use the original Bruker TDF-SDK for time of flight to mass over charge and scan to inverse ion mobility transformations.
-To make it as easy at can be, we have prepared a `Python` module called (opentims_bruker_bridge)[https://github.com/MatteoLacki/opentims_bruker_bridge] that ships the necessary `dll` and `so` files.
+To make it as easy at can be, we have prepared a `Python` module called [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) that ships the necessary `dll` and `so` files.
 Please visit the project and follow language-specific instructions for its installation.
 
 # Plans for future

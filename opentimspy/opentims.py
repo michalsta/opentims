@@ -49,7 +49,7 @@ class OpenTIMS:
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.min_frame = self.handle.min_frame_id()
         self.max_frame = self.handle.max_frame_id()
-        self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))
+        self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
         self.peaks_cnt = self.handle.no_peaks_total()
         self.all_columns = all_columns
         self.all_columns_dtypes = all_columns_dtype
@@ -147,11 +147,12 @@ class OpenTIMS:
         """Get data from a selection of frames based on retention times.
 
         Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
+        Retention time is in seconds.
 
 
         Args:
-            min_retention_time (float): Minimal retention time.
-            max_retention_time (float): Maximal retention time to choose.
+            min_retention_time (float): Minimal retention time (in seconds).
+            max_retention_time (float): Maximal retention time to choose (in seconds).
             columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Returns:

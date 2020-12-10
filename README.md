@@ -105,7 +105,7 @@ print(all_columns)
 
 
 # Get a dict with data from frames 1, 5, and 67.
-# pprint(D.query(frames=[1,5,67], columns=all_columns))
+pprint(D.query(frames=[1,5,67], columns=all_columns))
 # {'frame': array([ 1,  1,  1, ..., 67, 67, 67], dtype=uint32),
 #  'intensity': array([ 9,  9,  9, ..., 19, 57, 95], dtype=uint32),
 #  'inv_ion_mobility': array([1.60114183, 1.6       , 1.6       , ..., 0.60077422, 0.60077422,

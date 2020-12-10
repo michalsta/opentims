@@ -127,8 +127,7 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # time of the experiment?
 # For this reasone, we have prepared a retention time based query:
 # suppose you are interested in all frames corresponding to all that eluted between 10 and 12
-# minute of the experiment.
-# Well, here goes nothing:
+# second of the experiment.
 D.rt_query(10,12)
 # {'frame': array([ 92,  92,  92, ..., 109, 109, 109], dtype=uint32),
 #  'scan': array([ 33,  36,  41, ..., 914, 916, 917], dtype=uint32),

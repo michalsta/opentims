@@ -19,7 +19,7 @@ ipy:
 	python -m IPython
 clean: pyclean rclean hereclean
 rclean:
-	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck
+	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck opentimsr/src/*.o opentimsr/src/*.so opentimsr/src/*.tmp
 pyclean:
 	rm -rf build dist opentimspy.egg-info
 hereclean:

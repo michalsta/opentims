@@ -307,7 +307,7 @@ query = function(opentims,
 #' @param opentims Instance of OpenTIMS.
 #' @param from First frame to extract.
 #' @param to Last frame to extract.
-#' @param step Every step-th frame gets extracted (starting from the first one).
+#' @param by Every by-th frame gets extracted (starting from the first one).
 #' @param columns Vector of columns to extract. Defaults to all columns.
 #' @return data.frame with selected columns.
 #' @export

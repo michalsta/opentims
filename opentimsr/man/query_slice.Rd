@@ -13,9 +13,9 @@ query_slice(opentims, from = NULL, to = NULL, by = 1, columns = all_columns)
 
 \item{to}{Last frame to extract.}
 
-\item{columns}{Vector of columns to extract. Defaults to all columns.}
+\item{by}{Every by-th frame gets extracted (starting from the first one).}
 
-\item{step}{Every step-th frame gets extracted (starting from the first one).}
+\item{columns}{Vector of columns to extract. Defaults to all columns.}
 }
 \value{
 data.frame with selected columns.

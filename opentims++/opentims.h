@@ -34,8 +34,8 @@
 
 #ifdef OPENTIMS_BUILDING_R
 #define STRICT_R_HEADERS
-#include <Rcpp.h>
 #include "mio.h"
+#include <Rcpp.h>
 #else
 #include "mio.hpp"
 #endif

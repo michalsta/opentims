@@ -35,10 +35,10 @@ void setup_bruker_so(const Rcpp::String& path)
 
 
 // [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d)
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res)
 {
     TimsDataHandle* p; 
-    p = new TimsDataHandle(path_d);
+    p = new TimsDataHandle(path_d, sql_res);
     return Rcpp::XPtr<TimsDataHandle>(p, true);
 }
 

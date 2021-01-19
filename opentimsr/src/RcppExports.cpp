@@ -17,13 +17,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_open
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d);
-RcppExport SEXP _opentimsr_tdf_open(SEXP path_dSEXP) {
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res);
+RcppExport SEXP _opentimsr_tdf_open(SEXP path_dSEXP, SEXP sql_resSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::String& >::type path_d(path_dSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_open(path_d));
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type sql_res(sql_resSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_open(path_d, sql_res));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -153,7 +154,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_setup_bruker_so", (DL_FUNC) &_opentimsr_setup_bruker_so, 1},
-    {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 1},
+    {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 2},
     {"_opentimsr_tdf_min_frame_id", (DL_FUNC) &_opentimsr_tdf_min_frame_id, 1},
     {"_opentimsr_tdf_max_frame_id", (DL_FUNC) &_opentimsr_tdf_max_frame_id, 1},
     {"_opentimsr_tdf_no_peaks_total", (DL_FUNC) &_opentimsr_tdf_no_peaks_total, 1},

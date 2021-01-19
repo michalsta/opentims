@@ -183,7 +183,7 @@ OpenTIMS = function(path.d){
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     DBI::dbDisconnect(sql_conn)
-    handle = tdf_open(path.d)
+    handle = tdf_open(path.d, frames)
 
     new("OpenTIMS",
         path.d=path.d,

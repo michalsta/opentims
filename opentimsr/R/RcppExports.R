@@ -5,8 +5,8 @@
     invisible(.Call('_opentimsr_setup_bruker_so', PACKAGE = 'opentimsr', path))
 }
 
-tdf_open <- function(path_d) {
-    .Call('_opentimsr_tdf_open', PACKAGE = 'opentimsr', path_d)
+tdf_open <- function(path_d, sql_res) {
+    .Call('_opentimsr_tdf_open', PACKAGE = 'opentimsr', path_d, sql_res)
 }
 
 tdf_min_frame_id <- function(tdf) {

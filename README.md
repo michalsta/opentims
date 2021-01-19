@@ -21,6 +21,13 @@ We have you covered! Check out the children projects [`TimsR`](https://github.co
 The software was tested on Linux, Windows, and MacOS.
 On Windows, install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) to make use of C++ or Python code.
 On Linux, have `clang++` or `g++` installed (`clang` produces slightly faster code).
+Also, do make sure that a developper version of Python is installed.
+For instance, on Ubuntu, install Python with 
+```
+sudo apt install python3.8-dev
+```
+i.e. with the `-dev` version.
+This contains headers needed for pybind to work properly.
 On macOS, [install x-tools command line tools](https://www.godo.dev/tutorials/xcode-command-line-tools-installation-faq/).
 
 ## Python

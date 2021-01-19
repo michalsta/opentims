@@ -23,10 +23,14 @@
 #include <vector>
 #include <unordered_map>
 
+#include "platform.h"
+
+#ifndef OPENTIMS_BUILDING_R
 #include "sqlite/sqlite3.h"
+#endif
+
 #include "zstd/zstd.h"
 
-#include "platform.h"
 
 #ifdef OPENTIMS_BUILDING_R
 #define STRICT_R_HEADERS

@@ -238,7 +238,7 @@ pprint(D[1:10])
 For a detailed documentation of the `R` package, consult the [CRAN webpage of the project](https://cran.r-project.org/web/packages/opentimsr/index.html).
 
 ```R
-library(opentims)
+library(opentimsr)
 
 # path = pathlib.Path('path_to_your_data.d')
 path = "/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d"
@@ -334,7 +334,7 @@ pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 # For this reasone, we have prepared a retention time based query:
 # suppose you are interested in all frames corresponding to all that eluted between 10 and 12
 # second of the experiment.
-pprint(rt_query(opentims, 10, 12))
+pprint(rt_query(D, 10, 12))
 #   frame scan    tof intensity        mz inv_ion_mobility retention_time
 # 1    92   33 361758         9 1456.2835         1.601142        10.0869
 # 2    92   36  65738         9  222.2822         1.597716        10.0869

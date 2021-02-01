@@ -227,15 +227,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         close();
 }
 
-
-void Peak::print()
-{
-#ifndef OPENTIMS_BUILDING_R
-    std::cout << frame_id << "  " << scan_id << "   " << tof << "    " << intensity << std::endl;
-#endif
-}
-
-
 int tims_sql_callback(void* out, int cols, char** row, char**)
 {
     assert(cols == 7);

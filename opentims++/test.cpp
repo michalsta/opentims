@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     {
         TimsFrame& frame = TDH.get_frame(ii);
 
-        frame.decompress();
+        //frame.decompress();
 
     //    TDH.frame_desc(1).print();
 

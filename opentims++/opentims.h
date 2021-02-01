@@ -92,7 +92,6 @@ class TimsFrame
                                         ZSTD_DCtx* decomp_ctx = nullptr);
     */
 
-public:
     TimsFrame(uint32_t _id,
               uint32_t _num_scans,
               uint32_t _num_peaks,
@@ -106,23 +105,65 @@ public:
     static TimsFrame TimsFrameFromSql(char** sql_row, 
                                       TimsDataHandle& parent_handle);
 
-    const uint32_t id;
-    const uint32_t num_scans;
-    const uint32_t num_peaks;
-    const uint32_t msms_type;
+    inline size_t data_size_ints() const { return num_scans + num_peaks + num_peaks; };
+
+
+public:
+
+    const uint32_t id;          ///< ID of the frame
+    const uint32_t num_scans;   ///< Number of scans this frame contains
+    const uint32_t num_peaks;   ///< Number of peaks this frame contains (summed across all scans)
+    const uint32_t msms_type;   ///< The MS/MS type of this frame
+private:
     const double intensity_correction;
     const double time;
 
+public:
+     //! \brief Prints out to stdout a short summary of this frame.
     void print() const;
 
-    void decompress(char* decompression_buffer = nullptr, ZSTD_DCtx* decomp_ctx = nullptr);
-
-    void close();
-
-    inline size_t data_size_ints() const { return num_scans + num_peaks + num_peaks; };
-
+    //! Return the size of back buffer needed to store raw TIMS data.
     inline size_t data_size_bytes() const { return data_size_ints() * 4; };
 
+    //! Precalculates and memorizes all the information contained within this frame.
+    /**
+     * This method extracts all the data associated with the frame and stores it in memory.
+     * Without it, the data (mz values, intensities, etc.) will be re-calculated every time they
+     * are accessed. After this method is called, they will be just retrieved from RAM.
+     *
+     * This is a purely performance-enchancing method - it is recommended to call it if
+     * repeated access to the frame is necessary, before the access, and to call close()
+     * afterward.
+     *
+     * @param decompression_buffer optional, a pre-allocated buffer which will be used for 
+     *        the decompression.
+     *        If null, a pre-allocated buffer from parent TimsDataFrame will be used,
+     *        making this method non-thread-safe. If TimsFrame is to be used in multithreaded
+     *        context, a thread-local buffer must be passed here (or a mutex must be used).
+     *        The buffer must be at least data_size_bytes() large.
+     * @param decomp_ctx optonal, a decompression buffer to be used by the method. If null,
+     *        a ctx from parent handle will be used, possibly making this non-thread-safe.
+     *        To ensure thread safety a thread-local context must be passed here.
+     */
+    void decompress(char* decompression_buffer = nullptr, ZSTD_DCtx* decomp_ctx = nullptr);
+
+    //! Releases the storage taken by decompress() method, without destroying the frame. Will be called in destructor.
+    void close();
+
+    //! Retrieve the MS peak data held by the frame.
+    /**
+     * The data is saved to the passed buffers - if some of this data is unnecessary, then nullptr
+     * may be passed as the corresponding pointer.
+     * The buffers are passed and returned by columns. Each row corresponds to one MS peak.
+     *
+     * @param frame_ids     The repeated ID of this frame.
+     * @param scan_ids      IDs of the scan a peak comes from.
+     * @param tofs          Times of Flight of peaks.
+     * @param intensities   Signal intensities of peaks.
+     * @param mzs           M/Z ratios of peaks.
+     * @param inv_ion_mobilities    Inverse ion mobilities (in seconds).
+     * @param retention_times       Retention times (in seconds).
+     */
     void save_to_buffs(uint32_t* frame_ids,
                        uint32_t* scan_ids,
                        uint32_t* tofs,
@@ -132,18 +173,12 @@ public:
                        double* retention_times,
                        ZSTD_DCtx* decomp_ctx = nullptr);
 
+    //! This function is deprecated and intentionally undocumented; do not use.
     void save_to_matrix_buffer(uint32_t* buf,
                                ZSTD_DCtx* decomp_ctx = nullptr)
     { save_to_buffs(buf, buf+num_peaks, buf+2*num_peaks, buf+3*num_peaks, nullptr, nullptr, nullptr, decomp_ctx); };
-};
 
-struct Peak
-{
-    uint32_t frame_id;
-    uint32_t scan_id;
-    uint32_t tof;
-    uint32_t intensity;
-    void print();
+    friend class TimsDataHandle;
 };
 
 class BrukerTof2MzConverter;
@@ -181,16 +216,20 @@ private:
 
     void init();
 
-public:
+#ifdef OPENTIMS_BUILDING_R
+    void* setupFromAnalysisList(const Rcpp::List& analysis_tdf);
+#endif /* OPENTIMS_BUILDING_R */
+
     TimsDataHandle(const std::string& tims_tdf_bin_path,
                    const std::string& tims_tdf_path,
                    const std::string& tims_data_dir);
+
+public:
 
     TimsDataHandle(const std::string& tims_data_dir);
 
 #ifdef OPENTIMS_BUILDING_R
     TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf);
-    void* setupFromAnalysisList(const Rcpp::List& analysis_tdf);
 #endif /* OPENTIMS_BUILDING_R */
 
     ~TimsDataHandle();

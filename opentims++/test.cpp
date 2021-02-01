@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 {
     assert(argc == 2);
     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>("/home/mist/svn/git/timsdata_scratchpad/tims2hdf5/libtimsdata.so");
-    DefaultScan2DriftConverterFactory::setAsDefault<BrukerScan2DriftConverterFactory, const char*>("/home/mist/svn/git/timsdata_scratchpad/tims2hdf5/libtimsdata.so");
+    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>("/home/mist/svn/git/timsdata_scratchpad/tims2hdf5/libtimsdata.so");
     TimsDataHandle TDH(argv[1]);
     for(size_t ii = TDH.min_frame_id(); ii <= TDH.max_frame_id(); ii++)
     {

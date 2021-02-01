@@ -155,6 +155,7 @@ public:
      * The data is saved to the passed buffers - if some of this data is unnecessary, then nullptr
      * may be passed as the corresponding pointer.
      * The buffers are passed and returned by columns. Each row corresponds to one MS peak.
+     * Each buffer must be albe to hold at least this->num_peaks values.
      *
      * @param frame_ids     The repeated ID of this frame.
      * @param scan_ids      IDs of the scan a peak comes from.
@@ -224,54 +225,92 @@ private:
                    const std::string& tims_tdf_path,
                    const std::string& tims_data_dir);
 
+    void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
+    void set_converter(std::unique_ptr<Scan2InvIonMobilityConverter>&& converter);
+
 public:
 
+    //! Open TimsTOF dataset.
+    /**
+     * Open a TimsTOF dataset (read-only access supported). Return a handle using which
+     * Tims data may be retrieved.
+     *
+     * @param Path to the dataset (typically a *.d directory, containing a analysis.tdf
+     * and analysis.tdf_bin files).
+     */
     TimsDataHandle(const std::string& tims_data_dir);
 
 #ifdef OPENTIMS_BUILDING_R
+    //! Internal use only.
     TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf);
 #endif /* OPENTIMS_BUILDING_R */
 
+    //! Close and deallocate the TimsTOF data handle (destructor).
     ~TimsDataHandle();
 
+    //! Access a single frame by its ID.
     TimsFrame& get_frame(uint32_t frame_no);
 
-    std::unordered_map<uint32_t, TimsFrame>& get_frame_descs();
+    //! Access a dictionary containing all the frames from this dataset, keyed by ID.
+    const std::unordered_map<uint32_t, TimsFrame>& get_frame_descs();
 
+    //! Returns the total number of MS peaks in this handle.
     size_t no_peaks_total() const;
 
-    size_t no_peaks_in_frames(const uint32_t* indexes,
+    //! Count the peaks in a subset of frames
+    /**
+     * Returns the total number of peaks in the frames with given indexes.
+     *
+     * @param indexes    Indexes of frames to count
+     * @param no_indexes Number of indexes (and length of the indexes[] table).
+     */
+    size_t no_peaks_in_frames(const uint32_t indexes[],
                               size_t no_indexes);
 
+    //! Count the peaks in a subset of frames
+    /**
+     * Returns the total number of peaks in the frames with given indexes.
+     *
+     * @param indexes    Indexes of frames to count
+     */
     size_t no_peaks_in_frames(const std::vector<uint32_t>& indexes)
     { return no_peaks_in_frames(indexes.data(), indexes.size()); };
 
+    //! Count the peaks in a subset of frames, selected by a slice
+    /**
+     * Returns the total number of peaks in frames with IDs contained
+     * in the start:stop:end slice
+     */
     size_t no_peaks_in_slice(uint32_t start,
                              uint32_t end,
                              uint32_t step);
 
+    //! Access the lowest id of a valid frame from this dataset.
     uint32_t min_frame_id() const { return _min_frame_id; };
 
+    //! Access the highest id of a valid frame from this dataset.
     uint32_t max_frame_id() const { return _max_frame_id; };
 
+    //! Check whether a frame with provided ID exists in the dataset.
     bool has_frame(uint32_t frame_id) const { return frame_descs.count(frame_id) > 0; };
 
-    void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
-    void set_converter(std::unique_ptr<Scan2InvIonMobilityConverter>&& converter);
-
+    //! This function is deprecated, and left deliberately undocumented; do not use.
     void extract_frames(const uint32_t* indexes,
                         size_t no_indexes,
                         uint32_t* result);
 
+    //! This function is deprecated, and left deliberately undocumented; do not use.
     void extract_frames(const std::vector<uint32_t>& indexes,
                         uint32_t* result)
     { extract_frames(indexes.data(), indexes.size(), result); };
 
+    //! This function is deprecated, and left deliberately undocumented; do not use.
     void extract_frames_slice(uint32_t start,
                               uint32_t end,
                               uint32_t step,
                               uint32_t* result);
 
+    //! This function is deprecated, and left deliberately undocumented; do not use.
     void extract_frames(const uint32_t* indexes,
                         size_t no_indexes,
                         uint32_t* frame_ids,
@@ -282,7 +321,22 @@ public:
                         double* inv_ion_mobilities,
                         double* retention_times);
 
-
+    //! Extract a subset of frames, selected by indexes, filling provided buffers with MS peak data.
+    /**
+     * The data is saved to the passed buffers - if some of this data is unnecessary, then nullptr
+     * may be passed as the corresponding pointer.
+     * The buffers are passed and returned by columns. Each row corresponds to one MS peak.
+     * Each buffer must be able to hold at least no_peaks_in_frames(indexes) values.
+     *
+     * @param indexes       Set of indexes of frames for which data is to be obtained.
+     * @param frame_ids     The IDs of frames containing the associated peaks.
+     * @param scan_ids      IDs of the scan a peak comes from.
+     * @param tofs          Times of Flight of peaks.
+     * @param intensities   Signal intensities of peaks.
+     * @param mzs           M/Z ratios of peaks.
+     * @param inv_ion_mobilities    Inverse ion mobilities (in seconds).
+     * @param retention_times       Retention times (in seconds).
+     */
     void extract_frames(const std::vector<uint32_t>& indexes,
                         uint32_t* frame_ids,
                         uint32_t* scan_ids,
@@ -301,6 +355,26 @@ public:
                      inv_ion_mobilities,
                      retention_times); };
 
+    //! Extract a subset of frames, selected by a slice, filling provided buffers with MS peak data.
+    /**
+     * The data is saved to the passed buffers - if some of this data is unnecessary, then nullptr
+     * may be passed as the corresponding pointer.
+     * The buffers are passed and returned by columns. Each row corresponds to one MS peak.
+     * Each buffer must be able to hold at least no_peaks_in_slice(start, stop, end) values.
+     *
+     * IDs of the returned frames come from start:stop:step slice.
+     *
+     * @param indexes       Start of the slice.
+     * @param end           End of the slice.
+     * @param step          Step of the slice.
+     * @param frame_ids     The IDs of frames containing the associated peaks.
+     * @param scan_ids      IDs of the scan a peak comes from.
+     * @param tofs          Times of Flight of peaks.
+     * @param intensities   Signal intensities of peaks.
+     * @param mzs           M/Z ratios of peaks.
+     * @param inv_ion_mobilities    Inverse ion mobilities (in seconds).
+     * @param retention_times       Retention times (in seconds).
+     */
     void extract_frames_slice(uint32_t start,
                               uint32_t end, 
                               uint32_t step,
@@ -318,14 +392,19 @@ public:
 
     void free_buffers();
 
+    //! Return the maximal number of peaks in the biggest frame in this dataset.
     size_t max_peaks_in_frame();
 
+    //! Expermental API - use discouraged.
     size_t expose_frame(size_t frame_id);
 
+    //! Expermental API - use discouraged.
     const std::unique_ptr<uint32_t[]>& scan_ids_buffer() { return _scan_ids_buffer; };
 
+    //! Expermental API - use discouraged.
     const std::unique_ptr<uint32_t[]>& tofs_buffer() { return _tofs_buffer; };
 
+    //! Expermental API - use discouraged.
     const std::unique_ptr<uint32_t[]>& intensities_buffer() { return _intensities_buffer; };
 
 //    const sqlite3* db_connection() { return db_conn; };

@@ -296,18 +296,29 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir)
 {}
 
 #ifdef OPENTIMS_BUILDING_R
+
+union braindead_r
+{
+    double as_dbl;
+    int64_t as_int;
+};
+
 TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf) :
 TimsDataHandle(tims_data_dir)
 {
+    braindead_r converter;
+
     Rcpp::IntegerVector ids = analysis_tdf("Id");
     Rcpp::IntegerVector num_scans = analysis_tdf("NumScans");
     Rcpp::IntegerVector num_peaks = analysis_tdf("NumPeaks");
     Rcpp::IntegerVector msms_type = analysis_tdf("MsMsType");
     Rcpp::NumericVector accum_time = analysis_tdf("AccumulationTime");
     Rcpp::NumericVector time = analysis_tdf("Time");
-    Rcpp::IntegerVector tims_id = analysis_tdf("TimsId");
+    Rcpp::NumericVector tims_id = analysis_tdf("TimsId");
 
     for(size_t ii = 0; ii < ids.size(); ii++)
+    {
+        converter.as_dbl = tims_id[ii];
         frame_descs.emplace(ids[ii], TimsFrame(
                 ids[ii],
                 num_scans[ii],
@@ -315,8 +326,9 @@ TimsDataHandle(tims_data_dir)
                 msms_type[ii],
                 100.0 / accum_time[ii],
                 time[ii],
-                tims_id[ii] + tims_data_bin.data(),
+                converter.as_int + tims_data_bin.data(),
                 *this));
+    }
 
     init();
 }

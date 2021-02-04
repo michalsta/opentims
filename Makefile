@@ -7,13 +7,17 @@ reinstall_ve: pyclean pipclean
 	pip install . --verbose --no-cache 
 rdoc:
 	Rscript rdocs.R
-rprep: rclean rdoc
+rbuild:
 	R CMD build opentimsr
+rprep: rclean rdoc rbuild
+
 rcheck: rprep
 	R CMD check opentimsr_*.tar.gz
 rcheck_as_CRAN: rprep
 	R CMD check --as-cran opentimsr_*.tar.gz
-rinst: rprep
+rfullinst: rprep
+	R CMD INSTALL opentimsr_*.tar.gz
+rinst: rclean rbuild
 	R CMD INSTALL opentimsr_*.tar.gz
 ipy:
 	python -m IPython

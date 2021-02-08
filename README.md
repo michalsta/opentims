@@ -418,7 +418,7 @@ table2df(D, 'TimsCalibration')
 # C++
 
 In C++ we offer several functions for the raw access to the data.
-To check out how to use the `C++` code, check a basic usage example [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp),
+To check out how to use the `C++` API, check a basic usage example [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp),
 or the full documentation at [/docs/opentims++](https://michalsta.github.io/opentims/opentims++/html/)
 
 

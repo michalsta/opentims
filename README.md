@@ -235,7 +235,7 @@ pprint(D[1:10])
 
 ## R
 
-For a detailed documentation of the `R` package, consult the [CRAN webpage of the project](https://cran.r-project.org/web/packages/opentimsr/index.html).
+For a detailed documentation of the `R` package, consult the [CRAN webpage of the project](https://cran.r-project.org/web/packages/opentimsr/index.html) (especially the reference manual linked there).
 
 ```R
 library(opentimsr)
@@ -416,8 +416,12 @@ table2df(D, 'TimsCalibration')
 ```
 
 # C++
-To check out how to use the `C++` code, check out [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp).
-The `C++` code is, as for now, only self-documenting.
+
+In C++ we offer several functions for the raw access to the data.
+To check out how to use the `C++` code, check a basic usage example [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp),
+or the full documentation at [/docs/opentims++](https://michalsta.github.io/opentims/opentims++/html/)
+
+
 
 # More options?
 
@@ -434,8 +438,8 @@ Please visit the project and follow language-specific instructions for its insta
 
 # Plans for future
 
-* Together with Bruker we are working on openning up the tof-mz and scan-dt conversions which is scheduled for the next release of the acquisition software.
-* This way open source access will be available on all of the commonly used platforms. 
+* Together with Bruker we are working on opening up the tof-mz and scan-dt conversions which is scheduled for the next release of the acquisition software.
+* This way fully open source access will be available on all of the commonly used platforms.
 * Adding bindings to other languages.
 
 ## Licence

@@ -456,6 +456,9 @@ OpenTIMS contains built-in versions of the following software:
 See the respective files for details.
 Consider [TimsPy](https://github.com/MatteoLacki/opentims_bruker_bridge) for Bruker proprietary time of flight to mass to charge ratio and scan to drift time transformations, which are shipped under separate license. 
 
+If the above license terms do not suit you, please contact us.
+We are open to discussion about your particular licensing needs.
+
 ## Special thanks
 We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from Bruker Daltonik GmbH, for their magnificent work in developing tfd-sdk.
 

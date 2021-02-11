@@ -114,11 +114,9 @@ public:
     const uint32_t num_scans;   ///< Number of scans this frame contains
     const uint32_t num_peaks;   ///< Number of peaks this frame contains (summed across all scans)
     const uint32_t msms_type;   ///< The MS/MS type of this frame
-private:
     const double intensity_correction;
     const double time;
 
-public:
      //! \brief Prints out to stdout a short summary of this frame.
     void print() const;
 

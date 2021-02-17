@@ -18,6 +18,26 @@ S4 class that facilitates data queries for TimsTOF data.
 
 \item{\code{max_frame}}{The index of the miximal frame.}
 
+\item{\code{min_scan}}{The minimal scan number. It is assumed to be equal to 1.}
+
+\item{\code{max_scan}}{The maximal scan number.}
+
+\item{\code{min_intensity}}{The minimal value of intensity. Set to 0, but actually 9 is more sensible.}
+
+\item{\code{max_intensity}}{The maximal intensity: the max over values reported in the frames.}
+
+\item{\code{min_retention_time}}{The lowest recorded retention time.}
+
+\item{\code{max_retention_time}}{The highest recorded retention time.}
+
+\item{\code{min_inv_ion_mobility}}{The minimal recorded inverse ion mobility.}
+
+\item{\code{max_inv_ion_mobility}}{The maximal recorded inverse ion mobility.}
+
+\item{\code{min_mz}}{The minimal recorded mass to charge ratio.}
+
+\item{\code{max_mz}}{The maximal recorded mass to charge ratio.}
+
 \item{\code{frames}}{A data.frame with information on the frames (contents of the Frames table in the sqlite db).}
 
 \item{\code{all_columns}}{Names of available columns.}

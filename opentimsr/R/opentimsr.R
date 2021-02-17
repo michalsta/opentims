@@ -33,10 +33,16 @@ all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retent
 #' @slot handle Pointer to raw data.
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
+#' @slot min_scan The minimal scan number. It is assumed to be equal to 1.
+#' @slot max_scan The maximal scan number.
+#' @slot min_intensity The minimal value of intensity. Set to 0, but actually 9 is more sensible.
+#' @slot max_intensity The maximal intensity: the max over values reported in the frames.
 #' @slot min_retention_time The lowest recorded retention time.
 #' @slot max_retention_time The highest recorded retention time.
-#' @slot min_scan The minimal scan number.
-#' @slot max_scan The index of the miximal frame.
+#' @slot min_inv_ion_mobility The minimal recorded inverse ion mobility.
+#' @slot max_inv_ion_mobility The maximal recorded inverse ion mobility.
+#' @slot min_mz The minimal recorded mass to charge ratio.
+#' @slot max_mz The maximal recorded mass to charge ratio.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
 #' @slot all_columns Names of available columns.
 #' @export
@@ -45,11 +51,16 @@ setClass('OpenTIMS',
                    handle='externalptr',
                    min_frame='integer',
                    max_frame='integer',
+                   min_scan='integer',
+                   max_scan='integer',
+                   min_intensity='integer',
+                   max_intensity='integer',
                    min_retention_time='numeric',
                    max_retention_time='numeric',
+                   min_inv_ion_mobility='numeric',
+                   max_inv_ion_mobility='numeric',
                    min_mz='numeric',
                    max_mz='numeric',
-
                    frames='data.frame',
                    all_columns='character'),
          validity = function(object){
@@ -152,6 +163,7 @@ table2df = function(opentims, names){
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
     DBI::dbDisconnect(sql_conn)
+    names(tables) = names
     return(tables)
 }
 
@@ -191,17 +203,74 @@ OpenTIMS = function(path.d){
     analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     frames = DBI::dbReadTable(sql_conn, 'Frames')
+    GlobalMetadata = DBI::dbReadTable(sql_conn, 'GlobalMetadata')
+    GlobalMetadata = array(GlobalMetadata$Value, dimnames=list(GlobalMetadata$Key))
     DBI::dbDisconnect(sql_conn)
     handle = tdf_open(path.d, frames)
+
+    ## Extracting basic info on the limits of reported measurements.
+    ## Does not include TOF index
+
+    # since we must use RSQLite anyway, we don't have to read it from C++
+    # min_frame=as.integer(tdf_min_frame_id(handle)),
+    # max_frame=as.integer(tdf_max_frame_id(handle)),
+    min_frame = as.integer(min(frames$Id)) # just in case
+    max_frame = as.integer(max(frames$Id)) # just in case
+    min_scan = 1L
+    max_scan = as.integer(max(frames$NumScans))
+    min_intensity = 0L
+    max_intensity = max(frames$MaxIntensity)
+    min_retention_time = min(frames$Time)
+    max_retention_time = max(frames$Time)
+    min_inv_ion_mobility = as.numeric(GlobalMetadata['OneOverK0AcqRangeLower'])
+    max_inv_ion_mobility = as.numeric(GlobalMetadata['OneOverK0AcqRangeUpper'])
+    min_mz = as.numeric(GlobalMetadata['MzAcqRangeLower']) # would "float" be 
+    max_mz = as.numeric(GlobalMetadata['MzAcqRangeUpper']) # a bad name to use?
 
     new("OpenTIMS",
         path.d=path.d,
         handle=handle,
-        min_frame=as.integer(tdf_min_frame_id(handle)),
-        max_frame=as.integer(tdf_max_frame_id(handle)),
+        min_frame=min_frame,
+        max_frame=max_frame,
+        min_scan=min_scan,
+        max_scan=max_scan,
+        min_intensity=min_intensity,
+        max_intensity=max_intensity,
+        min_retention_time=min_retention_time,
+        max_retention_time=max_retention_time,
+        min_inv_ion_mobility=min_inv_ion_mobility,
+        max_inv_ion_mobility=max_inv_ion_mobility,
+        min_mz=min_mz,
+        max_mz=max_mz,
         frames=frames,
         all_columns=all_columns)
 }
+
+
+#' Get border values for measurements.
+#'
+#' Get the min-max values of the measured variables (except for TOFs, that would require iteration through data rather than parsing metadata).
+#' 
+#' @param opentims Instance of OpenTIMS.
+#' @return data.frame Limits of individual extracted quantities.
+#' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' min_max_measurements(D) # this gives a small data-frame with min and max values.
+#' }
+min_max_measurements = function(opentims){
+    data.frame(stat=c('min','max'),
+               frame=c(opentims@min_frame,opentims@max_frame),
+               scan=c(opentims@min_scan, opentims@max_scan),
+               intensity=c(opentims@min_intensity, opentims@max_intensity),
+               retention.time=c(opentims@min_retention_time,
+                                opentims@max_retention_time),
+               inv_ion_mobility=c(opentims@min_inv_ion_mobility,
+                                  opentims@max_inv_ion_mobility),
+               mz=c(opentims@min_mz, opentims@max_mz))
+}
+
 
 #' Get MS1 frame numbers.
 #'
@@ -369,8 +438,7 @@ get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.ope
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS('path/to/your/folder.d')
-#' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
-#' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' print(rt_query(D, 10, 100)) # extract frames corresponding to those between tenth and a hundreth second of the experiment.
 #' }
 rt_query = function(opentims,
                     min_retention_time,

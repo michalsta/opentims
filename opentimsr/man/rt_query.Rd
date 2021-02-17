@@ -29,7 +29,6 @@ Extract all frames corresponding to retention times inside [min_retention_time, 
 \examples{
 \dontrun{
 D = OpenTIMS('path/to/your/folder.d')
-print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
-print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+print(rt_query(D, 10, 100)) # extract frames corresponding to those between tenth and a hundreth second of the experiment.
 }
 }

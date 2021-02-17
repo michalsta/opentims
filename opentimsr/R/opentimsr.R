@@ -33,6 +33,10 @@ all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retent
 #' @slot handle Pointer to raw data.
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
+#' @slot min_retention_time The lowest recorded retention time.
+#' @slot max_retention_time The highest recorded retention time.
+#' @slot min_scan The minimal scan number.
+#' @slot max_scan The index of the miximal frame.
 #' @slot frames A data.frame with information on the frames (contents of the Frames table in the sqlite db).
 #' @slot all_columns Names of available columns.
 #' @export
@@ -41,6 +45,11 @@ setClass('OpenTIMS',
                    handle='externalptr',
                    min_frame='integer',
                    max_frame='integer',
+                   min_retention_time='numeric',
+                   max_retention_time='numeric',
+                   min_mz='numeric',
+                   max_mz='numeric',
+
                    frames='data.frame',
                    all_columns='character'),
          validity = function(object){
@@ -293,7 +302,7 @@ query = function(opentims,
                            get_inv_ion_mobilities = col[6],
                            get_retention_times = col[7] )
 
-  as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default???? 
+  as.data.frame(df)[,columns, drop=F] # What an idiot invented drop=T as default????
 }
 
 

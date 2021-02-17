@@ -438,7 +438,7 @@ get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.ope
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS('path/to/your/folder.d')
-#' print(rt_query(D, 10, 100)) # extract frames corresponding to those between tenth and a hundreth second of the experiment.
+#' print(rt_query(D, 10, 100)) # frames between tenth and a hundreth second of the experiment
 #' }
 rt_query = function(opentims,
                     min_retention_time,

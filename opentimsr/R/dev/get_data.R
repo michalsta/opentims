@@ -24,6 +24,7 @@ D@min_intensity
 D@max_intensity
 
 min_max_measurements(D)
+?min_max_measurements
 
 library(devtools)
 

@@ -63,18 +63,6 @@ setClass('OpenTIMS',
                    max_mz='numeric',
                    frames='data.frame',
                    all_columns='character')
-         # validity = function(object){
-         #    d.folder = file.exists(object@path.d) 
-         #    if(!d.folder) print('The folder with data (typically named *.d) does not exist.')
-          
-         #    d.folder.analysis.tdf = file.exists(file.path(object@path.d, 'analysis.tdf'))
-         #    if(!d.folder.analysis.tdf) print('The .d folder does not contain the sqlite data-base called "analysis.tdf".')
-          
-         #    d.folder.analysis.tdf_bin = file.exists(file.path(object@path.d, 'analysis.tdf_bin'))
-         #    if(!d.folder.analysis.tdf_bin) print('The .d folder does not contain the raw data file called "analysis.tdf_bin".')
-
-         #    d.folder & d.folder.analysis.tdf & d.folder.analysis.tdf_bin
-         # }
 )
 
 setMethod('show',

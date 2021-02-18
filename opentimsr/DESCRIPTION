@@ -18,7 +18,7 @@ Authors@R:
 Maintainer: Michał Piotr Startek <michal.startek@mimuw.edu.pl>
 Description: A free, open-source package designed for
     handling .tdf data files produced by Bruker's 'timsTOF' mass
-    spectrometers, as described <https://www.bruker.com/service/support-upgrades/software-downloads/mass-spectrometry.html> (after registering). 
+    spectrometers.
     Fast, free, crossplatform, with no reading through
     EULAs or messing with binary .dll files involved.
 License: GPL-3

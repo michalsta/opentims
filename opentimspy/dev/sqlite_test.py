@@ -2,32 +2,30 @@
 %autoreload 2
 from pathlib import Path
 from opentimspy.opentims import OpenTIMS
-import numpy as np
+
+from timspy.df import TimsPyDF
+# import numpy as np
 import pandas as pd
 
 folder_d = Path("/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d")
-path = folder_d/"analysis.tdf"
 
 D = OpenTIMS(folder_d)
+D.tables_names()
+E = TimsPyDF(folder_d)
+E.tables_names()
+X = E.min_max_measurements()
+X.loc['min']
+X['frame']['min']
 
-D.min_frame
-D.max_frame
-D.min_scan
-D.max_scan
-D.min_intensity
-D.max_intensity
-D.min_retention_time
-D.max_retention_time
-D.min_inv_ion_mobility
-D.max_inv_ion_mobility
-D.min_mz
-D.max_mz
+E.summary()
+E.plot_peak_counts()
+E.query([10,20], ['mz','inv_ion_mobility'])
 
-pd.DataFrame({'statistic':['min','max'],
-              'frame':[D.min_frame, D.max_frame],
-              'scan':[D.min_scan, D.max_scan],
-              'intensity':[D.min_intensity, D.max_intensity],
-              'retention_time':[D.min_retention_time, D.max_retention_time],
-              'inv_ion_mobility':[D.min_inv_ion_mobility, D.max_inv_ion_mobility],
-              'mz':[D.min_mz,D.max_mz]}).set_index('statistic')
+E.table2df('Frames')
+E.table2dict('Frames')
 
+E.intensity_per_frame(recalibrated=False)
+E.plot_TIC()
+
+I, mz_bin_borders, inv_ion_mobility_bin_borders = E.intensity_given_mz_inv_ion_mobility(verbose=True)
+E.plot_intensity_given_mz_inv_ion_mobility(I, mz_bin_borders, inv_ion_mobility_bin_borders)

@@ -12,6 +12,7 @@ setup_bruker_so('/home/matteo/libtimsdata.so')
 all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
 D = OpenTIMS(raw_folder)
+D = OpenTIMS('dupa')
 D@min_frame
 D@max_frame
 D@min_scan

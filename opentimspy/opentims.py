@@ -21,6 +21,7 @@ import pathlib
 
 import opentimspy
 
+from .sql import tables_names, table2dict
 
 all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
@@ -45,17 +46,41 @@ class OpenTIMS:
                 analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
         self.analysis_directory = pathlib.Path(analysis_directory)
-        assert self.analysis_directory.exists(), f"There is no such location: {self.analysis_directory}"
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
-        self.min_frame = self.handle.min_frame_id()
-        self.max_frame = self.handle.max_frame_id()
-        self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
+        self.frames = self.table2dict("Frames")
+        # make sure it is all sorted by retention time / frame number
+        sort_order = np.argsort(self.frames["Id"])
+        for column in self.frames:
+            self.frames[column] = self.frames[column][sort_order]
+        self.GlobalMetadata = self.table2dict("GlobalMetadata")
+        self.GlobalMetadata = dict(zip(self.GlobalMetadata['Key'], self.GlobalMetadata['Value']))
+
+        self.min_frame = self.frames['Id'][0]
+        self.max_frame = self.frames['Id'][-1]
+        # self.ms_types = np.array([self.handle.get_frame(i).msms_type 
+                                  # for i in range(self.min_frame, self.max_frame+1)])
+        self.ms_types = self.frames['MsMsType']
+        self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
+        self.frames_no = self.max_frame - self.min_frame+1
+        self._ms1_mask = np.zeros(self.frames_no, dtype=bool)
+        self._ms1_mask[self.ms1_frames-1] = True
+        self.min_scan = 1
+        self.max_scan = self.frames['NumScans'].max()
+        self.min_intensity = 0
+        self.max_intensity = self.frames['MaxIntensity'].max()
+        self.retention_times = self.frames['Time'] # it's in seconds!
+        self.min_retention_time = self.retention_times[0]
+        self.max_retention_time = self.retention_times[-1]
+        self.min_inv_ion_mobility = float(self.GlobalMetadata['OneOverK0AcqRangeLower'])
+        self.max_inv_ion_mobility = float(self.GlobalMetadata['OneOverK0AcqRangeUpper'])
+        self.min_mz = float(self.GlobalMetadata['MzAcqRangeLower'])
+        self.max_mz = float(self.GlobalMetadata['MzAcqRangeUpper'])
+        # self.min_frame = self.handle.min_frame_id()
+        # self.max_frame = self.handle.max_frame_id()
+        # self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
         self.peaks_cnt = self.handle.no_peaks_total()
         self.all_columns = all_columns
         self.all_columns_dtypes = all_columns_dtype
-        self.ms_types = np.array([self.handle.get_frame(i).msms_type 
-                                  for i in range(self.min_frame, self.max_frame+1)])
-        self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
 
     def __len__(self):
         return self.peaks_cnt
@@ -69,6 +94,11 @@ class OpenTIMS:
         if hasattr(self, 'handle'):
             del self.handle
 
+    def tables_names(self):
+        return tables_names(self.analysis_directory/"analysis.tdf")
+
+    def table2dict(self, name):
+        return table2dict(self.analysis_directory/"analysis.tdf", name)
 
     def frame2retention_time(self, frames):
         frames = np.r_[frames]

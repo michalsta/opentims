@@ -46,7 +46,6 @@ class OpenTIMS:
                 analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
         self.analysis_directory = pathlib.Path(analysis_directory)
-        assert self.analysis_directory.exists(), f"There is no such location: {self.analysis_directory}"
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.frames = self.table2dict("Frames")
         # make sure it is all sorted by retention time / frame number

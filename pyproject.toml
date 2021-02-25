@@ -1,2 +1,4 @@
 [build-system]
 requires = ["setuptools", "wheel", "pybind11", "virtualenv>=16.1.1"]
+[project]
+requires-python = ">=3.7"

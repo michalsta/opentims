@@ -17,14 +17,13 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install vcpython27 -f -y
 
-      - name: Install pybind11
-        run: pip install pybind11
-
       - name: Build wheels
         uses: joerick/cibuildwheel@v1.10.0
         # to supply options, put them in 'env', like:
         # env:
         #   CIBW_SOME_OPTION: value
+        env:
+          CIBW_SKIP: cp27-* pp27-*
 
       - uses: actions/upload-artifact@v2
         with:

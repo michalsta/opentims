@@ -33,7 +33,7 @@ elif platform.system().startswith("CYGWIN"):
 if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++') != None:
     os.environ['CXX'] = 'clang++'
 
-native_build = "CI" not in os.environ
+native_build = "CIBUILDWHEEL" not in os.environ
 if native_build:
     raise Exception(" ".join(os.environ.keys()))
 

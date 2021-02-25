@@ -33,7 +33,7 @@ elif platform.system().startswith("CYGWIN"):
 if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++') != None:
     os.environ['CXX'] = 'clang++'
 
-native_build = "GITHUB_BUILDING_WHEELS" not in os.environ
+native_build = "CI" not in os.environ
 assert not native_build
 
 def get_cflags(asan=False, warnings=True, std_flag=False):

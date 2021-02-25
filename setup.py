@@ -34,7 +34,7 @@ if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++')
     os.environ['CXX'] = 'clang++'
 
 native_build = "GITHUB_BUILDING_WHEELS" not in os.environ
-print("Performing native build:", native_build)
+assert not native_build
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:

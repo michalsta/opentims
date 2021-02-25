@@ -25,7 +25,7 @@ clean: pyclean rclean hereclean
 rclean:
 	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck opentimsr/src/*.o opentimsr/src/*.so opentimsr/src/*.tmp
 pyclean:
-	rm -rf build dist opentimspy.egg-info
+	rm -rf build dist opentimspy.egg-info *.whl
 hereclean:
 	rm -f *.so a.out
 pipclean:

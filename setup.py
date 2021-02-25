@@ -34,8 +34,6 @@ if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++')
     os.environ['CXX'] = 'clang++'
 
 native_build = "CIBUILDWHEEL" not in os.environ
-if native_build:
-    raise Exception(" ".join(os.environ.keys()))
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:

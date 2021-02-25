@@ -9,19 +9,6 @@ from distutils.core import setup, Extension
 from distutils import sysconfig, spawn
 
 
-class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path
-    The purpose of this class is to postpone importing pybind11
-    until it is actually installed, so that the ``get_include()``
-    method can be invoked. """
-
-    def __str__(self):
-        try:
-            import pybind11
-            return pybind11.get_include()
-        except ImportError:
-            print("pybind11 not found. Please either install it manually, or install via pip rather than through setuptools directly.")
-            sys.exit(1)
 
 import platform
 
@@ -46,6 +33,35 @@ elif platform.system().startswith("CYGWIN"):
 if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++') != None:
     os.environ['CXX'] = 'clang++'
 
+native_build = False
+def get_cflags(asan=False, warnings=True):
+    if windows:
+        return ["/O2"]
+    if asan:
+        return "-Og -g -std=c++14 -fsanitize=address".split()
+    res = ["-std=c++14", "-g", "-O3"]
+    if warnings:
+        res.extend(["-Wall", "-Wextra"])
+    if native_build:
+        res.extend(["-march=native", "-mtune=native"])
+    return res
+
+cflags = get_cflags
+
+class get_pybind_include(object):
+    """Helper class to determine the pybind11 include path
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked. """
+
+    def __str__(self):
+        try:
+            import pybind11
+            return pybind11.get_include()
+        except ImportError:
+            print("pybind11 not found. Please either install it manually, or install via pip rather than through setuptools directly.")
+            sys.exit(1)
+
 
 if dual_build:
     ext_modules = [
@@ -53,7 +69,7 @@ if dual_build:
             name='opentimspy_support',
             sources = [join("opentims++", "sqlite", "sqlite3.c"),
                        join("opentims++", "zstd", "zstddeclib.c")],
-            extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb"],
+            extra_compile_args = get_cflags(asan=False, warnings=False),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         ),
@@ -62,7 +78,7 @@ if dual_build:
             sources=[join("opentims++","opentims_pybind11.cpp"),
                      join("opentims++", "tof2mz_converter.cpp"),
                      join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
-            extra_compile_args = "-std=c++14 -O3 -march=native -mtune=native -Wall -Wextra -ggdb".split() if not build_asan else "-Og -g -std=c++14 -fsanitize=address".split(),
+            extra_compile_args = get_cflags(asan=build_asan),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
             undef_macros = [] if not build_asan else [ "NDEBUG" ]
@@ -77,7 +93,7 @@ else:
                        join("opentims++", "opentims_pybind11.cpp"),
                        join("opentims++", "tof2mz_converter.cpp"),
                        join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
-            extra_compile_args = ["/O2"] if windows else ["-march=native", "-mtune=native", "-O3", "-ggdb", "-std=c++14"],
+            extra_compile_args = get_cflags(asan=build_asan),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         )]

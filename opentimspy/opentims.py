@@ -343,10 +343,6 @@ class OpenTIMS:
         Returns:
             np.array: Total Ion Current values per each frame (sums of intensities for each frame).
         """
-        I = (d['intensity'].sum()
-             for d in self.query_iter(slice(self.min_frame,
-                                            self.max_frame+1),
-                                      columns=('intensity',)))
-        return np.fromiter(I,
-                           dtype=int,
-                           count=self.max_frame-self.min_frame+1)
+        res = np.empty(shape=self.max_frame, dtype=np.uint32)
+        self.handle.per_frame_TIC(res)
+        return res

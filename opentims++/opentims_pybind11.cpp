@@ -147,6 +147,14 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             py::arg("mz"),
             py::arg("inv_ion_mobility"),
             py::arg("retention_time")
+        )
+        .def("per_frame_TIC",
+            [](
+                TimsDataHandle& dh,
+                py::buffer& tics)
+            {
+                dh.per_frame_TIC(get_ptr<uint32_t>(tics));
+            }
         );
 
     m.def("setup_bruker_so", [](const std::string& path)

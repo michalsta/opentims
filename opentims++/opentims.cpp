@@ -182,7 +182,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
         for(uint32_t ii = 0; ii < no_peaks; ii++)
         {
-            //scan_ids[peaks_processed] = scan_idx;
             accum_tofs += back_data(read_offset);
             tofs[peaks_processed] = accum_tofs;
             read_offset++;
@@ -563,4 +562,19 @@ size_t TimsDataHandle::expose_frame(size_t frame_no)
     TimsFrame& frame = get_frame(frame_no);
     frame.save_to_buffs(nullptr, _scan_ids_buffer.get(), _tofs_buffer.get(), _intensities_buffer.get(), nullptr, nullptr, nullptr, zstd_dctx);
     return frame.num_peaks;
+}
+
+void TimsDataHandle::per_frame_TIC(uint32_t* result)
+{
+    std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(max_peaks_in_frame());
+
+    for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
+    {
+        it->second.save_to_buffs(nullptr, nullptr, nullptr, intensities.get(), nullptr, nullptr, nullptr, zstd_dctx);
+        uint32_t acc = 0;
+        const size_t n_peaks = it->second.num_peaks;
+        for(size_t ii = 0; ii < n_peaks; ii++)
+            acc += intensities[ii];
+        result[it->first - 1] = acc;
+    }
 }

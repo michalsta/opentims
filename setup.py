@@ -34,12 +34,14 @@ if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++')
     os.environ['CXX'] = 'clang++'
 
 native_build = False
-def get_cflags(asan=False, warnings=True):
+def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
         return ["/O2"]
     if asan:
         return "-Og -g -std=c++14 -fsanitize=address".split()
-    res = ["-std=c++14", "-g", "-O3"]
+    res = ["-g", "-O3"]
+    if std_flag:
+        res.append("-std=c++14")
     if warnings:
         res.extend(["-Wall", "-Wextra"])
     if native_build:
@@ -69,7 +71,7 @@ if dual_build:
             name='opentimspy_support',
             sources = [join("opentims++", "sqlite", "sqlite3.c"),
                        join("opentims++", "zstd", "zstddeclib.c")],
-            extra_compile_args = get_cflags(asan=False, warnings=False),
+            extra_compile_args = get_cflags(asan=False, warnings=False, std_flag=False),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         ),
@@ -78,7 +80,7 @@ if dual_build:
             sources=[join("opentims++","opentims_pybind11.cpp"),
                      join("opentims++", "tof2mz_converter.cpp"),
                      join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
-            extra_compile_args = get_cflags(asan=build_asan),
+            extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
             undef_macros = [] if not build_asan else [ "NDEBUG" ]
@@ -93,7 +95,7 @@ else:
                        join("opentims++", "opentims_pybind11.cpp"),
                        join("opentims++", "tof2mz_converter.cpp"),
                        join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
-            extra_compile_args = get_cflags(asan=build_asan),
+            extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         )]

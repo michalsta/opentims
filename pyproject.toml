@@ -1,4 +1,4 @@
 [build-system]
 requires = ["setuptools", "wheel", "pybind11"]
 [project]
-requires-python = ">=3.5"
+requires-python = ">=3.6"

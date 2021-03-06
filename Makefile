@@ -9,7 +9,7 @@ rdoc:
 	Rscript rdocs.R
 rbuild:
 	R CMD build opentimsr
-rprep: rclean rdoc rbuild
+rprep: rclean rdoc rclean rbuild
 
 rcheck: rprep
 	R CMD check opentimsr_*.tar.gz

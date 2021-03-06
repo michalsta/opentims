@@ -139,7 +139,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     std::unique_ptr<uint32_t[]> tofs_hndl;
     std::unique_ptr<uint32_t[]> intensities_hndl;
 
-    if(scan_ids == nullptr)
+    if(scan_ids == nullptr && inv_ion_mobilities != nullptr)
     {
         scan_ids_hndl = std::make_unique<uint32_t[]>(num_peaks);
         scan_ids = scan_ids_hndl.get();
@@ -175,12 +175,13 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         const uint32_t no_peaks = back_data(scan_idx+1) / 2;
 
         const uint32_t for_loop_end = no_peaks + peaks_processed;
-        for(uint32_t ii = peaks_processed; ii < for_loop_end; ii++)
-            scan_ids[ii] = scan_idx;
+
+        if(scan_ids != nullptr)
+            for(uint32_t ii = peaks_processed; ii < for_loop_end; ii++)
+                scan_ids[ii] = scan_idx;
 
         for(uint32_t ii = 0; ii < no_peaks; ii++)
         {
-            //scan_ids[peaks_processed] = scan_idx;
             accum_tofs += back_data(read_offset);
             tofs[peaks_processed] = accum_tofs;
             read_offset++;
@@ -194,9 +195,12 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
     const uint32_t nnum_peaks = num_peaks;
 
+    if(scan_ids != nullptr)
+        for(uint32_t ii = peaks_processed; ii < nnum_peaks; ii++)
+            scan_ids[peaks_processed] = num_scans_m1;
+
     while(peaks_processed < nnum_peaks)
     {
-        scan_ids[peaks_processed] = num_scans_m1;
         accum_tofs += back_data(read_offset);
         tofs[peaks_processed] = accum_tofs;
         read_offset++;
@@ -558,4 +562,19 @@ size_t TimsDataHandle::expose_frame(size_t frame_no)
     TimsFrame& frame = get_frame(frame_no);
     frame.save_to_buffs(nullptr, _scan_ids_buffer.get(), _tofs_buffer.get(), _intensities_buffer.get(), nullptr, nullptr, nullptr, zstd_dctx);
     return frame.num_peaks;
+}
+
+void TimsDataHandle::per_frame_TIC(uint32_t* result)
+{
+    std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(max_peaks_in_frame());
+
+    for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
+    {
+        it->second.save_to_buffs(nullptr, nullptr, nullptr, intensities.get(), nullptr, nullptr, nullptr, zstd_dctx);
+        uint32_t acc = 0;
+        const size_t n_peaks = it->second.num_peaks;
+        for(size_t ii = 0; ii < n_peaks; ii++)
+            acc += intensities[ii];
+        result[it->first - 1] = acc;
+    }
 }

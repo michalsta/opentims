@@ -407,6 +407,13 @@ public:
 
 //    const sqlite3* db_connection() { return db_conn; };
 
+    //! Obtain the Total Ionic Current for each frame present in the spectrum
+    /** The data is saved to the argument buffer - which must be able to hold at least
+     * max_frame_id()-1 values. The number at nth index corresponds to n+1st frame (as
+     * frames are numbered starting at 1).
+     */
+    void per_frame_TIC(uint32_t* result);
+
     friend int tims_sql_callback(void* out, int cols, char** row, char** colnames);
 
     friend class TimsFrame;

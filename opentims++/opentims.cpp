@@ -1,6 +1,6 @@
 /*
  *   OpenTIMS: a fully open-source library for opening Bruker's TimsTOF data files.
- *   Copyright (C) 2020 Michał Startek and Mateusz Łącki
+ *   Copyright (C) 2020-2021 Michał Startek and Mateusz Łącki
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License, version 3 only,
@@ -14,6 +14,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #include <cstdlib>
 #include <cassert>
 #include <cstdint>

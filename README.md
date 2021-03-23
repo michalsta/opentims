@@ -34,7 +34,7 @@ On macOS, [install x-tools command line tools](https://www.godo.dev/tutorials/xc
  
 From terminal (assuming you have python and pip included in the system PATH) write
 ```bash
-pip install opentims
+pip install opentimspy
 ```
 For a direct installation from github:
 ```bash
@@ -395,7 +395,7 @@ pprint(X)
 # 3331319   200  911 146843         9
 
 
-# Simple access to 'analysis.tdf'? Sure:
+# Simple access to 'analysis.bin'? Sure:
 tables_names(D)
 #  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
 #  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     

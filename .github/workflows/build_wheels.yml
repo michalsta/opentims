@@ -18,9 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Visual C++ for Python 2.7
-        if: runner.os == 'Windows'
-        run: choco install vcpython27 -f -y
+#      - name: Install Visual C++ for Python 2.7
+#        if: runner.os == 'Windows'
+#        run: choco install vcpython27 -f -y
 
       - name: Build wheels
         uses: joerick/cibuildwheel@v1.10.0

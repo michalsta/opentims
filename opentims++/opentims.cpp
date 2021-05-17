@@ -23,6 +23,7 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <limits>
 #include <unordered_map>
 
 
@@ -386,7 +387,7 @@ TimsFrame& TimsDataHandle::get_frame(uint32_t frame_no)
     return frame_descs.at(frame_no); 
 }
 
-const std::unordered_map<uint32_t, TimsFrame>& TimsDataHandle::get_frame_descs()
+std::unordered_map<uint32_t, TimsFrame>& TimsDataHandle::get_frame_descs()
 {
     return frame_descs;
 }

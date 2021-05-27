@@ -211,9 +211,11 @@ private:
     sqlite3* db_conn;
 #endif
 
+public:
     std::unique_ptr<Tof2MzConverter> tof2mz_converter;
     std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 
+private:
     void init();
 
 #ifdef OPENTIMS_BUILDING_R

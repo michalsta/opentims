@@ -252,7 +252,10 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
     std::locale previous_locale = std::locale::global(std::locale("C"));
 
     if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
+    {
+        std::locale::global(previous_locale);
         throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
+    }
 
     const char sql[] = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
 

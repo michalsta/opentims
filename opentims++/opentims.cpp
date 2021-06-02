@@ -22,6 +22,7 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <locale>
 #include <memory>
 #include <limits>
 #include <unordered_map>
@@ -255,13 +256,18 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 
     char* error = NULL;
 
+    std::locale previous_locale = std::locale::global(std::locale("C"));
+
     if(sqlite3_exec(db_conn, sql, tims_sql_callback, this, &error) != SQLITE_OK)
     {
         std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
         sqlite3_free(error);
         sqlite3_close(db_conn);
+        std::locale::global(previous_locale);
         throw std::runtime_error(err_msg);
     }
+
+    std::locale::global(previous_locale);
 #endif
 }
 

@@ -1,33 +1,65 @@
+import sys
 import pathlib
 from pprint import pprint
 
+import opentimspy
 from opentimspy.opentims import OpenTIMS
 
-path = pathlib.Path('path_to_your_data.d')
+
+# This example will open the TimsTOF data set given as the first argument,
+# and print out all the peaks in a CSV format.
+
+# Check whether the Bruker binary converter is available. If yes, it will be used
+# by default, without any setup necessary. If no, the extra columns will be missing.
+if opentimspy.bruker_bridge_present:
+    all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
+else:
+    print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
+    print("Install the Python module 'opentims_bruker_bridge' if you are on Linux or Windows.")
+    print("Otherwise, you will be able to use only these columns:")
+    all_columns = ('frame','scan','tof','intensity','retention_time')
+
+
+try:
+    path = pathlib.Path(sys.argv[1])
+except IndexError:
+    print("Usage:")
+    print("\tpython", sys.argv[0], "<path to your TimsTOF dataset.d directory>")
+    sys.exit(1)
+
 D = OpenTIMS(path) # get data handle
+
+# prepare and print the CSV header:
+header = '"' + '"\t"'.join(all_columns) + '"'
+print(header)
+
+
+# Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
+for frame_id in D.frames['Id']:
+    frame = D.query(frame_id)
+    peak_idx = 0
+    # Frame is stored as a dict of column vectors
+    while peak_idx < len(frame['frame']):
+        row = [str(frame[colname][peak_idx]) for colname in all_columns]
+        print('\t'.join(row))
+        peak_idx += 1
+
+
+'''
+Advanced usage below. Uncomment to run it.
+
 print(D)
+print(D.frames)
 # OpenTIMS(404183877 peaks)
+print(D[1])
 
 print(len(D)) # The number of peaks.
 # 404183877	
 
-D.framesTIC() # Return combined intensity for each frame.
+
+# Return combined intensity for each frame. This has to iterate over the whole dataset, and will take a while.
+D.framesTIC()
 # array([ 95910, 579150, 906718, ..., 406317,   8093,   8629])
-
-
-try:
-	import opentims_bruker_bridge
-	all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-except ModuleNotFoundError:
-	print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
-	print("Download 'opentims_bruker_bridge' if you are on Linux or Windows.")
-	print("Otherwise, you will be able to use only these columns:")
-	all_columns = ('frame','scan','tof','intensity','retention_time')
-
-
-# We consider the following columns:
-print(all_columns)
-# ('frame', 'scan', 'tof', 'intensity', 'mz', 'inv_ion_mobility', 'retention_time')
 
 
 # Get a dict with data from frames 1, 5, and 67.
@@ -150,3 +182,4 @@ pprint(D[1:10])
 #        [     9,    913, 204042,     10],
 #        [     9,    914, 358144,      9],
 #        [     9,    915, 354086,      9]], dtype=uint32)
+'''

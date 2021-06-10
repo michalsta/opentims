@@ -5,3 +5,5 @@ zstddeclib.o: ../opentims++/zstd/zstddeclib.c
 	$(CC) ../opentims++/zstd/zstddeclib.c -c -o zstddeclib.o
 sqlite3.o: ../opentims++/sqlite/sqlite3.c
 	$(CC) ../opentims++/sqlite/sqlite3.c -c -o sqlite3.o
+clean:
+	rm -f get_data *.o

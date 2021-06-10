@@ -11,3 +11,47 @@ timsVE
 sphinx
 *Rcheck
 *Rhistory
+
+# bloop and metals
+.bloop
+.bsp
+.metals
+
+# scala 3
+.tasty
+
+# vs code
+.vscode
+
+# sbt
+# (may want to keep parts of 'project')
+bin/
+project/
+target/
+build/
+
+# eclipse
+build
+.classpath
+.project
+.settings
+.worksheet
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+# mac
+.DS_Store
+
+# other?
+.history
+.scala_dependencies
+.cache
+.cache-main
+
+#general
+*.class

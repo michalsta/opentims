@@ -121,9 +121,10 @@ class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
     const std::string dll_path;
+    LoadedLibraryHandle lib_hndl;
  public:
-    BrukerTof2MzConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
-    BrukerTof2MzConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
+    BrukerTof2MzConverterFactory(const char* _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
+    BrukerTof2MzConverterFactory(const std::string& _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) override final { return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str()); };
 };
 

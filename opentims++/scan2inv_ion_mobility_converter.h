@@ -136,9 +136,10 @@ class ErrorScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilit
 class BrukerScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilityConverterFactory
 {
     const std::string dll_path;
+    LoadedLibraryHandle lib_hndl;
  public:
-    BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path) : dll_path(_dll_path) {};
-    BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path) : dll_path(_dll_path) {};
+    BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
+    BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
     std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH) override final
     { return std::make_unique<BrukerScan2InvIonMobilityConverter>(TDH, dll_path.c_str()); };
 };

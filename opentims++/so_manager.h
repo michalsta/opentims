@@ -35,7 +35,7 @@ class LoadedLibraryHandle
  public:
     LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
     {
-        os_handle = dlopen(path.c_str(), RTLD_LAZY);
+        os_handle = dlopen(path.c_str(), RTLD_NOW);
         if(os_handle == nullptr)
             throw std::runtime_error(std::string("dlopen(") + path + ") failed, reason: " + dlerror());
     }

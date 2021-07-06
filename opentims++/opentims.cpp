@@ -200,7 +200,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
     if(scan_ids != nullptr)
         for(uint32_t ii = peaks_processed; ii < nnum_peaks; ii++)
-            scan_ids[peaks_processed] = num_scans_m1;
+            scan_ids[ii] = num_scans_m1;
 
     while(peaks_processed < nnum_peaks)
     {

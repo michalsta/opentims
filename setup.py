@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-from os.path import join
+import os.path
 from glob import glob
 
 import setuptools
@@ -29,11 +29,26 @@ elif platform.system().startswith("CYGWIN"):
     dual_build = False
 
 
-# Prefer clang if available
-if os.getenv('ISO_USE_DEFAULT_CXX') == None and spawn.find_executable('clang++') != None:
-    os.environ['CXX'] = 'clang++'
-
 native_build = "CIBUILDWHEEL" not in os.environ
+use_clang = (not windows) and spawn.find_executable('clang++') != None and os.getenv('OPENTIMS_USE_DEFAULT_CXX') == None
+#use_ccache = (not windows) and spawn.find_executable('ccache') != None and native_build
+use_ccache = os.path.exists("./use_ccache")
+
+# Prefer clang on UNIX if available
+if use_clang:
+    if use_ccache:
+        os.environ['CXX'] = 'ccache g++'
+        os.environ['CC'] = 'ccache gcc'
+    else:
+        os.environ['CXX'] = 'clang++'
+else:
+    if use_ccache:
+        os.environ['CXX'] = 'ccache c++'
+        os.environ['CC'] = 'ccache cc'
+    else:
+        # leave defaults
+        pass
+
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
@@ -70,17 +85,17 @@ if dual_build:
     ext_modules = [
         Extension(
             name='opentimspy_support',
-            sources = [join("opentims++", "sqlite", "sqlite3.c"),
-                       join("opentims++", "zstd", "zstddeclib.c")],
+            sources = [os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                       os.path.join("opentims++", "zstd", "zstddeclib.c")],
             extra_compile_args = get_cflags(asan=False, warnings=False, std_flag=False),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         ),
         Extension(
             name='opentimspy_cpp',
-            sources=[join("opentims++","opentims_pybind11.cpp"),
-                     join("opentims++", "tof2mz_converter.cpp"),
-                     join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
+            sources=[os.path.join("opentims++","opentims_pybind11.cpp"),
+                     os.path.join("opentims++", "tof2mz_converter.cpp"),
+                     os.path.join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
             extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -91,11 +106,11 @@ else:
     ext_modules = [
         Extension(
             name='opentimspy_cpp',
-            sources = [join("opentims++", "sqlite", "sqlite3.c"),
-                       join("opentims++", "zstd", "zstddeclib.c"),
-                       join("opentims++", "opentims_pybind11.cpp"),
-                       join("opentims++", "tof2mz_converter.cpp"),
-                       join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
+            sources = [os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                       os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                       os.path.join("opentims++", "opentims_pybind11.cpp"),
+                       os.path.join("opentims++", "tof2mz_converter.cpp"),
+                       os.path.join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
             extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],

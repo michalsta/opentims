@@ -135,6 +135,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
                               double* retention_times,
                               ZSTD_DCtx* decomp_ctx)
 {
+    std::cout << "SAVE TO BUFFS " << num_scans << std::endl;
     if(num_peaks == 0)
         return;
 
@@ -180,8 +181,14 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         const uint32_t for_loop_end = no_peaks + peaks_processed;
 
         if(scan_ids != nullptr)
+        {
+            std::cout << "PP " << peaks_processed << " FLE " << for_loop_end << std::endl;
+         
             for(uint32_t ii = peaks_processed; ii < for_loop_end; ii++)
-                scan_ids[ii] = scan_idx;
+                std::cout << "SCID" << (scan_ids[ii] = scan_idx) << "  " << ii << std::endl;
+        }
+        std::cout << "scan_idx " << scan_idx << std::endl;
+        std::cout << scan_ids << std::endl;
 
         for(uint32_t ii = 0; ii < no_peaks; ii++)
         {

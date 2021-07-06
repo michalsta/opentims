@@ -23,8 +23,23 @@ import opentimspy
 
 from .sql import tables_names, table2dict
 
-all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
+
+columns_dtypes = {  'frame' : np.uint32,
+                    'scan'  : np.uint32,
+                    'tof'   : np.uint32,
+                    'intensity' : np.uint32,
+                    'mz'    : np.double,
+                    'inv_ion_mobility' : np.double,
+                    'retention_time' : np.double,
+                 }
+
+all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time') # in standard ordering
+
+if opentimspy.bruker_bridge_initialized:
+    available_columns = all_columns
+else:
+    available_columns = ('frame','scan','tof','intensity','retention_time')
+
 
 def hash_frame(X,
                columns=('frame','scan','tof','intensity'),
@@ -79,8 +94,7 @@ class OpenTIMS:
         # self.max_frame = self.handle.max_frame_id()
         # self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
         self.peaks_cnt = self.handle.no_peaks_total()
-        self.all_columns = all_columns
-        self.all_columns_dtypes = all_columns_dtype
+        self.all_columns = available_columns
 
     def __len__(self):
         return self.peaks_cnt
@@ -121,16 +135,16 @@ class OpenTIMS:
         return self.handle.no_peaks_in_frames(frames)
 
 
-    def _get_empty_arrays(self, size, selected_columns=all_columns):
+    def _get_empty_arrays(self, size, selected_columns=available_columns):
         """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
+        assert all(c in self.all_columns for c in selected_columns), f"Available column names: {self.all_columns}"
+        ret= {col: np.empty(shape=size if col in selected_columns else 0,dtype=columns_dtypes[col]) for col in all_columns}
+        print(len(ret))
+        return ret
 
-        return {col: np.empty(shape=size if col in selected_columns else 0,
-                              dtype=dtype) 
-                for col, dtype in zip(self.all_columns, 
-                                      self.all_columns_dtypes)}
 
 
-    def query(self, frames, columns=all_columns):
+    def query(self, frames, columns=available_columns):
         """Get data from a selection of frames.
 
         Args:
@@ -139,7 +153,6 @@ class OpenTIMS:
         Returns:
             dict: columns to numpy array mapping.
         """
-        assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
 
         try:
             frames = np.r_[frames].astype(np.uint32)

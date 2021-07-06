@@ -1,6 +1,9 @@
 # This Makefile is for the convenience of the package developers,
 # and is not meant for use by end-users.
-
+CC=ccache gcc
+CXX=ccache g++
+all:
+	echo "Boo!"
 reinstall: pyclean pipclean
 	pip install . --user --verbose --no-cache
 reinstall_ve: pyclean pipclean

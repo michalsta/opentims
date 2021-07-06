@@ -27,7 +27,10 @@ template<typename T> T* get_ptr(py::buffer& buf)
 {
     py::buffer_info buf_info = buf.request();
     if(buf_info.size == 0)
+    {
+        std::cout << "Returning nullptr\n";
         return nullptr;
+    }
     return static_cast<T*>(buf_info.ptr);
 }
 

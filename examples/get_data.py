@@ -43,6 +43,7 @@ for frame_id in D.frames['Id']:
         row = [str(frame[colname][peak_idx]) for colname in all_columns]
         print('\t'.join(row))
         peak_idx += 1
+    sys.exit(0)
 
 
 '''

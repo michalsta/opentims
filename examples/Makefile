@@ -1,5 +1,5 @@
 get_data_cpp: support
-	$(CXX) -std=c++17 sqlite3.o zstddeclib.o get_data.cpp -o get_data -ldl -lpthread
+	$(CXX) -std=c++17 sqlite3.o zstddeclib.o get_data.cpp -o get_data -ldl -lpthread -g -Og
 support: sqlite3.o zstddeclib.o
 zstddeclib.o: ../opentims++/zstd/zstddeclib.c
 	$(CC) ../opentims++/zstd/zstddeclib.c -c -o zstddeclib.o

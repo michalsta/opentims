@@ -57,4 +57,4 @@ if bruker_bridge_present:
 
         raise ImportError('\n'.join(errmsg))
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"

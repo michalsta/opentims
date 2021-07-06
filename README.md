@@ -36,9 +36,9 @@ From terminal (assuming you have python and pip included in the system PATH) wri
 ```bash
 pip install opentimspy
 ```
-For a direct installation from github:
+We recommend also installing the opentims_bruker_bridge module, containing Bruker's proprietary conversion functions (Linux and Windows only). To do that, do:
 ```bash
-pip install git+https://github.com/michalsta/opentims
+pip install opentims_bruker_bridge
 ```
 
 **On Windows**: we have noticed issues with the numpy==1.19.4 due to changes in Intel's fmod function, unrelated to our work. 

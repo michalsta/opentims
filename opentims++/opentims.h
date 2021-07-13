@@ -200,6 +200,7 @@ private:
     uint32_t _max_frame_id;
 
     std::unique_ptr<char[]> decompression_buffer;
+    size_t decomp_buffer_size;
 
     std::unique_ptr<uint32_t[]> _scan_ids_buffer;
     std::unique_ptr<uint32_t[]> _tofs_buffer;
@@ -212,6 +213,7 @@ private:
 #endif
 
 public:
+    size_t get_decomp_buffer_size() const { return decomp_buffer_size; };
     std::unique_ptr<Tof2MzConverter> tof2mz_converter;
     std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 

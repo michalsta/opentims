@@ -279,7 +279,7 @@ void TimsDataHandle::init()
 {
     _min_frame_id = (std::numeric_limits<uint32_t>::max)();
     _max_frame_id = (std::numeric_limits<uint32_t>::min)();
-    size_t decomp_buffer_size = 0;
+    decomp_buffer_size = 0;
     for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
     {
         _min_frame_id = (std::min)(_min_frame_id, it->first);

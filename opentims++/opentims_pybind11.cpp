@@ -18,6 +18,7 @@
 #include <pybind11/pybind11.h>
 #include <cstdint>
 #include "opentims.cpp"
+#include "converters.cpp"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -160,7 +161,6 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {
-                                    DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
-                                    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
+                                    setup_bruker(path);
                                 });
 }

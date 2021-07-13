@@ -15,7 +15,6 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "opentims.cpp"
-#include "scan2inv_ion_mobility_converter.cpp"
-#include "tof2mz_converter.cpp"
-#include "converters.cpp"
+#pragma once
+
+void setup_bruker(const std::string& path);

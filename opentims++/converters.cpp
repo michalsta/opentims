@@ -15,7 +15,8 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "opentims.cpp"
-#include "scan2inv_ion_mobility_converter.cpp"
-#include "tof2mz_converter.cpp"
-#include "converters.cpp"
+void setup_bruker(const std::string& path)
+{
+    DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
+    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
+};

@@ -1,4 +1,6 @@
-all: zstddeclib.o sqlite3.o
+lib: zstddeclib.o sqlite3.o *.cpp *.h
+	g++ opentims_all.cpp -Wall -Wextra -pedantic -std=c++14 -O3 -g zstddeclib.o sqlite3.o -lpthread -ldl -shared -fPIC -o libopentims.so
+test: zstddeclib.o sqlite3.o
 	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -O3 -g zstddeclib.o sqlite3.o -lpthread -ldl
 	#clang++ sqlite3.o tims2hdf5.cpp -lpthread -ldl -lzstd -lhdf5 -g -o tims2hdf5
 check-gcc:
@@ -6,9 +8,9 @@ check-gcc:
 dbg: zstddeclib.o sqlite3.o
 	g++ test.cpp -Wall -Wextra -pedantic -std=c++14 -Og -g zstddeclib.o sqlite3.o -lpthread -ldl
 sqlite3.o: sqlite/*
-	gcc -c -O2 sqlite/sqlite3.c -o sqlite3.o
+	gcc -c -O2 sqlite/sqlite3.c -o sqlite3.o -fPIC
 zstddeclib.o: zstd/*
-	gcc -c -O3 zstd/zstddeclib.c -o zstddeclib.o
+	gcc -c -O3 zstd/zstddeclib.c -o zstddeclib.o -fPIC
 check:
 	clang++ opentims.cpp -Weverything -fsyntax-only -std=c++14 -Wno-c++98-compat
 clean:

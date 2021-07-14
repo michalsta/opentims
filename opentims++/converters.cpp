@@ -20,3 +20,11 @@ void setup_bruker(const std::string& path)
     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
     DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
 };
+
+extern "C"
+{
+void setup_bruker_c(const char* path)
+{
+    return setup_bruker(std::string(path));
+}
+}

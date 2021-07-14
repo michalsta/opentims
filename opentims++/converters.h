@@ -18,3 +18,7 @@
 #pragma once
 
 void setup_bruker(const std::string& path);
+
+extern "C" {
+    void setup_bruker_c(const char* path);
+}

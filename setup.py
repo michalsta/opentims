@@ -84,7 +84,7 @@ class get_pybind_include(object):
 if dual_build:
     ext_modules = [
         Extension(
-            name='opentimspy_support',
+            name='libopentims_support',
             sources = [os.path.join("opentims++", "sqlite", "sqlite3.c"),
                        os.path.join("opentims++", "zstd", "zstddeclib.c")],
             extra_compile_args = get_cflags(asan=False, warnings=False, std_flag=False),
@@ -100,7 +100,13 @@ if dual_build:
             libraries='pthread dl'.split(),
             include_dirs=[get_pybind_include()],
             undef_macros = [] if not build_asan else [ "NDEBUG" ]
-        )
+        ),
+        Extension(
+            name='libopentims_cpp',
+            sources=[os.path.join("opentims++","opentims_all.cpp")],
+            extra_compile_args = get_cflags(asan=False, std_flag=True),
+            libraries= '' if windows else 'pthread dl'.split(),
+            )
     ]
 else:
     ext_modules = [
@@ -133,10 +139,13 @@ setup(
              'Programming Language :: Python :: 3.7',
              'Programming Language :: Python :: 3.8',
              'Programming Language :: Python :: 3.9'],
+    zip_safe=False,
     setup_requires=['pybind11'],
     install_requires=['pybind11','numpy'],
     ext_modules=ext_modules,
     package_dir={'opentimspy':'opentimspy'},
+    package_data={'opentimspy':['opentims++/*.h', 'opentims++/*/*.h', 'opentims++/*.hpp']},
+
     extras_require = {
         'bruker_proprietary': ['opentims_bruker_bridge']
     }

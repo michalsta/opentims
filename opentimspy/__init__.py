@@ -13,13 +13,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import pathlib
 
 try:
     import opentimspy_cpp
 except ImportError:
     import ctypes
     import pkgutil
-    support_lib = pkgutil.get_loader("opentimspy_support")
+    support_lib = pkgutil.get_loader("libopentims_support")
     ctypes.CDLL(support_lib.get_filename(), ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
@@ -56,5 +57,9 @@ if bruker_bridge_present:
         errmsg.append("Please either fix one of the above errors, or uninstall opentims_bruker_bridge module.")
 
         raise ImportError('\n'.join(errmsg))
+
+
+def get_module_dir():
+    return pathlib.Path(__file__).parent
 
 __version__ = "1.0.7"

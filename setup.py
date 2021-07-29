@@ -88,7 +88,7 @@ if dual_build:
             sources = [os.path.join("opentims++", "sqlite", "sqlite3.c"),
                        os.path.join("opentims++", "zstd", "zstddeclib.c")],
             extra_compile_args = get_cflags(asan=False, warnings=False, std_flag=False),
-            libraries= '' if windows else 'pthread dl'.split(),
+            libraries= [] if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
         ),
         Extension(
@@ -97,7 +97,7 @@ if dual_build:
                      os.path.join("opentims++", "tof2mz_converter.cpp"),
                      os.path.join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
             extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
-            libraries='pthread dl'.split(),
+            libraries= [] if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
             undef_macros = [] if not build_asan else [ "NDEBUG" ]
         ),
@@ -105,7 +105,7 @@ if dual_build:
             name='libopentims_cpp',
             sources=[os.path.join("opentims++","opentims_all.cpp")],
             extra_compile_args = get_cflags(asan=False, std_flag=True),
-            libraries= '' if windows else 'pthread dl'.split(),
+            libraries= [] if windows else 'pthread dl'.split(),
             )
     ]
 else:

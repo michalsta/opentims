@@ -26,7 +26,7 @@
 
 #if defined(OPENTIMS_UNIX)
 
-#include "dlfcn.h"
+#include <dlfcn.h>
 
 class LoadedLibraryHandle
 // RAII-style wrapper for results of dlopen()

@@ -41,8 +41,8 @@ class Scan2InvIonMobilityConverter
                          double* inv_ion_mobilities,
                          const uint32_t* scans,
                          uint32_t size) = 0;
-    virtual ~Scan2InvIonMobilityConverter() {};
-    virtual std::string description() const { return "Scan2InvIonMobilityConverter default"; };
+    virtual ~Scan2InvIonMobilityConverter();
+    virtual std::string description() const;
 };
 
 class ErrorScan2InvIonMobilityConverter : public Scan2InvIonMobilityConverter
@@ -64,14 +64,7 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
     tims_close_fun_t* tims_close;
     tims_convert_fun_t* tims_scannum_to_inv_ion_mobility;
 
-    std::string get_tims_error()
-    {
-        const size_t buf_size = 10000;
-        std::unique_ptr<char[]> buf = std::make_unique<char[]>(buf_size);
-        tims_get_last_error_string(buf.get(), buf_size-1);
-        buf[buf_size-1] = '\0';
-        return std::string(buf.get());
-    }
+    std::string get_tims_error();
 
  public:
     BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path);

@@ -19,6 +19,13 @@
 
 std::unique_ptr<Scan2InvIonMobilityConverterFactory> DefaultScan2InvIonMobilityConverterFactory::fac_instance;
 
+Scan2InvIonMobilityConverter::~Scan2InvIonMobilityConverter() {};
+
+std::string Scan2InvIonMobilityConverter::description() const
+{
+    return "Scan2InvIonMobilityConverter default";
+};
+
 /*
  * ErrorScan2InvIonMobilityConverter implementation
  */
@@ -43,6 +50,15 @@ std::string ErrorScan2InvIonMobilityConverter::description() const
 /*
  * BrukerScan2InvIonMobilityConverter implementation
  */
+
+std::string BrukerScan2InvIonMobilityConverter::get_tims_error()
+{
+    const size_t buf_size = 10000;
+    std::unique_ptr<char[]> buf = std::make_unique<char[]>(buf_size);
+    tims_get_last_error_string(buf.get(), buf_size-1);
+    buf[buf_size-1] = '\0';
+    return std::string(buf.get());
+}
 
 BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path) : lib_handle(lib_path), bruker_file_handle(0)
 {

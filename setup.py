@@ -93,9 +93,7 @@ if dual_build:
         ),
         Extension(
             name='opentimspy_cpp',
-            sources=[os.path.join("opentims++","opentims_pybind11.cpp"),
-                     os.path.join("opentims++", "tof2mz_converter.cpp"),
-                     os.path.join("opentims++", "scan2inv_ion_mobility_converter.cpp"),],
+            sources=[os.path.join("opentims++","opentims_pybind11.cpp"),],
             extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries= [] if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
@@ -114,13 +112,19 @@ else:
             name='opentimspy_cpp',
             sources = [os.path.join("opentims++", "sqlite", "sqlite3.c"),
                        os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                       os.path.join("opentims++", "opentims_pybind11.cpp"),
-                       os.path.join("opentims++", "tof2mz_converter.cpp"),
-                       os.path.join("opentims++", "scan2inv_ion_mobility_converter.cpp")],
+                       os.path.join("opentims++", "opentims_pybind11.cpp"),],
             extra_compile_args = get_cflags(asan=build_asan, std_flag=True),
             libraries= '' if windows else 'pthread dl'.split(),
             include_dirs=[get_pybind_include()],
-        )]
+        ),
+        Extension(
+            name='libopentims_cpp',
+            sources=[os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                     os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                     os.path.join("opentims++","opentims_all.cpp")],
+            extra_compile_args = get_cflags(asan=False, std_flag=True),
+            libraries= [] if windows else 'pthread dl'.split(),
+            )]
 
 
 setup(

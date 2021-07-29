@@ -62,4 +62,4 @@ if bruker_bridge_present:
 def get_module_dir():
     return pathlib.Path(__file__).parent
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"

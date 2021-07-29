@@ -126,7 +126,7 @@ else:
 setup(
     name='opentimspy',
     packages=['opentimspy'],
-    version='1.0.7',
+    version='1.0.8',
     author='Mateusz Krzysztof Łącki (MatteoLacki), Michał Startek (michalsta)',
     author_email='matteo.lacki@gmail.com, michal.startek@mimuw.edu.pl',
     description='opentimspy: An open-source parser of Bruker Tims Data File (.tdf).',
@@ -147,6 +147,6 @@ setup(
     package_data={'opentimspy':['opentims++/*.h', 'opentims++/*/*.h', 'opentims++/*.hpp']},
 
     extras_require = {
-        'bruker_proprietary': ['opentims_bruker_bridge']
+        'bruker_proprietary': ['opentims_bruker_bridge>=1.0.3']
     }
 )

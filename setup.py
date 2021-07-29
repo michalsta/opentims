@@ -121,7 +121,7 @@ else:
             name='libopentims_cpp',
             sources=[os.path.join("opentims++", "sqlite", "sqlite3.c"),
                      os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                     os.path.join("opentims++","opentims_all.cpp")],
+                     os.path.join("opentims++","libopentims_py.cpp")],
             extra_compile_args = get_cflags(asan=False, std_flag=True),
             libraries= [] if windows else 'pthread dl'.split(),
             )]

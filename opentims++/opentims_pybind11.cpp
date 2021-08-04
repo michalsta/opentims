@@ -17,7 +17,7 @@
 
 #include <pybind11/pybind11.h>
 #include <cstdint>
-#include "opentims_all.cpp"
+#include "opentims_all.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;

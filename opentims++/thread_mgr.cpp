@@ -30,7 +30,10 @@ void ThreadingManager::converter_threading()
 
 void ThreadingManager::set_num_threads(size_t n)
 {
-    n_threads = n;
+    if(n == 0)
+        n_threads = std::thread::hardware_concurrency();
+    else
+        n_threads = n;
 }
 
 

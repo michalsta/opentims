@@ -65,4 +65,7 @@ if bruker_bridge_present:
 def get_module_dir():
     return pathlib.Path(__file__).parent
 
+
+from opentimspy.opentims import OpenTIMS
+
 __version__ = "1.0.8"

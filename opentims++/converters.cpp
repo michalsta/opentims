@@ -15,10 +15,16 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tof2mz_converter.h"
+#include "scan2inv_ion_mobility_converter.h"
+#include "thread_mgr.h"
+#include "converters.h"
+
 void setup_bruker(const std::string& path)
 {
     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
     DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
+    BrukerThreadingManager::SetupBrukerThreading(path);
 };
 
 extern "C"

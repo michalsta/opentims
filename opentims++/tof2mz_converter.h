@@ -49,7 +49,7 @@ class ErrorTof2MzConverter : public Tof2MzConverter
 
 class BrukerTof2MzConverter final : public Tof2MzConverter
 {
-    LoadedLibraryHandle lib_handle;
+    const LoadedLibraryHandle lib_handle;
     uint64_t bruker_file_handle;
 
     tims_open_fun_t* tims_open;
@@ -85,7 +85,7 @@ class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
     const std::string dll_path;
-    LoadedLibraryHandle lib_hndl;
+    const LoadedLibraryHandle lib_hndl;
  public:
     BrukerTof2MzConverterFactory(const char* _dll_path);
     BrukerTof2MzConverterFactory(const std::string& _dll_path);

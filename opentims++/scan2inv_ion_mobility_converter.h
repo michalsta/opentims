@@ -56,7 +56,7 @@ class ErrorScan2InvIonMobilityConverter : public Scan2InvIonMobilityConverter
 
 class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConverter
 {
-    LoadedLibraryHandle lib_handle;
+    const LoadedLibraryHandle lib_handle;
     uint64_t bruker_file_handle;
 
     tims_open_fun_t* tims_open;
@@ -95,7 +95,7 @@ class ErrorScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilit
 class BrukerScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilityConverterFactory
 {
     const std::string dll_path;
-    LoadedLibraryHandle lib_hndl;
+    const LoadedLibraryHandle lib_hndl;
  public:
     BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path);
     BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path);

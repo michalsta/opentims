@@ -22,15 +22,13 @@
 #include "opentimsr_types.h"
 
 // adding default converters.
-#include "scan2inv_ion_mobility_converter.h"
-#include "tof2mz_converter.h"
+#include "converters.h"
 
 
 // [[Rcpp::export(.setup_bruker_so)]]
 void setup_bruker_so(const Rcpp::String& path)
 {
-    DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.get_cstring());
-    DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.get_cstring());
+    setup_bruker(std::string(path.get_cstring()));
 }
 
 

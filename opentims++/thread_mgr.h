@@ -1,5 +1,8 @@
 #pragma once
 
+#include "bruker_api.h"
+#include "so_manager.h"
+
 class ThreadingManager
 {
  protected:

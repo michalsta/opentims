@@ -1,5 +1,7 @@
 #include <thread>
 #include "thread_mgr.h"
+#include "so_manager.h"
+#include "bruker_api.h"
 
 std::unique_ptr<ThreadingManager> ThreadingManager::instance;
 

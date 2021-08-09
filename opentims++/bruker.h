@@ -25,5 +25,6 @@ typedef uint32_t tims_scan2inv_ion_mobility_fun_t(uint64_t file_hndl, int64_t fr
 
 typedef uint32_t tims_get_last_error_string_fun_t(char *target, uint32_t str_length);
 
-typedef void tims_close_fun_t (uint64_t file_hndl);
+typedef void tims_close_fun_t(uint64_t file_hndl);
 
+typedef void tims_set_num_threads_t(uint32_t n);

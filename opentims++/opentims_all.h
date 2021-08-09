@@ -5,3 +5,4 @@
 #include "so_manager.h"
 #include "tof2mz_converter.h"
 #include "converters.h"
+#include "thread_mgr.h"

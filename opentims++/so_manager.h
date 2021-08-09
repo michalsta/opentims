@@ -47,7 +47,7 @@ class LoadedLibraryHandle
         // Deliberately not handling errors in dlclose() call here.
     }
 
-    template<typename T> T* symbol_lookup(const std::string& symbol_name)
+    template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {
         dlerror(); // Clear dllerror
         void* ret = dlsym(os_handle, symbol_name.c_str()); // nullptr might be a valid result here, got to check dlerror...
@@ -83,7 +83,7 @@ class LoadedLibraryHandle
             FreeLibrary(os_handle);
     }
 
-    template<typename T> T* symbol_lookup(const std::string& symbol_name)
+    template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {
         FARPROC ret = GetProcAddress(os_handle, symbol_name.c_str()); // nullptr might be a valid result here, got to check dlerror...
         if(ret == nullptr)
@@ -107,7 +107,7 @@ class LoadedLibraryHandle
 
     ~LoadedLibraryHandle() {}
 
-    template<typename T> T* symbol_lookup(const std::string& symbol_name)
+    template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {
         throw std::runtime_error(std::string("Loading additional libraries is not supported on your platform"));
     }

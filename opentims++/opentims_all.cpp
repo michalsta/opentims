@@ -19,3 +19,4 @@
 #include "scan2inv_ion_mobility_converter.cpp"
 #include "tof2mz_converter.cpp"
 #include "converters.cpp"
+#include "thread_mgr.cpp"

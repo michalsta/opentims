@@ -18,7 +18,7 @@
 #pragma once
 
 #include <memory>
-#include "bruker.h"
+#include "bruker_api.h"
 #include "platform.h"
 
 #ifdef OPENTIMS_BUILDING_R

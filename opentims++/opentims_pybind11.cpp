@@ -17,8 +17,8 @@
 
 #include <pybind11/pybind11.h>
 #include <cstdint>
+#include "platform.h"
 #ifdef OPENTIMS_WINDOWS
-#error "WTF"
 #include "opentims_all.cpp"
 #else
 #include "opentims_all.h"

@@ -17,7 +17,11 @@
 
 #include <pybind11/pybind11.h>
 #include <cstdint>
+#ifdef OPENTIMS_WINDOWS
+#include "opentims_all.cpp"
+#else
 #include "opentims_all.h"
+#endif
 
 namespace py = pybind11;
 using namespace pybind11::literals;

@@ -68,4 +68,16 @@ def get_module_dir():
 
 from opentimspy.opentims import OpenTIMS
 
+def set_num_threads(n):
+    '''
+    Set the numer of worker threads that OpenTIMS is allowed to use
+    during its calculations. Note: a setting of 1 still means OpenTIMS
+    might spawn a separate worker thread, just that at most 1 thread
+    at a time will be doing heavy computations.
+
+    A setting of 0 means to use all available cores (this is the default
+    behaviour)
+    '''
+    opentims_cpp.set_num_threads(n)
+
 __version__ = "1.0.8"

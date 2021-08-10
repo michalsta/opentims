@@ -15,10 +15,10 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "converters.h"
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
-#include "converters.h"
 
 void setup_bruker(const std::string& path)
 {

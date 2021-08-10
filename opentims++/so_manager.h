@@ -33,19 +33,8 @@ class LoadedLibraryHandle
 {
     void* os_handle;
  public:
-    LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
-    {
-        os_handle = dlopen(path.c_str(), RTLD_NOW);
-        if(os_handle == nullptr)
-            throw std::runtime_error(std::string("dlopen(") + path + ") failed, reason: " + dlerror());
-    }
-
-    ~LoadedLibraryHandle()
-    {
-        if(os_handle != nullptr)
-            dlclose(os_handle);
-        // Deliberately not handling errors in dlclose() call here.
-    }
+    LoadedLibraryHandle(const std::string& path);
+    ~LoadedLibraryHandle();
 
     template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {
@@ -70,18 +59,8 @@ class LoadedLibraryHandle
 {
     HMODULE os_handle;
  public:
-    LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
-    {
-        os_handle = LoadLibraryA(path.c_str());
-        if(os_handle == nullptr)
-            throw std::runtime_error(std::string("LoadLibraryA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
-    }
-
-    ~LoadedLibraryHandle()
-    {
-        if(os_handle != nullptr)
-            FreeLibrary(os_handle);
-    }
+    LoadedLibraryHandle(const std::string& path);
+    ~LoadedLibraryHandle();
 
     template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {
@@ -94,8 +73,6 @@ class LoadedLibraryHandle
 
 
 
-
-
 #else
 // provide empty stubs
 
@@ -103,9 +80,8 @@ class LoadedLibraryHandle
 // RAII-style wrapper for results of dlopen()
 {
  public:
-    LoadedLibraryHandle(const std::string&) {}
-
-    ~LoadedLibraryHandle() {}
+    LoadedLibraryHandle(const std::string&);
+    ~LoadedLibraryHandle();
 
     template<typename T> T* symbol_lookup(const std::string& symbol_name) const
     {

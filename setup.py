@@ -130,7 +130,7 @@ else:
 setup(
     name='opentimspy',
     packages=['opentimspy'],
-    version='1.0.9a1',
+    version='1.0.9a2',
     author='Mateusz Krzysztof Łącki (MatteoLacki), Michał Startek (michalsta)',
     author_email='matteo.lacki@gmail.com, michal.startek@mimuw.edu.pl',
     description='opentimspy: An open-source parser of Bruker Tims Data File (.tdf).',

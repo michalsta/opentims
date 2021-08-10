@@ -3,8 +3,7 @@ import pathlib
 from pprint import pprint
 
 import opentimspy
-from opentimspy.opentims import OpenTIMS
-
+from opentimspy import OpenTIMS
 
 # This example will open the TimsTOF data set given as the first argument,
 # and print out all the peaks in a CSV format.

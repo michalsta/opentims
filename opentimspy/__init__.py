@@ -78,6 +78,6 @@ def set_num_threads(n):
     A setting of 0 means to use all available cores (this is the default
     behaviour)
     '''
-    opentims_cpp.set_num_threads(n)
+    opentimspy_cpp.set_num_threads(n)
 
 __version__ = "1.0.9a1"

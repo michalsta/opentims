@@ -20,7 +20,7 @@ windows = platform.system() == 'Windows'
 # Dual-build: work-around for the fact that we have both C and C++ files in the extension, and sometimes need
 # to split it into two. Windows and CYGWIN for now seems to need dual_build set to False, OSX to True, Linux seems fine
 # with either setting.
-dual_build = True
+dual_build = not windows
 
 if platform.system() == "Windows":
     assert not build_asan

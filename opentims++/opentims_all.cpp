@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "opentims_all.h"
 #include "opentims.cpp"
 #include "scan2inv_ion_mobility_converter.cpp"
 #include "tof2mz_converter.cpp"

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "platform.h"
 #include "opentims.h"
 #include "bruker_api.h"

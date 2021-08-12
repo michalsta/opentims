@@ -21,4 +21,4 @@
 #include "tof2mz_converter.cpp"
 #include "converters.cpp"
 #include "thread_mgr.cpp"
-#include "so_manager.h"
+#include "so_manager.cpp"

@@ -41,3 +41,5 @@ LoadedLibraryHandle::~LoadedLibraryHandle()
 
 LoadedLibraryHandle::LoadedLibraryHandle(const std::string& path) {};
 LoadedLibraryHandle::~LoadedLibraryHandle() {};
+
+#endif

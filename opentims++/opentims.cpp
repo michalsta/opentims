@@ -245,6 +245,20 @@ int tims_sql_callback(void* out, int cols, char** row, char**)
     return 0;
 }
 
+int check_compression(void*, int cols, char** row, char**)
+{
+    assert(cols == 1);
+    assert(row != NULL);
+    assert(row[0] != NULL);
+    if(atoi(row[0]) != 2)
+    {
+        std::string error_msg = "Compression algorithm used in your TDF dataset: ";
+        error_msg += row[0];
+        error_msg += " is not (yet) supported by OpenTIMS. Right now only algorithm 2 (zstd) is supported.";
+        throw std::runtime_error(error_msg);
+    }
+    return 0;
+}
 
 #ifndef OPENTIMS_BUILDING_R
 namespace{
@@ -296,6 +310,7 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
     const std::string sql = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
 
     DB.query(sql, tims_sql_callback, this);
+    DB.query("SELECT Value FROM GlobalMetadata WHERE Key == \"TimsCompressionType\";", check_compression, nullptr);
 
     db_conn = DB.release_connection();
 

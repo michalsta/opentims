@@ -245,17 +245,23 @@ int tims_sql_callback(void* out, int cols, char** row, char**)
     return 0;
 }
 
+namespace{
+class RAIILocaleHelper
+{
+    const std::locale previous_locale;
+ public:
+    RAIILocaleHelper() : previous_locale(std::locale::global(std::locale("C"))) {};
+    ~RAIILocaleHelper() { std::locale::global(previous_locale); };
+};
+}
 
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 {
 #ifndef OPENTIMS_BUILDING_R
-    std::locale previous_locale = std::locale::global(std::locale("C"));
+    RAIILocaleHelper locale_guard;
 
     if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
-    {
-        std::locale::global(previous_locale);
         throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
-    }
 
     const char sql[] = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
 
@@ -266,11 +272,8 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
         std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
         sqlite3_free(error);
         sqlite3_close(db_conn);
-        std::locale::global(previous_locale);
         throw std::runtime_error(err_msg);
     }
-
-    std::locale::global(previous_locale);
 #endif
 }
 

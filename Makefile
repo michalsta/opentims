@@ -1,5 +1,5 @@
 # This Makefile is for the convenience of the package developers,
-# and is not meant for use by end-users.
+# and is not meant for use by end-users or packagers.
 
 reinstall: pyclean pipclean
 	pip install . --user --verbose --no-cache

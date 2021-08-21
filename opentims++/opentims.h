@@ -389,6 +389,34 @@ public:
                               double* inv_ion_mobilities,
                               double* retention_times);
 
+    //! Extract a subset of frames, selected by indexes, filling provided buffers with MS peak data.
+    /**
+     * The data is saved to the passed arrays of buffers - if some of this data is unnecessary, then
+     * nullptr-filled array may be passed as the corresponding argument.
+     *
+     * Each array (for example scan_ids array) must hold indexes.size() pointers.
+     * Each of these pointers must be a nullptr, or must point to a block of memory
+     * able to hold enough values: for example array pointed to by tofs[13] must be able
+     * to hold this->get_frame(indexes[13]).num_peaks values.
+     *
+     * @param indexes       Set of indexes of frames for which data is to be obtained.
+     * @param frame_ids     The IDs of frames containing the associated peaks.
+     * @param scan_ids      IDs of the scan a peak comes from.
+     * @param tofs          Times of Flight of peaks.
+     * @param intensities   Signal intensities of peaks.
+     * @param mzs           M/Z ratios of peaks.
+     * @param inv_ion_mobilities    Inverse ion mobilities (in seconds).
+     * @param retention_times       Retention times (in seconds).
+     */
+    void extract_frames(const std::vector<uint32_t>& indexes,
+                        uint32_t* const * frame_ids,
+                        uint32_t* const * scan_ids,
+                        uint32_t* const * tofs,
+                        uint32_t* const * intensities,
+                        double* const * mzs,
+                        double* const * inv_ion_mobilities,
+                        double* const * retention_times);
+
     void allocate_buffers();
 
     inline void ensure_buffers_allocated() { if(_scan_ids_buffer) return; allocate_buffers(); };

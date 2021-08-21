@@ -274,6 +274,20 @@ class OpenTIMS:
         self.handle.extract_frames_slice(start, stop, step, X)
         return X    
 
+    def get_separate_frames(self, frame_ids, columns = all_columns):
+        if not isinstance(frame_ids, list):
+            frame_ids = list(frame_ids)
+        col_b = [col in columns for col in all_columns]
+        A = self.handle.extract_separate_frames(frame_ids, *col_b)
+        ret = {}
+        for ii in range(len(frame_ids)):
+            X = {}
+            for jj in range(len(all_columns)):
+                if col_b[jj]:
+                    X[all_columns[jj]] = A[jj][ii]
+            ret[frame_ids[ii]] = X
+        return ret
+
 
     def __getitem__(self, frames):
         """Get raw data array for given frames and scans.
@@ -335,7 +349,6 @@ class OpenTIMS:
                                                       self.max_frame+1),
                                          columns=columns)]
 
-    #TODO: port to C++
     @functools.lru_cache(maxsize=1)
     def framesTIC(self):
         """Get the Total Ion Current for each frame.

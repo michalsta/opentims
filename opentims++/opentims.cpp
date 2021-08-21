@@ -578,6 +578,23 @@ size_t TimsDataHandle::expose_frame(size_t frame_no)
     return frame.num_peaks;
 }
 
+void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
+                                    uint32_t* const * frame_ids,
+                                    uint32_t* const * scan_ids,
+                                    uint32_t* const * tofs,
+                                    uint32_t* const * intensities,
+                                    double* const * mzs,
+                                    double* const * inv_ion_mobilities,
+                                    double* const * retention_times)
+{
+    for(size_t ii = 0; ii < indexes.size(); ii++)
+    {
+        TimsFrame& frame = get_frame(indexes[ii]);
+        frame.save_to_buffs(frame_ids[ii], scan_ids[ii], tofs[ii], intensities[ii], mzs[ii], inv_ion_mobilities[ii], retention_times[ii]);
+    }
+}
+
+
 void TimsDataHandle::per_frame_TIC(uint32_t* result)
 {
     std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(max_peaks_in_frame());

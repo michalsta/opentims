@@ -25,7 +25,7 @@ void setup_bruker(const std::string& path)
     DefaultTof2MzConverterFactory::setAsDefault<BrukerTof2MzConverterFactory, const char*>(path.c_str());
     DefaultScan2InvIonMobilityConverterFactory::setAsDefault<BrukerScan2InvIonMobilityConverterFactory, const char*>(path.c_str());
     BrukerThreadingManager::SetupBrukerThreading(path);
-};
+}
 
 extern "C"
 {

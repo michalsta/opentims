@@ -11,7 +11,7 @@ n_threads(std::thread::hardware_concurrency()),
 is_opentims_threading(false)
 {}
 
-ThreadingManager::~ThreadingManager() {};
+ThreadingManager::~ThreadingManager() {}
 
 ThreadingManager* ThreadingManager::get_instance()
 {
@@ -52,7 +52,7 @@ tims_set_num_threads(bruker_lib.symbol_lookup<tims_set_num_threads_t>("tims_set_
     set_bruker_threads();
 }
 
-BrukerThreadingManager::~BrukerThreadingManager() {};
+BrukerThreadingManager::~BrukerThreadingManager() {}
 
 void BrukerThreadingManager::SetupBrukerThreading(const std::string& bruker_so_path)
 {

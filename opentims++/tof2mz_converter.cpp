@@ -19,26 +19,26 @@
 
 std::unique_ptr<Tof2MzConverterFactory> DefaultTof2MzConverterFactory::fac_instance;
 
-Tof2MzConverter::~Tof2MzConverter() {};
+Tof2MzConverter::~Tof2MzConverter() {}
 
-std::string Tof2MzConverter::description() { return "Tof2MzConverter default"; };
+std::string Tof2MzConverter::description() { return "Tof2MzConverter default"; }
 
 /*
  * ErrorTof2MzConverter implementation
  */
-ErrorTof2MzConverter::ErrorTof2MzConverter(TimsDataHandle&) {};
+ErrorTof2MzConverter::ErrorTof2MzConverter(TimsDataHandle&) {}
 
 void ErrorTof2MzConverter::convert(uint32_t, double*, const double*, uint32_t)
 {
     throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
-};
+}
 
 void ErrorTof2MzConverter::convert(uint32_t, double*, const uint32_t*, uint32_t)
 {
     throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
-};
+}
 
-std::string ErrorTof2MzConverter::description() { return "ErrorTof2MzConverter default"; };
+std::string ErrorTof2MzConverter::description() { return "ErrorTof2MzConverter default"; }
 
 /*
  * BrukerTof2MzConverter implementation
@@ -51,7 +51,7 @@ std::string BrukerTof2MzConverter::get_tims_error()
     tims_get_last_error_string(buf.get(), buf_size-1);
     buf[buf_size-1] = '\0';
     return std::string(buf.get());
-};
+}
 
 BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path) : lib_handle(lib_path), bruker_file_handle(0)
 {
@@ -64,17 +64,17 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
 
     if(bruker_file_handle == 0)
         throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
-};
+}
 
 BrukerTof2MzConverter::~BrukerTof2MzConverter()
 {
     if(bruker_file_handle != 0) tims_close(bruker_file_handle);
-};
+}
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size)
 {
     tims_index_to_mz(bruker_file_handle, frame_id, tofs, mzs, size);
-};
+}
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size)
 {
@@ -82,18 +82,18 @@ void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_tofs[idx] = static_cast<double>(tofs[idx]);
     tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
-};
+}
 
 std::string BrukerTof2MzConverter::description()
 {
     return "BrukerTof2MzConverter";
-};
+}
 
 /*
  * Tof2MzConverterFactory implementation
  */
 
-Tof2MzConverterFactory::~Tof2MzConverterFactory() {};
+Tof2MzConverterFactory::~Tof2MzConverterFactory() {}
 
 /*
  * ErrorTof2MzConverterFactory
@@ -101,7 +101,7 @@ Tof2MzConverterFactory::~Tof2MzConverterFactory() {};
 std::unique_ptr<Tof2MzConverter> ErrorTof2MzConverterFactory::produce(TimsDataHandle& TDH)
 {
     return std::make_unique<ErrorTof2MzConverter>(TDH);
-};
+}
 
 /*
  * BrukerTof2MzConverterFactory implementation
@@ -110,17 +110,17 @@ std::unique_ptr<Tof2MzConverter> ErrorTof2MzConverterFactory::produce(TimsDataHa
 BrukerTof2MzConverterFactory::BrukerTof2MzConverterFactory(const char* _dll_path) :
     dll_path(_dll_path),
     lib_hndl(_dll_path)
-    {};
+    {}
 
 BrukerTof2MzConverterFactory::BrukerTof2MzConverterFactory(const std::string& _dll_path) :
     dll_path(_dll_path),
     lib_hndl(_dll_path)
-    {};
+    {}
 
 std::unique_ptr<Tof2MzConverter> BrukerTof2MzConverterFactory::produce(TimsDataHandle& TDH)
 {
     return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str());
-};
+}
 
 /*
  * DefaultTof2MzConverterFactory implementation

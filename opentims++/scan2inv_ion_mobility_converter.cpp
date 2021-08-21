@@ -19,23 +19,23 @@
 
 std::unique_ptr<Scan2InvIonMobilityConverterFactory> DefaultScan2InvIonMobilityConverterFactory::fac_instance;
 
-Scan2InvIonMobilityConverter::~Scan2InvIonMobilityConverter() {};
+Scan2InvIonMobilityConverter::~Scan2InvIonMobilityConverter() {}
 
 std::string Scan2InvIonMobilityConverter::description() const
 {
     return "Scan2InvIonMobilityConverter default";
-};
+}
 
 /*
  * ErrorScan2InvIonMobilityConverter implementation
  */
 
-ErrorScan2InvIonMobilityConverter::ErrorScan2InvIonMobilityConverter(TimsDataHandle&) {};
+ErrorScan2InvIonMobilityConverter::ErrorScan2InvIonMobilityConverter(TimsDataHandle&) {}
 
 void ErrorScan2InvIonMobilityConverter::convert(uint32_t, double*, const double*, uint32_t)
 {
     throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
-};
+}
 
 void ErrorScan2InvIonMobilityConverter::convert(uint32_t, double*, const uint32_t*, uint32_t)
 {
@@ -45,7 +45,7 @@ void ErrorScan2InvIonMobilityConverter::convert(uint32_t, double*, const uint32_
 std::string ErrorScan2InvIonMobilityConverter::description() const
 {
     return "ErrorScan2InvIonMobilityConverter default";
-};
+}
 
 /*
  * BrukerScan2InvIonMobilityConverter implementation
@@ -98,13 +98,13 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
     tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size);
 }
 
-std::string BrukerScan2InvIonMobilityConverter::description() const { return "BrukerScan2InvIonMobilityConverter"; };
+std::string BrukerScan2InvIonMobilityConverter::description() const { return "BrukerScan2InvIonMobilityConverter"; }
 
 /*
  * Scan2InvIonMobilityConverterFactory implementation
  */
 
-Scan2InvIonMobilityConverterFactory::~Scan2InvIonMobilityConverterFactory() {};
+Scan2InvIonMobilityConverterFactory::~Scan2InvIonMobilityConverterFactory() {}
 
 /*
  * ErrorScan2InvIonMobilityConverterFactory implementation
@@ -113,20 +113,20 @@ Scan2InvIonMobilityConverterFactory::~Scan2InvIonMobilityConverterFactory() {};
 std::unique_ptr<Scan2InvIonMobilityConverter> ErrorScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH)
 {
     return std::make_unique<ErrorScan2InvIonMobilityConverter>(TDH);
-};
+}
 
 /*
  * BrukerScan2InvIonMobilityConverterFactory implementation
  */
 
-BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
+BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {}
 
-BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {};
+BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {}
 
 std::unique_ptr<Scan2InvIonMobilityConverter> BrukerScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH)
 {
     return std::make_unique<BrukerScan2InvIonMobilityConverter>(TDH, dll_path.c_str());
-};
+}
 
 /*
  * DefaultScan2InvIonMobilityConverterFactory implementation

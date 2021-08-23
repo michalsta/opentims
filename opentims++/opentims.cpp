@@ -20,11 +20,13 @@
 #include <cstdint>
 #include <string>
 #include <cstring>
+#include <atomic>
 #include <vector>
 #include <iostream>
 #include <locale>
 #include <memory>
 #include <limits>
+#include <thread>
 #include <unordered_map>
 
 
@@ -587,11 +589,30 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                                     double* const * inv_ion_mobilities,
                                     double* const * retention_times)
 {
-    for(size_t ii = 0; ii < indexes.size(); ii++)
-    {
-        TimsFrame& frame = get_frame(indexes[ii]);
-        frame.save_to_buffs(frame_ids[ii], scan_ids[ii], tofs[ii], intensities[ii], mzs[ii], inv_ion_mobilities[ii], retention_times[ii]);
-    }
+    std::atomic<size_t> current_task(0);
+
+    ThreadingManager::get_instance().set_shared_threading();
+    size_t n_threads = ThreadingManager::get_instance().get_no_opentims_threads();
+
+    std::vector<std::thread> threads;
+    for(size_t ii=0; ii<n_threads; ii++)
+        threads.emplace_back([&](){
+            std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
+            std::unique_ptr<char[]> decomp_buffer = std::make_unique<char[]>(decomp_buffer_size);
+            while(true)
+            {
+                size_t my_task = current_task.fetch_add(1);
+                if(my_task < indexes.size())
+                {
+                    TimsFrame& frame = get_frame(indexes[ii]);
+                    frame.decompress(decomp_buffer.get(), zstd.get());
+                    frame.save_to_buffs(frame_ids[ii], scan_ids[ii], tofs[ii], intensities[ii], mzs[ii], inv_ion_mobilities[ii], retention_times[ii]);
+                    frame.close();
+                }
+            }
+        });
+    for (auto& th : threads) th.join();
+    ThreadingManager::get_instance().set_converter_threading();
 }
 
 

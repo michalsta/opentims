@@ -8,7 +8,7 @@ std::unique_ptr<ThreadingManager> ThreadingManager::instance;
 
 ThreadingManager::ThreadingManager() :
 n_threads(std::thread::hardware_concurrency()),
-threading_type(OPENTIMS_THREADING)
+threading_type(CONVERTER_THREADING)
 {}
 
 ThreadingManager::~ThreadingManager() {}

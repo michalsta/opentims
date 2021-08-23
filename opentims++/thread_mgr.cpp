@@ -8,27 +8,36 @@ std::unique_ptr<ThreadingManager> ThreadingManager::instance;
 
 ThreadingManager::ThreadingManager() :
 n_threads(std::thread::hardware_concurrency()),
-is_opentims_threading(false)
+threading_type(OPENTIMS_THREADING)
 {}
 
 ThreadingManager::~ThreadingManager() {}
 
-ThreadingManager* ThreadingManager::get_instance()
+ThreadingManager& ThreadingManager::get_instance()
 {
     if(!instance)
-        instance = std::make_unique<ThreadingManager>();
-    return instance.get();
+        instance = std::make_unique<DefaultThreadingManager>();
+    return *instance.get();
 }
 
-void ThreadingManager::opentims_threading()
+void ThreadingManager::set_opentims_threading()
 {
-    is_opentims_threading = true;
+    threading_type = OPENTIMS_THREADING;
+    signal_threading_changed();
 }
 
-void ThreadingManager::converter_threading()
+void ThreadingManager::set_converter_threading()
 {
-    is_opentims_threading = false;
+    threading_type = CONVERTER_THREADING;
+    signal_threading_changed();
 }
+
+void ThreadingManager::set_shared_threading()
+{
+    threading_type = SHARED_THREADING;
+    signal_threading_changed();
+}
+
 
 void ThreadingManager::set_num_threads(size_t n)
 {
@@ -36,8 +45,9 @@ void ThreadingManager::set_num_threads(size_t n)
         n_threads = std::thread::hardware_concurrency();
     else
         n_threads = n;
-}
 
+    signal_threads_changed();
+}
 
 
 /*
@@ -56,30 +66,48 @@ BrukerThreadingManager::~BrukerThreadingManager() {}
 
 void BrukerThreadingManager::SetupBrukerThreading(const std::string& bruker_so_path)
 {
-    ThreadingManager::instance = std::make_unique<BrukerThreadingManager>(*ThreadingManager::get_instance(), bruker_so_path);
+    ThreadingManager::instance = std::make_unique<BrukerThreadingManager>(ThreadingManager::get_instance(), bruker_so_path);
 }
 
 void BrukerThreadingManager::set_bruker_threads()
 {
-    if(is_opentims_threading)
-        tims_set_num_threads(1);
-    else
-        tims_set_num_threads(n_threads);
+    switch(threading_type)
+    {
+        case OPENTIMS_THREADING:
+            tims_set_num_threads(1);
+            break;
+        case SHARED_THREADING:
+            tims_set_num_threads(sqrt(n_threads * io_overhead) + 0.5); // Square root, rounded up
+            break;
+        case CONVERTER_THREADING:
+            tims_set_num_threads(n_threads);
+            break;
+        default:
+            throw std::logic_error("Invalid threading model");
+    }
 }
-void BrukerThreadingManager::opentims_threading()
+
+void BrukerThreadingManager::signal_threading_changed()
 {
-    ThreadingManager::opentims_threading();
     set_bruker_threads();
 }
 
-void BrukerThreadingManager::converter_threading()
+void BrukerThreadingManager::signal_threads_changed()
 {
-    ThreadingManager::converter_threading();
     set_bruker_threads();
 }
 
-void BrukerThreadingManager::set_num_threads(size_t n)
+size_t BrukerThreadingManager::get_no_opentims_threads()
 {
-    ThreadingManager::set_num_threads(n);
-    set_bruker_threads();
+    switch(threading_type)
+    {
+        case OPENTIMS_THREADING:
+            return n_threads * io_overhead;
+        case SHARED_THREADING:
+            return sqrt(n_threads * io_overhead) + 0.5;
+        case CONVERTER_THREADING:
+            return 1;
+        default:
+            throw std::logic_error("Invalid threading model");
+    }
 }

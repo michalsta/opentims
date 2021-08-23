@@ -49,6 +49,17 @@ void ThreadingManager::set_num_threads(size_t n)
     signal_threads_changed();
 }
 
+/*
+ * DefaultThreadingManager
+ */
+
+DefaultThreadingManager::~DefaultThreadingManager() {}
+
+size_t DefaultThreadingManager::get_no_opentims_threads()
+{
+    return n_threads * io_overhead;
+}
+
 
 /*
  * BrukerThreadingManager

@@ -42,8 +42,8 @@ class ThreadingManager
 
 class DefaultThreadingManager final : public ThreadingManager
 {
-    void signal_threading_changed() override;
-    void signal_threads_changed() override;
+    void signal_threading_changed() override {};
+    void signal_threads_changed() override {};
  public:
     DefaultThreadingManager() = default;
     DefaultThreadingManager(const DefaultThreadingManager& other) = default;

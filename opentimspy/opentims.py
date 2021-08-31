@@ -123,7 +123,7 @@ class OpenTIMS:
 
     def _get_empty_arrays(self, size, selected_columns=all_columns):
         """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
-        assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
+        assert all(c in self.all_columns for c in selected_columns), f"Accepted column names: {self.all_columns}"
 
         return {col: np.empty(shape=size if col in selected_columns else 0,
                               dtype=dtype) 

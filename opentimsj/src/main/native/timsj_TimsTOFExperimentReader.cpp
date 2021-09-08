@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <stdio.h>
 
-#include </home/administrator/Documents/promotion/opentims/opentims++/opentims_all.cpp>
+#include "../../../../opentims++/opentims_all.cpp"
 
 // helper to convert from jstring to c++ string
 std::string jstring2string(JNIEnv *env, jstring jStr) {
@@ -72,12 +72,12 @@ JNIEXPORT jobject JNICALL Java_timsj_TimsTOFExperimentReader_getTimsTofRawFrameN
   if(NULL == constructor)
     std::cout << "/* method could not be found. */" << '\n';
 
-  jintArray resultScans = env->NewIntArray(length);
-  jintArray resultTofs = env->NewIntArray(length);
-  jintArray resultIntensities = env->NewIntArray(length);
+  jintArray resultScans = env->NewIntArray(frame.num_peaks);
+  jintArray resultTofs = env->NewIntArray(frame.num_peaks);
+  jintArray resultIntensities = env->NewIntArray(frame.num_peaks);
 
-  jdoubleArray resultMzs = env->NewDoubleArray(length);
-  jdoubleArray resultOneOverK0s = env->NewDoubleArray(length);
+  jdoubleArray resultMzs = env->NewDoubleArray(frame.num_peaks);
+  jdoubleArray resultOneOverK0s = env->NewDoubleArray(frame.num_peaks);
 
   // check for allocation failure
   if (resultScans == NULL ||
@@ -96,14 +96,14 @@ JNIEXPORT jobject JNICALL Java_timsj_TimsTOFExperimentReader_getTimsTofRawFrameN
   jdouble *pK0s = env->GetDoubleArrayElements(resultOneOverK0s, NULL);
 
   // copy values into java arrays
-  for(int i = 0; i < length; i++){
+  for(size_t peak_id = 0; peak_id < frame.num_peaks; peak_id++) {
 
-    pScans[i] = scan_ids[i];
-    pTofs[i] = tofs[i];
-    pIntens[i] = intensities[i];
+    pScans[peak_id] = scan_ids[peak_id];
+    pTofs[peak_id] = tofs[peak_id];
+    pIntens[peak_id] = intensities[peak_id];
 
-    pMzs[i] = mzs[i];
-    pK0s[i] = inv_ion_mobilities[i];
+    pMzs[peak_id] = mzs[peak_id];
+    pK0s[peak_id] = inv_ion_mobilities[peak_id];
   }
 
   // expose to garbage collection
@@ -147,7 +147,7 @@ JNIEXPORT jdoubleArray JNICALL Java_timsj_TimsTOFExperimentReader_scanToOneOverK
     double oneOverK0s[length];
 
     jint *body = env->GetIntArrayElements(scans, 0);
-    for(int i = 0; i < length; i++){
+    for(size_t i = 0; i < length; i++) {
         scans_c[i] = body[i];
     }
 
@@ -161,7 +161,7 @@ JNIEXPORT jdoubleArray JNICALL Java_timsj_TimsTOFExperimentReader_scanToOneOverK
     jdouble *pK0s = env->GetDoubleArrayElements(resultOneOverK0s, NULL);
 
     // copy values into java arrays
-    for(int i = 0; i < length; i++){
+    for(size_t i = 0; i < length; i++) {
         pK0s[i] = oneOverK0s[i];
     }
 
@@ -192,7 +192,7 @@ JNIEXPORT jdoubleArray JNICALL Java_timsj_TimsTOFExperimentReader_tofToMzNative
     double mzs[length];
 
     jint *body = env->GetIntArrayElements(tofs, 0);
-    for(int i = 0; i < length; i++){
+    for(size_t i = 0; i < length; i++) {
         tofs_c[i] = body[i];
     }
 
@@ -206,7 +206,7 @@ JNIEXPORT jdoubleArray JNICALL Java_timsj_TimsTOFExperimentReader_tofToMzNative
     jdouble *pMzs = env->GetDoubleArrayElements(resultMzs, NULL);
 
       // copy values into java arrays
-    for(int i = 0; i < length; i++){
+    for(size_t i = 0; i < length; i++) {
         pMzs[i] = mzs[i];
     }
 
@@ -214,3 +214,4 @@ JNIEXPORT jdoubleArray JNICALL Java_timsj_TimsTOFExperimentReader_tofToMzNative
 
     return resultMzs;
 }
+

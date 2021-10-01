@@ -29,7 +29,7 @@ elif platform.system().startswith("CYGWIN"):
     dual_build = False
 
 
-native_build = "CIBUILDWHEEL" not in os.environ
+native_build = "CIBUILDWHEEL" not in os.environ and 'darwin' not in platform.system().lower() and not 'aarch' in platform.machine().lower()
 use_clang = (not windows) and spawn.find_executable('clang++') != None and os.getenv('OPENTIMS_USE_DEFAULT_CXX') == None
 #use_ccache = (not windows) and spawn.find_executable('ccache') != None and native_build
 use_ccache = os.path.exists("./use_ccache")

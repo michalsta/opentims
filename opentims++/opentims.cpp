@@ -254,6 +254,22 @@ int tims_sql_callback(void* out, int cols, char** row, char**)
     return 0;
 }
 
+int check_compression(void*, int cols, char** row, char**)
+{
+    assert(cols == 1);
+    assert(row != NULL);
+    assert(row[0] != NULL);
+    if(atoi(row[0]) != 2)
+    {
+        std::string error_msg = "Compression algorithm used in your TDF dataset: ";
+        error_msg += row[0];
+        error_msg += " is not (yet) supported by OpenTIMS. Right now only algorithm 2 (zstd) is supported.";
+        throw std::runtime_error(error_msg);
+    }
+    return 0;
+}
+
+#ifndef OPENTIMS_BUILDING_R
 namespace{
 class RAIILocaleHelper
 {
@@ -262,27 +278,51 @@ class RAIILocaleHelper
     RAIILocaleHelper() : previous_locale(std::locale::global(std::locale("C"))) {};
     ~RAIILocaleHelper() { std::locale::global(previous_locale); };
 };
+
+class RAIISqlite
+{
+    sqlite3* db_conn;
+ public:
+    RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
+    {
+        if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
+            throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
+    }
+    ~RAIISqlite()
+    {
+        if(db_conn != nullptr)
+            sqlite3_close(db_conn);
+    }
+    sqlite3* release_connection() { sqlite3* ret = db_conn; db_conn = nullptr; return ret; }
+    void query(const std::string& sql, int (*callback)(void*,int,char**,char**), void* arg)
+    {
+        char* error = NULL;
+
+        if(sqlite3_exec(db_conn, sql.c_str(), callback, arg, &error) != SQLITE_OK)
+        {
+	    std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
+	    sqlite3_free(error);
+	    throw std::runtime_error(err_msg);
+        }
+    }
+
+};
 }
+#endif
 
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 {
 #ifndef OPENTIMS_BUILDING_R
     RAIILocaleHelper locale_guard;
+    RAIISqlite DB(tims_tdf_path);
 
-    if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
-        throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
+    const std::string sql = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
 
-    const char sql[] = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
+    DB.query(sql, tims_sql_callback, this);
+    DB.query("SELECT Value FROM GlobalMetadata WHERE Key == \"TimsCompressionType\";", check_compression, nullptr);
 
-    char* error = NULL;
+    db_conn = DB.release_connection();
 
-    if(sqlite3_exec(db_conn, sql, tims_sql_callback, this, &error) != SQLITE_OK)
-    {
-        std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
-        sqlite3_free(error);
-        sqlite3_close(db_conn);
-        throw std::runtime_error(err_msg);
-    }
 #endif
 }
 

@@ -59,7 +59,7 @@ class OpenTIMS:
 
         self.min_frame = self.frames['Id'][0]
         self.max_frame = self.frames['Id'][-1]
-        # self.ms_types = np.array([self.handle.get_frame(i).msms_type 
+        # self.ms_types = np.array([self.handle.get_frame(i).msms_type
                                   # for i in range(self.min_frame, self.max_frame+1)])
         self.ms_types = self.frames['MsMsType']
         self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
@@ -128,8 +128,8 @@ class OpenTIMS:
         assert all(c in self.all_columns for c in selected_columns), f"Accepted column names: {self.all_columns}"
 
         return {col: np.empty(shape=size if col in selected_columns else 0,
-                              dtype=dtype) 
-                for col, dtype in zip(self.all_columns, 
+                              dtype=dtype)
+                for col, dtype in zip(self.all_columns,
                                       self.all_columns_dtypes)}
 
 
@@ -242,7 +242,7 @@ class OpenTIMS:
     def frame_arrays(self, frames):
         """Get raw data from a selection of frames.
 
-        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'. 
+        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
 
         Args:
             frames (iterable): Frames to chose.
@@ -262,7 +262,7 @@ class OpenTIMS:
     def frame_arrays_slice(self, frames_slice):
         """Get raw data from a slice of frames.
 
-        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'. 
+        Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
 
         Args:
             frames_slice (slice): A slice defining which frames to chose.
@@ -270,12 +270,12 @@ class OpenTIMS:
             np.array: raw data from the selection of frames.
         """
         start = self.min_frame if frames_slice.start is None else frames_slice.start
-        stop  = self.max_frame if frames_slice.stop is None else frames_slice.stop 
+        stop  = self.max_frame if frames_slice.stop is None else frames_slice.stop
         step  = 1 if frames_slice.step is None else frames_slice.step
         peaks_cnt = self.handle.no_peaks_in_slice(start, stop, step)
         X = np.empty(shape=(peaks_cnt, 4), order='F', dtype=np.uint32)
         self.handle.extract_frames_slice(start, stop, step, X)
-        return X    
+        return X
 
     def get_separate_frames(self, frame_ids, columns = all_columns):
         assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
@@ -322,9 +322,9 @@ class OpenTIMS:
 
         Args:
             columns (list): Columns for which to calculate the hash.
-            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data. 
+            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data.
         Returns:
-            binary str: A hash. 
+            binary str: A hash.
         """
         h = algo()
         for X in self.query_iter(frames=slice(self.min_frame,
@@ -344,9 +344,9 @@ class OpenTIMS:
 
         Args:
             columns (list): Columns for which to calculate the hash.
-            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data. 
+            algo (object): Class with a call method for restarting hash calculations and an update method that accepts data.
         Returns:
-            list: Frame specifc hashes. 
+            list: Frame specifc hashes.
         """
         return [hash_frame(X, columns, algo)
                 for X in self.query_iter(frames=slice(self.min_frame,

@@ -54,6 +54,8 @@ class OpenTIMS:
             self.frames[column] = self.frames[column][sort_order]
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(zip(self.GlobalMetadata['Key'], self.GlobalMetadata['Value']))
+        if int(self.GlobalMetadata['TimsCompressionType']) != 2:
+            raise RuntimeError(f"Unsupported TimsCompressionType: {self.GlobalMetadata['TimsCompressionType']}. Updating your acquisition software *might* solve the problem.")
 
         self.min_frame = self.frames['Id'][0]
         self.max_frame = self.frames['Id'][-1]

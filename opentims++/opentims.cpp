@@ -113,7 +113,14 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
     if(decomp_ctx == nullptr)
         decomp_ctx = parent_tdh.zstd_dctx;
 
-    ZSTD_decompressDCtx(decomp_ctx, decompression_buffer, dsbytes, tims_bin_frame + 8, tims_packet_size - 8);
+    size_t dec_result = ZSTD_decompressDCtx(decomp_ctx, decompression_buffer, dsbytes, tims_bin_frame + 8, tims_packet_size - 8);
+    if(ZSTD_isError(dec_result))
+    {
+        std::string err = "Error uncompressing frame, error code: ";
+        err += std::to_string(dec_result);
+        err += ". File is either corrupted, or in a (yet) unsupported variant of the format.";
+        throw std::runtime_error(err);
+    }
 
     size_t dsints = data_size_ints();
     bytes0 = decompression_buffer;

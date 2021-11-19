@@ -82,4 +82,4 @@ def set_num_threads(n):
     '''
     opentimspy_cpp.set_num_threads(n)
 
-__version__ = "1.0.9"
+__version__ = "1.0.10"

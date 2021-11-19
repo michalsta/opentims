@@ -22,9 +22,11 @@ except ImportError:
     import ctypes
     import pkgutil
     support_lib = pkgutil.get_loader("libopentims_support")
-    ctypes.CDLL(support_lib.get_filename(), ctypes.RTLD_GLOBAL)
+    if not support_lib is None:
+        ctypes.CDLL(support_lib.get_filename(), ctypes.RTLD_GLOBAL)
     cpp_lib = pkgutil.get_loader("libopentims_cpp")
-    ctypes.CDLL(cpp_lib.get_filename(), ctypes.RTLD_GLOBAL)
+    if not cpp_lib is None:
+        ctypes.CDLL(cpp_lib.get_filename(), ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
 

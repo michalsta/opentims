@@ -41,6 +41,12 @@ Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List
 }
 
 
+// [[Rcpp::export]]
+void tdf_close(Rcpp::XPtr<TimsDataHandle> tdf)
+{
+    tdf.release();
+}
+
 
 // [[Rcpp::export]]
 uint32_t tdf_min_frame_id(Rcpp::XPtr<TimsDataHandle> tdf)

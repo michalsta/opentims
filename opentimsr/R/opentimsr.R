@@ -149,8 +149,8 @@ setMethod("range",
 table2df = function(opentims, names){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    on.exit(DBI::dbDisconnect(sql_conn))
     tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
-    DBI::dbDisconnect(sql_conn)
     names(tables) = names
     return(tables)
 }
@@ -169,8 +169,8 @@ table2df = function(opentims, names){
 tables_names = function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    on.exit(DBI::dbDisconnect(sql_conn))
     tables_names = DBI::dbListTables(sql_conn)
-    DBI::dbDisconnect(sql_conn)
     return(tables_names)
 }
 
@@ -190,10 +190,10 @@ OpenTIMS = function(path.d){
     # getting tables from SQlite 
     analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    on.exit(DBI::dbDisconnect(sql_conn))
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     GlobalMetadata = DBI::dbReadTable(sql_conn, 'GlobalMetadata')
     GlobalMetadata = array(GlobalMetadata$Value, dimnames=list(GlobalMetadata$Key))
-    DBI::dbDisconnect(sql_conn)
     handle = tdf_open(path.d, frames)
 
     ## Extracting basic info on the limits of reported measurements.
@@ -491,6 +491,27 @@ download_bruker_proprietary_code = function(
   download.file(url, target.file, mode="wb", ...)
 
   target.file
+}
+
+
+
+#' Close the TIMS data handle and release all resources.
+#'
+#' Calling this method is not mandatory - the resources will anyway
+#' be cleanly released when the garbage collector decides to
+#' destroy the OpenTIMS data handle. The only purpose of this
+#' method is to enable them to be explicitly released earlier than that.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @return void
+#' @export
+#' @examples
+#' \dontrun{
+#' D = OpenTIMS('path/to/your/folder.d')
+#' tims_close(D)
+#' }
+tims_close = function(opentims){
+    tdf_close(opentims@handle)
 }
 
 

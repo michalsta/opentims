@@ -9,6 +9,10 @@ tdf_open <- function(path_d, sql_res) {
     .Call('_opentimsr_tdf_open', PACKAGE = 'opentimsr', path_d, sql_res)
 }
 
+tdf_close <- function(tdf) {
+    invisible(.Call('_opentimsr_tdf_close', PACKAGE = 'opentimsr', tdf))
+}
+
 tdf_min_frame_id <- function(tdf) {
     .Call('_opentimsr_tdf_min_frame_id', PACKAGE = 'opentimsr', tdf)
 }

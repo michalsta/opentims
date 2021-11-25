@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // setup_bruker_so
 void setup_bruker_so(const Rcpp::String& path);
 RcppExport SEXP _opentimsr_setup_bruker_so(SEXP pathSEXP) {
@@ -26,6 +31,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sql_res(sql_resSEXP);
     rcpp_result_gen = Rcpp::wrap(tdf_open(path_d, sql_res));
     return rcpp_result_gen;
+END_RCPP
+}
+// tdf_close
+void tdf_close(Rcpp::XPtr<TimsDataHandle> tdf);
+RcppExport SEXP _opentimsr_tdf_close(SEXP tdfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    tdf_close(tdf);
+    return R_NilValue;
 END_RCPP
 }
 // tdf_min_frame_id
@@ -155,6 +170,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_setup_bruker_so", (DL_FUNC) &_opentimsr_setup_bruker_so, 1},
     {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 2},
+    {"_opentimsr_tdf_close", (DL_FUNC) &_opentimsr_tdf_close, 1},
     {"_opentimsr_tdf_min_frame_id", (DL_FUNC) &_opentimsr_tdf_min_frame_id, 1},
     {"_opentimsr_tdf_max_frame_id", (DL_FUNC) &_opentimsr_tdf_max_frame_id, 1},
     {"_opentimsr_tdf_no_peaks_total", (DL_FUNC) &_opentimsr_tdf_no_peaks_total, 1},

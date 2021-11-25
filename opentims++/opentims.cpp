@@ -434,6 +434,7 @@ TimsDataHandle(tims_data_dir)
 
 TimsDataHandle::~TimsDataHandle()
 {
+    std::cerr << "dfvhjsbdvhjbdsjvhfvb" << std::endl;
     if(zstd_dctx != nullptr)
         ZSTD_freeDCtx(zstd_dctx);
 #ifndef OPENTIMS_BUILDING_R

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <string>
+
 void setup_bruker(const std::string& path);
 
 extern "C" {

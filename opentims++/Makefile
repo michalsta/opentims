@@ -15,3 +15,4 @@ check:
 	clang++ opentims.cpp -Weverything -fsyntax-only -std=c++14 -Wno-c++98-compat
 clean:
 	rm -f *.o a.out *.gch
+separate: converters.o  libopentims_py.o  opentims.o  scan2inv_ion_mobility_converter.o  so_manager.o  test.o  thread_mgr.o  tof2mz_converter.o

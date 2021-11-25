@@ -42,6 +42,7 @@
 
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
+#include "thread_mgr.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,

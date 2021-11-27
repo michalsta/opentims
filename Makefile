@@ -15,6 +15,8 @@ rcheck: rprep
 	R CMD check opentimsr_*.tar.gz
 rcheck_as_CRAN: rprep
 	R CMD check --as-cran opentimsr_*.tar.gz
+rinstallfuckingdependenciescauseRcmdwontdoit:
+	R -e 'install.packages(c("Rcpp","DBI","RSQLite"))'
 rfullinst: rprep
 	R CMD INSTALL opentimsr_*.tar.gz
 rinst: rclean rbuild

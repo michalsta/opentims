@@ -508,9 +508,9 @@ download_bruker_proprietary_code = function(
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS('path/to/your/folder.d')
-#' tims_close(D)
+#' CloseTIMS(D)
 #' }
-tims_close = function(opentims){
+CloseTIMS = function(opentims){
     tdf_close(opentims@handle)
 }
 

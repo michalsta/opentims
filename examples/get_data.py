@@ -26,22 +26,21 @@ except IndexError:
     print("\tpython", sys.argv[0], "<path to your TimsTOF dataset.d directory>")
     sys.exit(1)
 
-D = OpenTIMS(path) # get data handle
+with OpenTIMS(path) as D:
+    # prepare and print the CSV header:
+    header = '"' + '"\t"'.join(all_columns) + '"'
+    print(header)
 
-# prepare and print the CSV header:
-header = '"' + '"\t"'.join(all_columns) + '"'
-print(header)
 
-
-# Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
-for frame_id in D.frames['Id']:
-    frame = D.query(frame_id)
-    peak_idx = 0
-    # Frame is stored as a dict of column vectors
-    while peak_idx < len(frame['frame']):
-        row = [str(frame[colname][peak_idx]) for colname in all_columns]
-        print('\t'.join(row))
-        peak_idx += 1
+    # Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
+    for frame_id in D.frames['Id']:
+        frame = D.query(frame_id)
+        peak_idx = 0
+        # Frame is stored as a dict of column vectors
+        while peak_idx < len(frame['frame']):
+            row = [str(frame[colname][peak_idx]) for colname in all_columns]
+            print('\t'.join(row))
+            peak_idx += 1
 
 
 '''

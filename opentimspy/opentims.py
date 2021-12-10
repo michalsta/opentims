@@ -45,6 +45,7 @@ class OpenTIMS:
             Args:
                 analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
+        self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.frames = self.table2dict("Frames")
@@ -93,8 +94,18 @@ class OpenTIMS:
 
 
     def __del__ (self):
-        if hasattr(self, 'handle'):
+        self.close()
+
+    def close(self):
+        if not self.handle is None:
             del self.handle
+            self.handle = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     def tables_names(self):
         return tables_names(self.analysis_directory/"analysis.tdf")

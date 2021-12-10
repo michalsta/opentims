@@ -172,3 +172,8 @@ table2df(D, 'TimsCalibration')
 # 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
 #         C9
 # 1 1663.341
+
+# Release the OS resources, file descriptors, etc. owned by OpenTIMS object.
+# Explicit calling this is non-mandatory - everything will be cleaned up
+# properly whe the OpenTIMS object is garbage-collected anyway.
+CloseTIMS(D)

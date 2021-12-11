@@ -26,9 +26,9 @@ LoadedLibraryHandle::~LoadedLibraryHandle()
 
 LoadedLibraryHandle::LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
 {
-    os_handle = LoadLibraryA(path.c_str());
+    os_handle = LoadLibraryExA(path.c_str(), nullptr, 0);
     if(os_handle == nullptr)
-        throw std::runtime_error(std::string("LoadLibraryA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
+        throw std::runtime_error(std::string("LoadLibraryExA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
 }
 
 LoadedLibraryHandle::~LoadedLibraryHandle()

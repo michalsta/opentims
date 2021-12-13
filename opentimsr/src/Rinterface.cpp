@@ -70,25 +70,6 @@ size_t tdf_no_peaks_total(Rcpp::XPtr<TimsDataHandle> tdf)
 
 
 // [[Rcpp::export]]
-Rcpp::IntegerVector tdf_get_msms_type(Rcpp::XPtr<TimsDataHandle> tdf)
-{
-    using namespace Rcpp;
-    size_t start = tdf->min_frame_id();
-    size_t end = tdf->min_frame_id();
-    int n = end - start;
-
-    TimsDataHandle& tdh = *tdf;
-    IntegerVector msms_types(n);
-
-    for(size_t idx = start; idx < end; idx += 1)
-    {
-
-    }
-
-    return msms_types;
-} 
-
-// [[Rcpp::export]]
 Rcpp::DataFrame tdf_get_range(Rcpp::XPtr<TimsDataHandle> tdf, size_t start, size_t end, int32_t step = 1)
 {
     using namespace Rcpp;

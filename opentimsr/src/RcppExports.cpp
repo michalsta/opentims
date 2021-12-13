@@ -76,17 +76,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// tdf_get_msms_type
-Rcpp::IntegerVector tdf_get_msms_type(Rcpp::XPtr<TimsDataHandle> tdf);
-RcppExport SEXP _opentimsr_tdf_get_msms_type(SEXP tdfSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_get_msms_type(tdf));
-    return rcpp_result_gen;
-END_RCPP
-}
 // tdf_get_range
 Rcpp::DataFrame tdf_get_range(Rcpp::XPtr<TimsDataHandle> tdf, size_t start, size_t end, int32_t step);
 RcppExport SEXP _opentimsr_tdf_get_range(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP) {
@@ -174,7 +163,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_tdf_min_frame_id", (DL_FUNC) &_opentimsr_tdf_min_frame_id, 1},
     {"_opentimsr_tdf_max_frame_id", (DL_FUNC) &_opentimsr_tdf_max_frame_id, 1},
     {"_opentimsr_tdf_no_peaks_total", (DL_FUNC) &_opentimsr_tdf_no_peaks_total, 1},
-    {"_opentimsr_tdf_get_msms_type", (DL_FUNC) &_opentimsr_tdf_get_msms_type, 1},
     {"_opentimsr_tdf_get_range", (DL_FUNC) &_opentimsr_tdf_get_range, 4},
     {"_opentimsr_tdf_get_indexes", (DL_FUNC) &_opentimsr_tdf_get_indexes, 2},
     {"_opentimsr_tdf_get_range_noend", (DL_FUNC) &_opentimsr_tdf_get_range_noend, 3},

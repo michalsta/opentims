@@ -25,10 +25,6 @@ tdf_no_peaks_total <- function(tdf) {
     .Call('_opentimsr_tdf_no_peaks_total', PACKAGE = 'opentimsr', tdf)
 }
 
-tdf_get_msms_type <- function(tdf) {
-    .Call('_opentimsr_tdf_get_msms_type', PACKAGE = 'opentimsr', tdf)
-}
-
 tdf_get_range <- function(tdf, start, end, step = 1L) {
     .Call('_opentimsr_tdf_get_range', PACKAGE = 'opentimsr', tdf, start, end, step)
 }

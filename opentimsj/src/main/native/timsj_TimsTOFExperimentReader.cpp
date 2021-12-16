@@ -74,6 +74,13 @@ TimsFramePl ExposedTimsDataHandle::getTimsFramePl(const int frameId) {
     std::vector<double> mzs, intensities, inv_ion_mobility;
     std::vector<int> scans, tof;
 
+    // pre-allocate to avoid resizing on fill
+    mzs.reserve(frame.num_peaks);
+    intensities.reserve(frame.num_peaks);
+    inv_ion_mobility.reserve(frame.num_peaks);
+    scans.reserve(frame.num_peaks);
+    tof.reserve(frame.num_peaks);
+
     // copy
     for(size_t peak_id = 0; peak_id < frame.num_peaks; peak_id++) {
         tof.push_back(tofs[peak_id]);

@@ -10,6 +10,10 @@ import java.io.File
  * @param brukerBinaryPath path to binary for bruker file format reading (.so or .dll)
  */
 class TimsTOFExperimentReader(experimentPath: String, brukerBinaryPath: String) {
+
+  // store pointer to C++ TimsDataHandle
+  private val ptr: Long = getDataHandlePointer(experimentPath, brukerBinaryPath)
+
   /**
    * get all available meta data of frames present in a given experiment
    * @return map<frameId, TimsTOFFrameMetadata> collection of meta data for all frames
@@ -59,19 +63,24 @@ class TimsTOFExperimentReader(experimentPath: String, brukerBinaryPath: String) 
    * @return bruker raw frame
    */
   def getTimsTofRawFrame(frameId: Int): TimsTOFRawFrame = {
-    getTimsTofRawFrameNative(frameId = frameId)
+    getTimsTofRawFrameNative(frameId = frameId, ptr)
   }
 
   /**
-   * hidden native call to opentims++ and bruker SDK for data access
    *
-   * @param frameId       id of raw frame that should be fetched
-   * @param expPath       path where .d bruker raw file can be found
-   * @param brukerLibPath path to bruker SDK
-   * @return TimsRawFrame object
+   * @param expPath path to experiment
+   * @param brukerLibPath path to bruker binary
+   * @return pointer value as long
    */
-  @native private def getTimsTofRawFrameNative(frameId: Int, expPath: String = experimentPath,
-                                               brukerLibPath: String = brukerBinaryPath): TimsTOFRawFrame
+  @native private def getDataHandlePointer(expPath: String = experimentPath, brukerLibPath: String = brukerBinaryPath): Long
+
+  /**
+   *
+   * @param frameId
+   * @param ptr
+   * @return
+   */
+  @native private def getTimsTofRawFrameNative(frameId: Int, ptr: Long): TimsTOFRawFrame
 
   /**
    * convert scan number to 1/K0 value

@@ -24,11 +24,5 @@ object Example extends App {
   // fetch meta data
   val metaData = timsTofExpReader.getFrameMetaData
 
-  // fetch frame
-  val frame = timsTofExpReader.getTimsTofRawFrame(frameId)
-
-  // check output
-  println(metaData.getOrElse(frameId, TimsTOFFrameMetaData()))
-  println(frame.retentionTime)
-  println(frame)
+  println(timsTofExpReader.getTimsTofRawFrame(frameId))
 }

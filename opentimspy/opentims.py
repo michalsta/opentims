@@ -18,6 +18,7 @@ import functools
 import hashlib
 import numpy as np
 import pathlib
+import sqlite3
 
 import opentimspy
 
@@ -106,6 +107,9 @@ class OpenTIMS:
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def get_sql_connection(self):
+        return sqlite3.connect(self.analysis_directory/"analysis.tdf")
 
     def tables_names(self):
         return tables_names(self.analysis_directory/"analysis.tdf")

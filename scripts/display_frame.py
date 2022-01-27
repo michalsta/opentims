@@ -59,7 +59,7 @@ with OpenTIMS(args.path) as OT:
         P = Pool()
         multiproc = lambda x: P.imap_unordered(worker, x)
     else:
-        multiproc = lambda x: sorted(x)
+        multiproc = lambda x: map(worker, sorted(x))
 
 
     for frame_id in progressbar(multiproc(frames), total=len(frames)):

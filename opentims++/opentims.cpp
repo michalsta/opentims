@@ -99,8 +99,7 @@ void TimsFrame::print() const
 void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
 {
     uint32_t tims_packet_size = *reinterpret_cast<const uint32_t*>(tims_bin_frame);
-    uint32_t nnum_scans = *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1);
-    assert(nnum_scans == num_scans);
+    assert(num_scans == *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1));
 
     size_t dsbytes = data_size_bytes();
 
@@ -244,7 +243,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         close();
 }
 
-int tims_sql_callback(void* out, int cols, char** row, char**)
+int tims_sql_callback(void* out, [[maybe_unused]] int cols, char** row, char**)
 {
     assert(cols == 7);
     assert(row != NULL);
@@ -255,7 +254,7 @@ int tims_sql_callback(void* out, int cols, char** row, char**)
     return 0;
 }
 
-int check_compression(void*, int cols, char** row, char**)
+int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
 {
     assert(cols == 1);
     assert(row != NULL);

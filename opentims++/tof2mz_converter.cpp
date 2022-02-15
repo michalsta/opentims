@@ -64,6 +64,7 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
     tims_get_last_error_string = lib_handle.symbol_lookup<tims_get_last_error_string_fun_t>("tims_get_last_error_string");
     tims_close = lib_handle.symbol_lookup<tims_close_fun_t>("tims_close");
     tims_index_to_mz = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_index_to_mz");
+    tims_mz_to_index = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_mz_to_index");
 
     bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 0); // Recalibrated states not supported
 

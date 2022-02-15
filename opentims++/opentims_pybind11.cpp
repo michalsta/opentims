@@ -246,7 +246,68 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             {
                 dh.per_frame_TIC(get_ptr<uint32_t>(tics));
             }
-        );
+        )
+        .def("tof_to_mz",
+                [](
+                    TimsDataHandle& dh,
+                    uint32_t frame_id,
+                    const py::buffer arg
+                )
+                {
+                    py::buffer_info arg_info = arg.request();
+                    const size_t n = arg_info.size;
+                    py::array_t<double> ret(n);
+                    py::buffer_info ret_info = ret.request();
+                    dh.tof2mz_converter->convert(frame_id, static_cast<double*>(ret_info.ptr), static_cast<uint32_t*>(arg_info.ptr), n);
+                    return ret;
+                }
+        )
+        .def("mz_to_tof",
+                [](
+                    TimsDataHandle& dh,
+                    uint32_t frame_id,
+                    const py::buffer arg
+                )
+                {
+                    py::buffer_info arg_info = arg.request();
+                    const size_t n = arg_info.size;
+                    py::array_t<uint32_t> ret(n);
+                    py::buffer_info ret_info = ret.request();
+                    dh.tof2mz_converter->inverse_convert(frame_id, static_cast<uint32_t*>(ret_info.ptr), static_cast<double*>(arg_info.ptr), n);
+                    return ret;
+                }
+        )
+        .def("scan_to_inv_mobility",
+                [](
+                    TimsDataHandle& dh,
+                    uint32_t frame_id,
+                    const py::buffer arg
+                )
+                {
+                    py::buffer_info arg_info = arg.request();
+                    const size_t n = arg_info.size;
+                    py::array_t<double> ret(n);
+                    py::buffer_info ret_info = ret.request();
+                    dh.scan2inv_ion_mobility_converter->convert(frame_id, static_cast<double*>(ret_info.ptr), static_cast<uint32_t*>(arg_info.ptr), n);
+                    return ret;
+                }
+        )
+        .def("inv_mobility_to_scan",
+                [](
+                    TimsDataHandle& dh,
+                    uint32_t frame_id,
+                    const py::buffer arg
+                )
+                {
+                    py::buffer_info arg_info = arg.request();
+                    const size_t n = arg_info.size;
+                    py::array_t<uint32_t> ret(n);
+                    py::buffer_info ret_info = ret.request();
+                    dh.scan2inv_ion_mobility_converter->inverse_convert(frame_id, static_cast<uint32_t*>(ret_info.ptr), static_cast<double*>(arg_info.ptr), n);
+                    return ret;
+                }
+        )
+        ;
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {

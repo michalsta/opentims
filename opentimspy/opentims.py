@@ -368,6 +368,24 @@ class OpenTIMS:
                                                       self.max_frame+1),
                                          columns=columns)]
 
+    def tof_to_mz(self, frame_id, arr):
+        return self.handle.tof_to_mz(frame_id, arr)
+
+    def mz_to_tof(self, frame_id, arr):
+        return self.handle.mz_to_tof(frame_id, arr)
+
+    def scan_to_inv_mobility(self, frame_id, arr):
+        return self.handle.scan_to_inv_mobility(frame_id, arr)
+
+    def inv_mobility_to_scan(self, frame_id, arr):
+        return self.handle.inv_mobility_to_scan(frame_id, arr)
+
+    def frame_id_to_rt(self, frame_id):
+        return self.retention_times[frame_id+1]
+
+    def rt_to_frame_id(self, rt):
+        return bisect_left(self.retention_times, rt)
+
     @functools.lru_cache(maxsize=1)
     def framesTIC(self):
         """Get the Total Ion Current for each frame.

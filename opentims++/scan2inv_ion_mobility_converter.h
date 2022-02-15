@@ -41,6 +41,12 @@ class Scan2InvIonMobilityConverter
                          double* inv_ion_mobilities,
                          const uint32_t* scans,
                          uint32_t size) = 0;
+
+    virtual void inverse_convert(uint32_t frame_id,
+                                 uint32_t* scans,
+                                 const double* inv_ion_mobilities,
+                                 uint32_t size) = 0;
+
     virtual ~Scan2InvIonMobilityConverter();
     virtual std::string description() const;
 };
@@ -51,6 +57,7 @@ class ErrorScan2InvIonMobilityConverter : public Scan2InvIonMobilityConverter
     ErrorScan2InvIonMobilityConverter(TimsDataHandle&);
     void convert(uint32_t, double*, const double*, uint32_t) override final;
     void convert(uint32_t, double*, const uint32_t*, uint32_t) override final;
+    void inverse_convert(uint32_t frame_id, uint32_t* scans, const double* inv_ion_mobilities, uint32_t size) override final;
     std::string description() const override final;
 };
 
@@ -63,6 +70,7 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
     tims_get_last_error_string_fun_t* tims_get_last_error_string;
     tims_close_fun_t* tims_close;
     tims_convert_fun_t* tims_scannum_to_inv_ion_mobility;
+    tims_convert_fun_t* tims_inv_ion_mobility_to_scannum;
 
     std::string get_tims_error();
 
@@ -72,6 +80,7 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
 
     void convert(uint32_t frame_id, double* inv_ion_mobilities, const double* scans, uint32_t size) override final;
     void convert(uint32_t frame_id, double* inv_ion_mobilities, const uint32_t* scans, uint32_t size) override final;
+    void inverse_convert(uint32_t frame_id, uint32_t* scans, const double* inv_ion_mobilities, uint32_t size) override final;
 
     std::string description() const override final;
 };

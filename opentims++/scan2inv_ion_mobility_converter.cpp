@@ -42,6 +42,11 @@ void ErrorScan2InvIonMobilityConverter::convert(uint32_t, double*, const uint32_
     throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
 }
 
+void ErrorScan2InvIonMobilityConverter::inverse_convert(uint32_t, uint32_t*, const double*, uint32_t)
+{
+    throw std::logic_error("Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor");
+}
+
 std::string ErrorScan2InvIonMobilityConverter::description() const
 {
     return "ErrorScan2InvIonMobilityConverter default";
@@ -66,6 +71,7 @@ BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataH
     tims_get_last_error_string = lib_handle.symbol_lookup<tims_get_last_error_string_fun_t>("tims_get_last_error_string");
     tims_close = lib_handle.symbol_lookup<tims_close_fun_t>("tims_close");
     tims_scannum_to_inv_ion_mobility = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_scannum_to_oneoverk0");
+    tims_inv_ion_mobility_to_scannum = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_oneoverk0_to_scannum");
 
     bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 0); // Recalibrated states not supported
 
@@ -96,6 +102,17 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_scans[idx] = static_cast<double>(scans[idx]);
     tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size);
+}
+
+void BrukerScan2InvIonMobilityConverter::inverse_convert(uint32_t frame_id,
+             uint32_t* scans,
+             const double* inv_ion_mobilities,
+             uint32_t size)
+{
+    std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
+    tims_inv_ion_mobility_to_scannum(bruker_file_handle, frame_id, inv_ion_mobilities, dbl_scans.get(), size);
+    for(uint32_t idx = 0; idx < size; idx++)
+        scans[idx] = static_cast<double>(dbl_scans[idx]);
 }
 
 std::string BrukerScan2InvIonMobilityConverter::description() const { return "BrukerScan2InvIonMobilityConverter"; }

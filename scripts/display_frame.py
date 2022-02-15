@@ -33,7 +33,7 @@ with OpenTIMS(args.path) as OT:
         plt.imshow(T)
         plt.title("Frame "+str(frame_id))
         if args.save:
-            plt.savefig(f"frame_{frame_id:06d}.png")
+            plt.savefig(f"frame_{frame_id:06d}.png", dpi=500)
         else:
             plt.show()
 

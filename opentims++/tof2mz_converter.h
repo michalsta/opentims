@@ -34,6 +34,7 @@ class Tof2MzConverter
  public:
     virtual void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) = 0;
     virtual void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) = 0;
+    virtual void inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size) = 0;
     virtual ~Tof2MzConverter();
     virtual std::string description();
 };
@@ -44,6 +45,7 @@ class ErrorTof2MzConverter : public Tof2MzConverter
     ErrorTof2MzConverter(TimsDataHandle&);
     void convert(uint32_t, double*, const double*, uint32_t) override final;
     void convert(uint32_t, double*, const uint32_t*, uint32_t) override final;
+    void inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size) override final;
     std::string description() override final;
 };
 
@@ -56,6 +58,7 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
     tims_get_last_error_string_fun_t* tims_get_last_error_string;
     tims_close_fun_t* tims_close;
     tims_convert_fun_t* tims_index_to_mz;
+    tims_convert_fun_t* tims_mz_to_index;
 
     std::string get_tims_error();
 
@@ -65,6 +68,7 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
 
     void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) override final;
     void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override final;
+    void inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size) override final;
 
     std::string description() override final;
 };

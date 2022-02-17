@@ -155,6 +155,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tdf_set_num_threads
+void tdf_set_num_threads(const size_t n);
+RcppExport SEXP _opentimsr_tdf_set_num_threads(SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const size_t >::type n(nSEXP);
+    tdf_set_num_threads(n);
+    return R_NilValue;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_setup_bruker_so", (DL_FUNC) &_opentimsr_setup_bruker_so, 1},
@@ -168,6 +178,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_tdf_get_range_noend", (DL_FUNC) &_opentimsr_tdf_get_range_noend, 3},
     {"_opentimsr_tdf_extract_frames", (DL_FUNC) &_opentimsr_tdf_extract_frames, 9},
     {"_opentimsr_tdf_extract_frames_slice", (DL_FUNC) &_opentimsr_tdf_extract_frames_slice, 11},
+    {"_opentimsr_tdf_set_num_threads", (DL_FUNC) &_opentimsr_tdf_set_num_threads, 1},
     {NULL, NULL, 0}
 };
 

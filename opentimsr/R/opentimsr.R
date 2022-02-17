@@ -530,3 +530,18 @@ CloseTIMS = function(opentims){
 #' }
 setup_bruker_so = function(path) .setup_bruker_so(path)
 
+
+#' Set the number of threads to be used for data processing by OpenTIMS
+#'
+#' A value of 0 s acceptable: it will cause OpenTIMS to use all detected cores.
+#'
+#' @param n The number of worker threads to be used.
+#' @return void
+#' @export
+#' @examples
+#' \dontrun{
+#' opentims_set_threads(1)
+#' }
+opentims_set_threads = function(n){
+    tdf_set_num_threads(n)
+}

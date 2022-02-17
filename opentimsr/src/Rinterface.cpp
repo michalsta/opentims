@@ -23,6 +23,7 @@
 
 // adding default converters.
 #include "converters.h"
+#include "thread_mgr.h"
 
 
 // [[Rcpp::export(.setup_bruker_so)]]
@@ -284,4 +285,10 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     set_frame<double, Rcpp::NumericVector>(result, "retention_time", retention_times, peaks_no);
 
     return result;
+}
+
+// [[Rcpp::export]]
+void tdf_set_num_threads(const size_t n)
+{
+    ThreadingManager::get_instance().set_num_threads(n);
 }

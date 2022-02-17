@@ -45,3 +45,7 @@ tdf_extract_frames_slice <- function(tdf, start, end, step = 1L, get_frames = TR
     .Call('_opentimsr_tdf_extract_frames_slice', PACKAGE = 'opentimsr', tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times)
 }
 
+tdf_set_num_threads <- function(n) {
+    invisible(.Call('_opentimsr_tdf_set_num_threads', PACKAGE = 'opentimsr', n))
+}
+

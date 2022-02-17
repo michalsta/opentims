@@ -368,23 +368,150 @@ class OpenTIMS:
                                                       self.max_frame+1),
                                          columns=columns)]
 
-    def tof_to_mz(self, frame_id, arr):
-        return self.handle.tof_to_mz(frame_id, arr)
 
-    def mz_to_tof(self, frame_id, arr):
-        return self.handle.mz_to_tof(frame_id, arr)
+    def retention_time_to_frame(
+        self,
+        retention_time: np.array
+    ) -> np.array:
+        """Transform retention times into their corresponding frame numbers.
 
-    def scan_to_inv_mobility(self, frame_id, arr):
-        return self.handle.scan_to_inv_mobility(frame_id, arr)
+        We check if retention times are within sensible bounds.
 
-    def inv_mobility_to_scan(self, frame_id, arr):
-        return self.handle.inv_mobility_to_scan(frame_id, arr)
+        Arguments:
+            retention_time (np.array): An array of retention times.
 
-    def frame_id_to_rt(self, frame_id):
-        return self.retention_times[frame_id-1]
+        Returns:
+            np.array: integers, numbers of respective frames (Tims pushes).
+        """
+        retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
+        assert all(retention_time <= self.max_retention_time), "Some retention times were higher than the latest one."
+        res = np.searchsorted(self.retention_times, retention_time)
+        res[res == len(self.retention_times)] -= 1
+        return res + 1
 
-    def rt_to_frame_id(self, rt):
-        return bisect_left(self.retention_times, rt)
+
+    def frame_to_retention_time(
+        self,
+        frame: np.array
+    ) -> np.array:
+        """Transform frames into their corresponding retention times.
+
+        We check if frames are within sensible bounds.
+
+        Arguments:
+            frame (np.array): An array of frames.
+
+        Returns:
+            np.array: retention time when a frame finishes [second].
+        """
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        return self.retention_times[frame-1]
+
+
+    def scan_to_inv_ion_mobility(
+        self, 
+        scan: np.array,
+        frame: np.array
+    ) -> np.array:
+        """Transform scans into their corresponding inverse ion mobilities.
+
+        We check if scans are within sensible bounds.
+
+        Arguments:
+            frame (np.array): An array of integer scans.
+
+        Returns:
+            np.array: inverse ion mobilities [1/k0].
+        """
+        scan = np.array(scan, dtype=np.uint32)
+        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
+        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        inv_ion_mobility = np.empty(len(scan), dtype=np.double)
+        for frame_id in np.unique(frame):
+            inv_ion_mobility[frame == frame_id] = self.handle.scan_to_inv_mobility(
+                frame_id,
+                scan[frame == frame_id]
+            )
+        return inv_ion_mobility
+
+
+    def inv_ion_mobility_to_scan(
+        self,
+        inv_ion_mobility: np.array,
+        frame: np.array
+    ) -> np.array:
+        """Transform inverse ion mobilities into their corresponding scan values.
+
+        We check if scans are within sensible bounds.
+        Scans correspond to individual emptyings of the second TIMS trap.
+
+        Arguments:
+            frame (np.array): An array of integer scans.
+
+        Returns:
+            np.array: inverse ion mobilities [1/k0].
+        """
+        inv_ion_mobility = np.array(inv_ion_mobility, dtype=np.double)
+        assert all(inv_ion_mobility >= self.min_inv_ion_mobility), "Some inverse ion mobilities were below the minimal one."
+        assert all(inv_ion_mobility <= self.max_inv_ion_mobility), "Some inverse ion mobilities were above the maximal one."
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        scan = np.empty(len(inv_ion_mobility), dtype=np.uint32)
+        for frame_id in np.unique(frame):
+            scan[frame == frame_id] = self.handle.inv_mobility_to_scan(
+                frame_id, 
+                scan[frame == frame_id]
+            )
+        return inv_ion_mobility
+
+
+    def tof_to_mz(self, tof: np.array, frame: np.array):
+        """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
+
+        Caution!
+        We do not check if the values are sensible, i.e. if they correspond to meaningful outputs.
+
+        Arguments:
+            tof (np.array): An array of time of flight integers.
+
+        Returns:
+            np.array: array of doubles with m/z values.
+        """
+        tof = np.array(tof, dtype=np.uint32)
+        mz = np.empty(len(tof), dtype=np.double)
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        for frame_id in np.unique(frame):
+            mz[frame == frame_id] = self.handle.tof_to_mz(frame_id, tof[frame == frame_id])
+        return mz
+
+
+    def mz_to_tof(self, mz: np.array, frame: np.array):
+        """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
+
+        We check if m/z values are within sensible bounds.
+        Time of flight indices are somehow proportional to time of flights.
+        We are figuring out how.
+        
+        Arguments:
+            mz (np.array): An array of m/z floats.
+
+        Returns:
+            np.array: integer time of flight indices.
+        """
+        mz = np.array(mz, dtype=np.double)
+        assert all(mz >= self.min_mz), "Some m/z values were below the minimal one."
+        assert all(mz <= self.max_mz), "Some m/z values were above the maximal one."
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        tof = np.empty(len(mz), dtype=np.uint32)
+        for frame_id in np.unique(frame):
+            tof[frame == frame_id] = self.handle.mz_to_tof(frame_id, mz[frame == frame_id])
+        return tof
+
 
     @functools.lru_cache(maxsize=1)
     def framesTIC(self):

@@ -386,8 +386,29 @@ class OpenTIMS:
         retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
         assert all(retention_time <= self.max_retention_time), "Some retention times were higher than the latest one."
         res = np.searchsorted(self.retention_times, retention_time)
-        res[res == len(self.retention_times)] -= 1
         return res + 1
+
+
+    def MS1_retention_time_to_frame(
+        self,
+        retention_time: np.array
+    ) -> np.array:
+        """Transform MS1 retention times into their corresponding frame numbers.
+
+        This is to be sure that we get values only in MS1.
+        We check if retention times are within sensible bounds.
+
+        Arguments:
+            retention_time (np.array): An array of retention times.
+
+        Returns:
+            np.array: integers, numbers of respective frames (Tims pushes).
+        """
+        retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
+        all_ms1_rts = self.retention_times[self.ms1_frames - 1]
+        assert all(retention_time <= all_ms1_rts[-1]), "Some retention times were higher than the last MS1 one."
+        res = np.searchsorted(all_ms1_rts, retention_time)
+        return self.ms1_frames[res]
 
 
     def frame_to_retention_time(

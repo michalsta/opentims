@@ -486,9 +486,9 @@ class OpenTIMS:
         for frame_id in np.unique(frame):
             scan[frame == frame_id] = self.handle.inv_mobility_to_scan(
                 frame_id, 
-                scan[frame == frame_id]
+                inv_ion_mobility[frame == frame_id]
             )
-        return inv_ion_mobility
+        return scan
 
 
     def tof_to_mz(self, tof: np.array, frame: np.array):

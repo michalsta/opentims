@@ -381,7 +381,7 @@ class OpenTIMS:
         return self.handle.inv_mobility_to_scan(frame_id, arr)
 
     def frame_id_to_rt(self, frame_id):
-        return self.retention_times[frame_id+1]
+        return self.retention_times[frame_id-1]
 
     def rt_to_frame_id(self, rt):
         return bisect_left(self.retention_times, rt)

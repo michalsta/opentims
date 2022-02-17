@@ -2,8 +2,8 @@ Encoding: UTF-8
 Package: opentimsr
 Type: Package
 Title: An Open-Source Loader for Bruker's timsTOF Data Files
-Version: 1.0.11
-Date: 2021-12-10
+Version: 1.0.12
+Date: 2022-02-17
 Authors@R:
     c(person(given="Michał Piotr",
              family="Startek",
@@ -33,5 +33,5 @@ Imports:
 LazyData: no
 LinkingTo: Rcpp
 NeedsCompilation: yes
-SystemRequirements: C++14
+SystemRequirements: C++17
 RoxygenNote: 7.1.2

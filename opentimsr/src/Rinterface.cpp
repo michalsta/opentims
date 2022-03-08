@@ -191,7 +191,7 @@ Rcpp::DataFrame tdf_extract_frames(
 
     std::unique_ptr<uint32_t[]> v = std::make_unique<uint32_t[]>(indexes.size());
 
-    for(size_t ii=0; ii < indexes.size(); ++ii) v[ii] = indexes[ii];
+    for(R_xlen_t ii=0; ii < indexes.size(); ++ii) v[ii] = indexes[ii];
 
     const size_t peaks_no = tdh.no_peaks_in_frames(v.get(), indexes.size()); // conts for compiler optimization.
 

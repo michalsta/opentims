@@ -1,6 +1,6 @@
 import numpy as np
 import sqlite3
-
+from collections import namedtuple
 
 def _sql2list(path, query):
     with sqlite3.connect(path) as conn:
@@ -37,3 +37,28 @@ def table2dict(path, name):
     colvalues = zip(*_sql2list(path, f"SELECT * FROM {name}"))
     return dict(zip(colnames, (np.array(values) for values in colvalues)))
 
+def table2keyed_dict(connection, tblname):
+    """Retrieve a dictionary from a table with a given name.
+    Do not feed as tblname anything coming from an untrusted source.
+
+    Args:
+        connection : An open sqlite3 connection
+        name (str): Name of the table to extract.
+    Returns:
+        dict: Maps primary_key name to a list of namedtuples containing values.
+    """
+    sql_key = list(connection.execute("SELECT name FROM pragma_table_info(?) WHERE pk == 1", [tblname]))
+    assert len(sql_key) == 1
+    sql_key = sql_key[0][0]
+    #other_colnames = [res[0] for res in conn.execute("SELECT name FROM pragma_table_info(?) WHERE pk == 0", [tblname])]
+    cur = connection.execute("SELECT * FROM " + tblname)
+    colnames = [col[0] for col in cur.description]
+    sql_key_idx = colnames.index(sql_key)
+
+    tuple_type = namedtuple(tblname+"_row", colnames)
+    ret = {}
+    for row in cur:
+        print(colnames)
+        nt = tuple_type(*row)
+        ret[nt[sql_key_idx]] = nt
+    return ret

@@ -58,7 +58,6 @@ def table2keyed_dict(connection, tblname):
     tuple_type = namedtuple(tblname+"_row", colnames)
     ret = {}
     for row in cur:
-        print(colnames)
         nt = tuple_type(*row)
         ret[nt[sql_key_idx]] = nt
     return ret

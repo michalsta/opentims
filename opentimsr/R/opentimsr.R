@@ -467,7 +467,7 @@ rt_query = function(opentims,
 download_bruker_proprietary_code = function(
   target.folder, 
   net_url=paste0("https://raw.githubusercontent.com/MatteoLacki/",
-                 "opentims_bruker_bridge/main/opentims_bruker_bridge/")
+                 "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode="wb",
   ...){
   sys_info = Sys.info()

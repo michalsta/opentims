@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser(description='Display a plot of a single frame f
 parser.add_argument("path", help="TDF dataset path", type=Path)
 parser.add_argument("frames", help="Comma-separated list of frames, including ranges. Example: 314,320-330,435. Will plot everything if omitted.", nargs='?', default=None)
 parser.add_argument("-s", "--save", help="Save the images to files instead of displaying them", action="store_true")
-parser.add_argument("--silent", help="do not display progressbar", action='store_true')
+parser.add_argument("--silent", help="Do not display progressbar", action='store_true')
+parser.add_argument("-p", "--processes", help="Number of subprocesses to use. Will use as many as there are detected cores in your system if omitted.", type=int, default=None)
 args=parser.parse_args()
 
 from numba import jit
@@ -40,6 +41,7 @@ with OpenTIMS(args.path) as OT:
             plt.savefig(f"frame_{frame_id:06d}.png", dpi=500)
         else:
             plt.show()
+        plt.close()
 
 
     if args.frames is None:
@@ -60,7 +62,7 @@ with OpenTIMS(args.path) as OT:
 
     if args.save:
         from multiprocessing import Pool
-        P = Pool()
+        P = Pool(args.processes)
         multiproc = lambda x: P.imap_unordered(worker, x)
     else:
         multiproc = lambda x: map(worker, sorted(x))

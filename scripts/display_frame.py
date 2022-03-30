@@ -53,9 +53,6 @@ with OpenTIMS(args.path) as OT:
             else:
                 frames.add(int(frame_desc))
 
-    if len(frames) == 0:
-        frames = D.frames['Id']
-
     if args.silent:
         progressbar = lambda x: x
     else:

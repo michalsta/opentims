@@ -21,6 +21,7 @@ def mkimage(scan, mz, intensity, A):
 
 
 with OpenTIMS(args.path) as OT:
+    max_intens = np.log10(OT.max_intensity+1)
 
     def worker(frame_id):
         frame = OT.query(frame_id, columns='scan mz intensity'.split())
@@ -28,10 +29,13 @@ with OpenTIMS(args.path) as OT:
 
         mkimage(frame['scan'], frame['mz'], frame['intensity'], T)
 
-        T = np.log((T+1))
+        T = np.log10((T+1))
 
-        plt.imshow(T)
+        plt.imshow(T, vmax=max_intens)
         plt.title("Frame "+str(frame_id))
+        plt.xlabel("m/z")
+        plt.ylabel("scan")
+        plt.colorbar(label="log10(intensity)", shrink=0.4, aspect=6)
         if args.save:
             plt.savefig(f"frame_{frame_id:06d}.png", dpi=500)
         else:

@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 import sys
 from pathlib import Path
-from opentimspy import OpenTIMS
+from opentimspy import OpenTIMS, set_num_threads, plotting
 from matplotlib import pyplot as plt
+from collections import namedtuple
+from functools import partial
 import numpy as np
+
+set_num_threads(1)
+
+Range = namedtuple("Range", "min max".split())
+
+def rangeize(in_str, conversion):
+    x, y = in_str.split('-')
+    return Range(conversion(x), conversion(y))
 
 import argparse
 parser = argparse.ArgumentParser(description='Display a plot of a single frame from TDF file.')
@@ -12,33 +22,39 @@ parser.add_argument("frames", help="Comma-separated list of frames, including ra
 parser.add_argument("-s", "--save", help="Save the images to files instead of displaying them", action="store_true")
 parser.add_argument("--silent", help="Do not display progressbar", action='store_true')
 parser.add_argument("-p", "--processes", help="Number of subprocesses to use. Will use as many as there are detected cores in your system if omitted.", type=int, default=None)
-args=parser.parse_args()
+parser.add_argument("--mz-range", help="Custom mz range, example: 400.0-600.0", type=partial(rangeize, conversion=float), default=Range(0, 2000))
+parser.add_argument("--scan-range", help="Custom scan range, example: 200-300", type=partial(rangeize, conversion=int), default=None)
+parser.add_argument("--mz-resolution", help="Custom mz binning resolution for plot. Default: 1.0", type=float, default=1.0)
+parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
 
-from numba import jit
-@jit(nopython=True)
-def mkimage(scan, mz, intensity, A):
-    for ii in range(len(scan)):
-        A[scan[ii], int(mz[ii])] += intensity[ii]
+
+args=parser.parse_args()
 
 
 with OpenTIMS(args.path) as OT:
-    max_intens = np.log10(OT.max_intensity+1)
+    max_intens = OT.max_intensity
+    if args.scan_range is None:
+        args.scan_range = Range(1, OT.max_scan+1)
 
     def worker(frame_id):
+        from matplotlib import pyplot as plt
         frame = OT.query(frame_id, columns='scan mz intensity'.split())
-        T = np.zeros(shape=(OT.max_scan,int(OT.max_mz)), dtype=np.uint32)
-
-        mkimage(frame['scan'], frame['mz'], frame['intensity'], T)
-
-        T = np.log10((T+1))
-
-        plt.imshow(T, vmax=max_intens)
+        plotting.do_plot(
+                plt,
+                frame,
+                axes='mz scan'.split(),
+                xax_min=args.mz_range.min,
+                xax_max=min(OT.max_mz, args.mz_range.max),
+                xax_res=args.mz_resolution,
+                yax_min=args.scan_range.min,
+                yax_max=args.scan_range.max,
+                yax_res=None,
+                intens_cutoff=args.intensity,
+                log_scale=True,
+                max_intens=max_intens)
         plt.title("Frame "+str(frame_id))
-        plt.xlabel("m/z")
-        plt.ylabel("scan")
-        plt.colorbar(label="log10(intensity)", shrink=0.4, aspect=6)
         if args.save:
-            plt.savefig(f"frame_{frame_id:06d}.png", dpi=500)
+            plt.savefig(f"frame_{frame_id:06d}.png", dpi=600, bbox_inches="tight", pad_inches=0)
         else:
             plt.show()
         plt.close()

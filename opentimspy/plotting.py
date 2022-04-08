@@ -61,22 +61,14 @@ def mk_bitmap(frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_r
 
     XI = transformations[xax](X, min_val=xax_min, resolution=xax_res)
     YI = transformations[yax](Y, min_val=yax_min, resolution=yax_res)
-    print(X)
-    print(XI)
-    print(I.sum())
 
     IMG = make_dense(XI, YI, I, no_idxes(xax_min, xax_max, xax_res), no_idxes(yax_min, yax_max, yax_res))
-    print(IMG.sum())
-    print(IMG.shape)
 
     if intens_cutoff > 0:
         IMG[IMG<intens_cutoff] = 0
 
-    print("MAX", IMG.max())
     if log_scale:
         IMG = np.log10(IMG+1)
-
-    print(IMG.sum())
 
     return IMG
 
@@ -90,18 +82,16 @@ def do_plot(plt, frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xa
     IMG = mk_bitmap(frame_dct, axes, xax_min, xax_max, xax_res, yax_min, yax_max, yax_res, intens_cutoff, log_scale)
     if log_scale:
         max_intens = np.log10(max_intens+1)
-    print(IMG.shape)
-    print(IMG[100,100])
 
     plt.subplots(figsize=(6,4))
     plt.margins(0,0)
     plt.imshow(
             np.transpose(IMG),
             vmax=max_intens,
-#            extent=(xax_min-resolution_offset(xax_res),
-#                    xax_max+resolution_offset(xax_res),
-#                    yax_max+resolution_offset(yax_res),
-#                    yax_min-resolution_offset(yax_res)),
+            extent=(xax_min-resolution_offset(xax_res),
+                    xax_max+resolution_offset(xax_res),
+                    yax_max+resolution_offset(yax_res),
+                    yax_min-resolution_offset(yax_res)),
 #            interpolation='None')
     )
     plt.xlabel(axes[0])

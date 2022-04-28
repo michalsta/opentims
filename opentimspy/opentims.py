@@ -23,6 +23,10 @@ import sqlite3
 import opentimspy
 
 from .sql import tables_names, table2dict, table2keyed_dict
+from .dimension_translations import (
+    translate_values_frame_sorted,
+    translate_values_frames_not_guaranteed_sorted,
+)
 
 all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
@@ -436,6 +440,17 @@ class OpenTIMS:
         return self.retention_times[frame-1]
 
 
+    def __scan_to_inv_ion_mobility_assertions(
+        self,
+        scan: np.array,
+        frame: np.array,
+    ) -> None:
+        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
+        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
+        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+
+
     def scan_to_inv_ion_mobility(
         self, 
         scan: np.array,
@@ -445,24 +460,63 @@ class OpenTIMS:
 
         We check if scans are within sensible bounds.
 
+        This works in O(nlog(n)).
+        Not happy, well, there's always 'scan_to_inv_ion_mobility_frame_sorted'.
+
         Arguments:
+            scan (np.array): An array of scans.
             frame (np.array): An array of integer scans.
 
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
-        scan = np.array(scan, dtype=np.uint32)
-        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
-        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
+        self.__scan_to_inv_ion_mobility_assertions(scan, frame)
+        return translate_values_frames_not_guaranteed_sorted(
+            x=scan,
+            frame=frame,
+            bruker_translator_foo=self.handle.scan_to_inv_mobility,
+            x_dtype=np.uint32,
+            result_dtype=np.double,
+        )
+
+    def scan_to_inv_ion_mobility_frame_sorted(
+        self, 
+        scan: np.array,
+        frame: np.array,
+    ) -> np.array:
+        """Transform scans into their corresponding inverse ion mobilities.
+
+        We check if scans are within sensible bounds.
+
+        This works in O(n).
+
+        Arguments:
+            scan (np.array): An array of scans.
+            frame (np.array): An array of integer scans.
+
+        Returns:
+            np.array: inverse ion mobilities [1/k0].
+        """
+        self.__scan_to_inv_ion_mobility_assertions(scan, frame)
+        return translate_values_frame_sorted(
+            x_frame_sorted=scan,
+            frame_sorted=frame,
+            bruker_translator_foo=self.handle.scan_to_inv_mobility,
+            x_dtype=np.uint32,
+            result_dtype=np.double,
+        )
+
+
+    def __inv_ion_mobility_to_scan_assertions(
+        self,
+        inv_ion_mobility: np.array,
+        frame: np.array,
+        _buffer: float = 0.0,
+    ) -> None:
+        assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
+        assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
         assert all(frame >= self.min_frame), "Some frames were below the minimal one."
         assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        inv_ion_mobility = np.empty(len(scan), dtype=np.double)
-        for frame_id in np.unique(frame):
-            inv_ion_mobility[frame == frame_id] = self.handle.scan_to_inv_mobility(
-                frame_id,
-                scan[frame == frame_id]
-            )
-        return inv_ion_mobility
 
 
     def inv_ion_mobility_to_scan(
@@ -476,45 +530,132 @@ class OpenTIMS:
         We check if scans are within sensible bounds.
         Scans correspond to individual emptyings of the second TIMS trap.
 
+        This works in O(nlog(n)).
+        Not happy, well, there's always 'inv_ion_mobility_to_scan_frame_sorted'.
+
         Arguments:
+            inv_ion_mobility (np.array): Inverse ion mobility values to translate.
             frame (np.array): An array of integer scans.
 
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
-        inv_ion_mobility = np.array(inv_ion_mobility, dtype=np.double)
-        assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
-        assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
+        self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
+        return translate_values_frames_not_guaranteed_sorted(
+            x=inv_ion_mobility,
+            frame=frame,
+            bruker_translator_foo=self.handle.inv_mobility_to_scan,
+            x_dtype=np.double,
+            result_dtype=np.uint32,
+        )
+
+    def inv_ion_mobility_to_scan_frame_sorted(
+        self,
+        inv_ion_mobility: np.array,
+        frame: np.array,
+        _buffer: float = 0.0,
+    ) -> np.array:
+        """Transform inverse ion mobilities into their corresponding scan values, assuming frames are sorted.
+
+        We check if scans are within sensible bounds.
+        Scans correspond to individual emptyings of the second TIMS trap.
+    
+        This works in O(n).
+
+        Arguments:
+            inv_ion_mobility (np.array): Inverse ion mobility values to translate.
+            frame (np.array): An array of integer scans.
+
+        Returns:
+            np.array: inverse ion mobilities [1/k0].
+        """
+        self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
+        return translate_values_frame_sorted(
+            x_frame_sorted=inv_ion_mobility,
+            frame_sorted=frame,
+            bruker_translator_foo=self.handle.inv_mobility_to_scan,
+            x_dtype=np.double,
+            result_dtype=np.uint32,
+        )
+
+
+    def __tof_to_mz_assertions(
+        self,
+        tof: np.array,
+        frame: np.array,
+    ) -> None:
         assert all(frame >= self.min_frame), "Some frames were below the minimal one."
         assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        scan = np.empty(len(inv_ion_mobility), dtype=np.uint32)
-        for frame_id in np.unique(frame):
-            scan[frame == frame_id] = self.handle.inv_mobility_to_scan(
-                frame_id, 
-                inv_ion_mobility[frame == frame_id]
-            )
-        return scan
 
 
-    def tof_to_mz(self, tof: np.array, frame: np.array):
+    def tof_to_mz(
+        self,
+        tof: np.array,
+        frame: np.array
+    ) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
 
         Caution!
         We do not check if the values are sensible, i.e. if they correspond to meaningful outputs.
 
+        This works in O(nlog(n)).
+        Not happy, well, there's always 'tof_to_mz_frame_sorted'.
+
         Arguments:
             tof (np.array): An array of time of flight integers.
+            frame (np.array): An array of integer scans.
 
         Returns:
             np.array: array of doubles with m/z values.
         """
-        tof = np.array(tof, dtype=np.uint32)
-        mz = np.empty(len(tof), dtype=np.double)
+        self.__tof_to_mz_assertions(tof, frame)
+        return translate_values_frames_not_guaranteed_sorted(
+            x=tof,
+            frame=frame,
+            bruker_translator_foo=self.handle.tof_to_mz,
+            x_dtype=np.uint32,
+            result_dtype=np.double,
+        )
+
+    def tof_to_mz_frame_sorted(
+        self,
+        tof: np.array,
+        frame: np.array
+    ) -> np.array:
+        """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
+
+        Caution!
+        We do not check if the values are sensible, i.e. if they correspond to meaningful outputs.
+
+        This works in O(n).
+
+        Arguments:
+            tof (np.array): An array of time of flight integers.
+            frame (np.array): An array of integer scans.
+
+        Returns:
+            np.array: array of doubles with m/z values.
+        """
+        self.__tof_to_mz_assertions(tof, frame)
+        return translate_values_frame_sorted(
+            x_frame_sorted=tof,
+            frame_sorted=frame,
+            bruker_translator_foo=self.handle.tof_to_mz,
+            x_dtype=np.uint32,
+            result_dtype=np.double,
+        )
+
+
+    def __mz_to_tof_assertions(
+        self,
+        mz: np.array,
+        frame: np.array,
+        _buffer: float,
+    ) -> None:
+        assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
+        assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
         assert all(frame >= self.min_frame), "Some frames were below the minimal one."
         assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        for frame_id in np.unique(frame):
-            mz[frame == frame_id] = self.handle.tof_to_mz(frame_id, tof[frame == frame_id])
-        return mz
 
 
     def mz_to_tof(
@@ -522,29 +663,59 @@ class OpenTIMS:
         mz: np.array,
         frame: np.array,
         _buffer: float=0.0,
-    ):
+    ) -> np.array:
         """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
 
         We check if m/z values are within sensible bounds.
         Time of flight indices are somehow proportional to time of flights.
         We are figuring out how.
         
+        This works in O(nlog(n)).
+        Not happy, well, there's always 'mz_to_tof_frame_sorted'.
+
         Arguments:
             mz (np.array): An array of m/z floats.
 
         Returns:
             np.array: integer time of flight indices.
         """
-        mz = np.array(mz, dtype=np.double)
-        assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
-        assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        tof = np.empty(len(mz), dtype=np.uint32)
-        for frame_id in np.unique(frame):
-            tof[frame == frame_id] = self.handle.mz_to_tof(frame_id, mz[frame == frame_id])
-        return tof
+        self.__mz_to_tof_assertions(mz, frame, _buffer)
+        return translate_values_frames_not_guaranteed_sorted(
+            x=mz,
+            frame=frame,
+            bruker_translator_foo=self.handle.mz_to_tof,
+            x_dtype=np.double,
+            result_dtype=np.uint32,
+        )
 
+    def mz_to_tof_frame_sorted(
+        self,
+        mz: np.array,
+        frame: np.array,
+        _buffer: float=0.0,
+    ) -> np.array:
+        """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
+
+        We check if m/z values are within sensible bounds.
+        Time of flight indices are somehow proportional to time of flights.
+        We are figuring out how.
+        
+        This works in O(n).
+
+        Arguments:
+            mz (np.array): An array of m/z floats.
+
+        Returns:
+            np.array: integer time of flight indices.
+        """
+        self.__mz_to_tof_assertions(mz, frame, _buffer)
+        return translate_values_frame_sorted(
+            x_frame_sorted=mz,
+            frame_sorted=frame,
+            bruker_translator_foo=self.handle.mz_to_tof,
+            x_dtype=np.double,
+            result_dtype=np.uint32,
+        )
 
     @functools.lru_cache(maxsize=1)
     def framesTIC(self):

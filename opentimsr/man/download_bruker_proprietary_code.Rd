@@ -6,8 +6,8 @@
 \usage{
 download_bruker_proprietary_code(
   target.folder,
-  net_url = paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
-    "raw/main/opentims_bruker_bridge/"),
+  net_url = paste0("https://raw.githubusercontent.com/MatteoLacki/",
+    "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode = "wb",
   ...
 )

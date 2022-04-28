@@ -466,22 +466,22 @@ rt_query = function(opentims,
 #' }
 download_bruker_proprietary_code = function(
   target.folder, 
-  net_url=paste0("https://github.com/MatteoLacki/opentims_bruker_bridge/",
-                 "raw/main/opentims_bruker_bridge/"),
+  net_url=paste0("https://raw.githubusercontent.com/MatteoLacki/",
+                 "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode="wb",
   ...){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
-    print("Welcome to a real OS.")
+    print("Downloading 64-bit Linux binary.")
     url_ending = file="libtimsdata.so"
   }
   if(sys_info['sysname'] == "Windows"){
-    print("Detected Windows. Like seriously?")
     file = "timsdata.dll"
     if(sys_info['machine'] == "x86-64"){
+      print("Downloading Windows 64-bit binary.")
       url_ending="win64/timsdata.dll"   
     } else {
-      print("Assuming 32 bits")
+      print("Downloading Windows 32-bit binary.")
       url_ending="win32/timsdata.dll"
     }
   }
@@ -533,7 +533,7 @@ setup_bruker_so = function(path) .setup_bruker_so(path)
 
 #' Set the number of threads to be used for data processing by OpenTIMS
 #'
-#' A value of 0 s acceptable: it will cause OpenTIMS to use all detected cores.
+#' A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
 #'
 #' @param n The number of worker threads to be used.
 #' @return void

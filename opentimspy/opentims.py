@@ -22,7 +22,7 @@ import sqlite3
 
 import opentimspy
 
-from .sql import tables_names, table2dict
+from .sql import tables_names, table2dict, table2keyed_dict
 from .dimension_translations import (
     translate_values_frame_sorted,
     translate_values_frames_not_guaranteed_sorted,
@@ -54,6 +54,7 @@ class OpenTIMS:
         self.analysis_directory = pathlib.Path(analysis_directory)
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.frames = self.table2dict("Frames")
+        self.frame_properties = self.table2keyed_dict("Frames")
         # make sure it is all sorted by retention time / frame number
         sort_order = np.argsort(self.frames["Id"])
         for column in self.frames:
@@ -120,6 +121,10 @@ class OpenTIMS:
 
     def table2dict(self, name):
         return table2dict(self.analysis_directory/"analysis.tdf", name)
+
+    def table2keyed_dict(self, name):
+        with self.get_sql_connection() as sqlcon:
+            return table2keyed_dict(sqlcon, name)
 
     def frame2retention_time(self, frames):
         frames = np.r_[frames]

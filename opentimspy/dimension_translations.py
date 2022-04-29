@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable
+from typing import Callable, List, Union
 
 
 # def is_sorted(xx: np.array) -> bool:
@@ -9,10 +9,30 @@ from typing import Callable
 #             return False
 #         x = x_prev
 #     return True
-
-
+## 80 times slower on sorted input...
 def is_sorted(xx: np.array) -> bool:
     return np.all(xx[:-1] <= xx[1:])
+
+
+#type defs
+TranslationInt = Union[np.array, int, List[int]]
+TranslationFloat = Union[np.array, float, List[float]]
+FrameType = Union[np.array, int, List[int], List[int]]
+
+
+def cast_to_numpy_arrays(
+    x: Union[TranslationInt, TranslationFloat],
+    frame: FrameType,
+):
+    if isinstance(frame, int):
+        frame = np.array([frame], dtype=np.uint32)
+    if isinstance(frame, list):
+        frame = np.array(frame, dtype=np.uint32)
+    if isinstance(x, (float, int)):
+        x = np.array([x])# type will be changed later: this is a scalar anyway
+    if isinstance(x, list):
+        x = np.array(x)# OK, this is potentially more expensive, simply use arrays to avoid that.
+    return (x, frame)
 
 
 def translate_values_frame_sorted(

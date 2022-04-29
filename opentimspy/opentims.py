@@ -24,6 +24,7 @@ import opentimspy
 
 from .sql import tables_names, table2dict, table2keyed_dict
 from .dimension_translations import (
+    cast_to_numpy_arrays,
     translate_values_frame_sorted,
     translate_values_frames_not_guaranteed_sorted,
 )
@@ -470,6 +471,7 @@ class OpenTIMS:
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
+        scan, frame = cast_to_numpy_arrays(scan, frame)
         self.__scan_to_inv_ion_mobility_assertions(scan, frame)
         return translate_values_frames_not_guaranteed_sorted(
             x=scan,
@@ -497,6 +499,7 @@ class OpenTIMS:
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
+        scan, frame = cast_to_numpy_arrays(scan, frame)
         self.__scan_to_inv_ion_mobility_assertions(scan, frame)
         return translate_values_frame_sorted(
             x_frame_sorted=scan,
@@ -540,6 +543,7 @@ class OpenTIMS:
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
+        inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
         self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
         return translate_values_frames_not_guaranteed_sorted(
             x=inv_ion_mobility,
@@ -569,6 +573,7 @@ class OpenTIMS:
         Returns:
             np.array: inverse ion mobilities [1/k0].
         """
+        inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
         self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
         return translate_values_frame_sorted(
             x_frame_sorted=inv_ion_mobility,
@@ -608,6 +613,7 @@ class OpenTIMS:
         Returns:
             np.array: array of doubles with m/z values.
         """
+        tof, frame = cast_to_numpy_arrays(tof, frame)
         self.__tof_to_mz_assertions(tof, frame)
         return translate_values_frames_not_guaranteed_sorted(
             x=tof,
@@ -636,6 +642,7 @@ class OpenTIMS:
         Returns:
             np.array: array of doubles with m/z values.
         """
+        tof, frame = cast_to_numpy_arrays(tof, frame)
         self.__tof_to_mz_assertions(tof, frame)
         return translate_values_frame_sorted(
             x_frame_sorted=tof,
@@ -679,6 +686,7 @@ class OpenTIMS:
         Returns:
             np.array: integer time of flight indices.
         """
+        mz, frame = cast_to_numpy_arrays(mz, frame)
         self.__mz_to_tof_assertions(mz, frame, _buffer)
         return translate_values_frames_not_guaranteed_sorted(
             x=mz,
@@ -708,6 +716,7 @@ class OpenTIMS:
         Returns:
             np.array: integer time of flight indices.
         """
+        mz, frame = cast_to_numpy_arrays(mz, frame)
         self.__mz_to_tof_assertions(mz, frame, _buffer)
         return translate_values_frame_sorted(
             x_frame_sorted=mz,

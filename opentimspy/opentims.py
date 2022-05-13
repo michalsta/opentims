@@ -12,13 +12,15 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+from __future__ import annotations
 import collections
 import functools
 import hashlib
 import numpy as np
+import numpy.typing as npt
 import pathlib
 import sqlite3
+import typing
 
 import opentimspy
 
@@ -43,9 +45,12 @@ def hash_frame(X,
     return hashes
 
 
+FramesType = typing.Union[ int, typing.Iterable[int] ]
+ColumnsType = typing.Union[ str, typing.Iterable[str] ]
+
 
 class OpenTIMS:
-    def __init__ (self, analysis_directory):
+    def __init__ (self, analysis_directory: str|pathlib.Path):
         """Initialize OpenTIMS.
 
             Args:
@@ -120,21 +125,21 @@ class OpenTIMS:
     def tables_names(self):
         return tables_names(self.analysis_directory/"analysis.tdf")
 
-    def table2dict(self, name):
+    def table2dict(self, name: str):
         return table2dict(self.analysis_directory/"analysis.tdf", name)
 
-    def table2keyed_dict(self, name):
+    def table2keyed_dict(self, name: str):
         with self.get_sql_connection() as sqlcon:
             return table2keyed_dict(sqlcon, name)
 
-    def frame2retention_time(self, frames):
+    def frame2retention_time(self, frames: FramesType):
         frames = np.r_[frames]
         assert frames.min() >= self.min_frame, f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
         assert frames.max() <= self.max_frame, f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
         return np.array([self.handle.get_frame(i).time for i in frames])
 
 
-    def peaks_per_frame_cnts(self, frames, convert=True):
+    def peaks_per_frame_cnts(self, frames: FramesType, convert=True):
         """Return the numbers of peaks in chosen frames.
 
         Args:
@@ -158,7 +163,7 @@ class OpenTIMS:
                                       self.all_columns_dtypes)}
 
 
-    def query(self, frames, columns=all_columns):
+    def query(self, frames: FramesType, columns: ColumnsType = all_columns):
         """Get data from a selection of frames.
 
         Args:
@@ -167,6 +172,10 @@ class OpenTIMS:
         Returns:
             dict: columns to numpy array mapping.
         """
+        if isinstance(columns, str):
+            columns = (columns,)
+
+        columns = tuple(columns)
         assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
 
         try:
@@ -184,8 +193,8 @@ class OpenTIMS:
 
 
     def query_iter(self,
-                   frames,
-                   columns=all_columns):
+                   frames: FramesType,
+                   columns: ColumnsType=all_columns):
         """Iterate data from a selection of frames.
 
         Args:
@@ -199,9 +208,9 @@ class OpenTIMS:
 
 
     def rt_query(self,
-                 min_retention_time,
-                 max_retention_time,
-                 columns=all_columns):
+                 min_retention_time: float,
+                 max_retention_time: float,
+                 columns: ColumnsType=all_columns):
         """Get data from a selection of frames based on retention times.
 
         Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
@@ -223,8 +232,8 @@ class OpenTIMS:
 
 
     def rt_query_iter(self,
-                      min_retention_time,
-                      max_retention_time,
+                      min_retention_time: float,
+                      max_retention_time: float,
                       columns=all_columns):
         """Iterate data from a selection of frames based on retention times.
 
@@ -245,7 +254,7 @@ class OpenTIMS:
         yield from self.query_iter(range(min_frame, max_frame+1), columns)
 
 
-    def frame_array(self, frame):
+    def frame_array(self, frame: int):
         """Get a 2D array of data for a given frame.
 
         Args:
@@ -264,7 +273,7 @@ class OpenTIMS:
         return X
 
 
-    def frame_arrays(self, frames):
+    def frame_arrays(self, frames: FramesType):
         """Get raw data from a selection of frames.
 
         Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
@@ -302,7 +311,7 @@ class OpenTIMS:
         self.handle.extract_frames_slice(start, stop, step, X)
         return X
 
-    def get_separate_frames(self, frame_ids, columns = all_columns):
+    def get_separate_frames(self, frame_ids, columns: ColumnsType=all_columns):
         assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
         if not isinstance(frame_ids, list):
             frame_ids = list(frame_ids)
@@ -318,7 +327,7 @@ class OpenTIMS:
         return ret
 
 
-    def __getitem__(self, frames):
+    def __getitem__(self, frames: FramesType):
         """Get raw data array for given frames and scans.
 
         Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
@@ -339,7 +348,7 @@ class OpenTIMS:
 
 
     def get_hash(self,
-                 columns=('frame','scan','tof','intensity'),
+                 columns: ColumnsType=('frame','scan','tof','intensity'),
                  algo=hashlib.blake2b):
         """Calculate a data-set-wide hash.
 
@@ -361,8 +370,8 @@ class OpenTIMS:
 
 
     def get_hashes(self,
-                   columns=('frame','scan','tof','intensity'),
-                   algo=hashlib.blake2b):
+                   columns: ColumnsType=('frame','scan','tof','intensity'),
+                   algo: typing.Callable=hashlib.blake2b):
         """Calculate a hashes for each frame.
 
         Defaults to raw data that are all uint32.
@@ -381,8 +390,8 @@ class OpenTIMS:
 
     def retention_time_to_frame(
         self,
-        retention_time: np.array,
-        _buffer=1,
+        retention_time: float | npt.NDArray[float] | list[float],
+        _buffer: int=1,
     ) -> np.array:
         """Transform retention times into their corresponding frame numbers.
 
@@ -402,8 +411,8 @@ class OpenTIMS:
 
     def MS1_retention_time_to_frame(
         self,
-        retention_time: np.array,
-        _buffer=1,
+        retention_time: np.float | npt.NDArray[float] | list[float],
+        _buffer: int=1,
     ) -> np.array:
         """Transform MS1 retention times into their corresponding frame numbers.
 
@@ -424,7 +433,7 @@ class OpenTIMS:
 
     def frame_to_retention_time(
         self,
-        frame: np.array
+        frame: FrameType
     ) -> np.array:
         """Transform frames into their corresponding retention times.
 

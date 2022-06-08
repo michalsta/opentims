@@ -102,7 +102,7 @@ class OpenTIMS:
 
 
     def __repr__(self):
-        return f"OpenTIMS({self.peaks_cnt} peaks)"
+        return f"OpenTIMS({self.peaks_cnt:_} peaks)"
 
 
     def __del__ (self):

@@ -68,7 +68,7 @@ def get_module_dir():
     return pathlib.Path(__file__).parent
 
 
-from opentimspy.opentims import OpenTIMS
+from opentimspy.opentims import OpenTIMS, column_to_dtype, all_columns, all_columns_dtype
 
 def set_num_threads(n):
     '''

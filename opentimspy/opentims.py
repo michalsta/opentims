@@ -30,6 +30,7 @@ from .dimension_translations import (
 
 all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
+column_to_dtype = dict(zip(all_columns, all_columns_dtype))
 
 def hash_frame(X,
                columns=('frame','scan','tof','intensity'),
@@ -435,8 +436,8 @@ class OpenTIMS:
         Returns:
             np.array: retention time when a frame finishes [second].
         """
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+#        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+#        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
         return self.retention_times[frame-1]
 
 
@@ -445,10 +446,11 @@ class OpenTIMS:
         scan: np.array,
         frame: np.array,
     ) -> None:
-        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
-        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        pass
+#        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
+#        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
+#        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+#        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
 
     def scan_to_inv_ion_mobility(
@@ -513,10 +515,11 @@ class OpenTIMS:
         frame: np.array,
         _buffer: float = 0.0,
     ) -> None:
-        assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
-        assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        pass
+        #assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
+        #assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
+        #assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        #assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
 
     def inv_ion_mobility_to_scan(
@@ -652,10 +655,11 @@ class OpenTIMS:
         frame: np.array,
         _buffer: float,
     ) -> None:
-        assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
-        assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        pass
+        #assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
+        #assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
+        #assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        #assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
 
     def mz_to_tof(

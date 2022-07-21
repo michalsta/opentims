@@ -424,6 +424,7 @@ class OpenTIMS:
         Returns:
             np.array: integers, numbers of respective frames (Tims pushes).
         """
+        # TODO: this allocates extra space and sucks...
         retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
         all_ms1_rts = self.retention_times[self.ms1_frames - 1]
         assert all(retention_time <= all_ms1_rts[-1] + _buffer), "Some retention times were higher than the last MS1 one."

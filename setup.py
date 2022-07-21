@@ -149,7 +149,7 @@ setup(
     setup_requires=['pybind11'],
     install_requires=['pybind11','numpy'],
     ext_modules=ext_modules,
-    scripts=['scripts/extract_tdf.py', 'scripts/display_frame.py'],
+    scripts=['scripts/opentims_extract_tdf.py', 'scripts/opentims_display_frame.py', 'scripts/opentims_verify.py'],
     package_dir={'opentimspy':'opentimspy'},
     package_data={'opentimspy':['opentims++/*.h', 'opentims++/*/*.h', 'opentims++/*.hpp']},
 

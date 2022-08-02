@@ -31,13 +31,20 @@ from .dimension_translations import (
     translate_values_frames_not_guaranteed_sorted,
 )
 
-all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-all_columns_dtype = (np.uint32,)*4 + (np.double,)*3
+all_columns = (
+    "frame",
+    "scan",
+    "tof",
+    "intensity",
+    "mz",
+    "inv_ion_mobility",
+    "retention_time",
+)
+all_columns_dtype = (np.uint32,) * 4 + (np.double,) * 3
 column_to_dtype = dict(zip(all_columns, all_columns_dtype))
 
-def hash_frame(X,
-               columns=('frame','scan','tof','intensity'),
-               algo=hashlib.blake2b):
+
+def hash_frame(X, columns=("frame", "scan", "tof", "intensity"), algo=hashlib.blake2b):
     hashes = []
     for c in columns:
         h = algo()
@@ -46,16 +53,16 @@ def hash_frame(X,
     return hashes
 
 
-FramesType = typing.Union[ int, typing.Iterable[int] ]
-ColumnsType = typing.Union[ str, typing.Iterable[str] ]
+FramesType = typing.Union[int, typing.Iterable[int]]
+ColumnsType = typing.Union[str, typing.Iterable[str]]
 
 
 class OpenTIMS:
-    def __init__ (self, analysis_directory: str|pathlib.Path):
+    def __init__(self, analysis_directory: str | pathlib.Path):
         """Initialize OpenTIMS.
 
-            Args:
-                analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
+        Args:
+            analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
         """
         self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)
@@ -67,30 +74,36 @@ class OpenTIMS:
         for column in self.frames:
             self.frames[column] = self.frames[column][sort_order]
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
-        self.GlobalMetadata = dict(zip(self.GlobalMetadata['Key'], self.GlobalMetadata['Value']))
-        if int(self.GlobalMetadata['TimsCompressionType']) != 2:
-            raise RuntimeError(f"Unsupported TimsCompressionType: {self.GlobalMetadata['TimsCompressionType']}. Updating your acquisition software *might* solve the problem.")
+        self.GlobalMetadata = dict(
+            zip(self.GlobalMetadata["Key"], self.GlobalMetadata["Value"])
+        )
+        if int(self.GlobalMetadata["TimsCompressionType"]) != 2:
+            raise RuntimeError(
+                f"Unsupported TimsCompressionType: {self.GlobalMetadata['TimsCompressionType']}. Updating your acquisition software *might* solve the problem."
+            )
 
-        self.min_frame = self.frames['Id'][0]
-        self.max_frame = self.frames['Id'][-1]
+        self.min_frame = self.frames["Id"][0]
+        self.max_frame = self.frames["Id"][-1]
         # self.ms_types = np.array([self.handle.get_frame(i).msms_type
-                                  # for i in range(self.min_frame, self.max_frame+1)])
-        self.ms_types = self.frames['MsMsType']
-        self.ms1_frames = np.arange(self.min_frame, self.max_frame+1)[self.ms_types == 0]
-        self.frames_no = self.max_frame - self.min_frame+1
+        # for i in range(self.min_frame, self.max_frame+1)])
+        self.ms_types = self.frames["MsMsType"]
+        self.ms1_frames = np.arange(self.min_frame, self.max_frame + 1)[
+            self.ms_types == 0
+        ]
+        self.frames_no = self.max_frame - self.min_frame + 1
         self._ms1_mask = np.zeros(self.frames_no, dtype=bool)
-        self._ms1_mask[self.ms1_frames-1] = True
+        self._ms1_mask[self.ms1_frames - 1] = True
         self.min_scan = 1
-        self.max_scan = self.frames['NumScans'].max()
+        self.max_scan = self.frames["NumScans"].max()
         self.min_intensity = 0
-        self.max_intensity = self.frames['MaxIntensity'].max()
-        self.retention_times = self.frames['Time'] # it's in seconds!
+        self.max_intensity = self.frames["MaxIntensity"].max()
+        self.retention_times = self.frames["Time"]  # it's in seconds!
         self.min_retention_time = self.retention_times[0]
         self.max_retention_time = self.retention_times[-1]
-        self.min_inv_ion_mobility = float(self.GlobalMetadata['OneOverK0AcqRangeLower'])
-        self.max_inv_ion_mobility = float(self.GlobalMetadata['OneOverK0AcqRangeUpper'])
-        self.min_mz = float(self.GlobalMetadata['MzAcqRangeLower'])
-        self.max_mz = float(self.GlobalMetadata['MzAcqRangeUpper'])
+        self.min_inv_ion_mobility = float(self.GlobalMetadata["OneOverK0AcqRangeLower"])
+        self.max_inv_ion_mobility = float(self.GlobalMetadata["OneOverK0AcqRangeUpper"])
+        self.min_mz = float(self.GlobalMetadata["MzAcqRangeLower"])
+        self.max_mz = float(self.GlobalMetadata["MzAcqRangeUpper"])
         # self.min_frame = self.handle.min_frame_id()
         # self.max_frame = self.handle.max_frame_id()
         # self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
@@ -101,12 +114,10 @@ class OpenTIMS:
     def __len__(self):
         return self.peaks_cnt
 
-
     def __repr__(self):
         return f"OpenTIMS({self.peaks_cnt:_} peaks)"
 
-
-    def __del__ (self):
+    def __del__(self):
         self.close()
 
     def close(self):
@@ -121,13 +132,13 @@ class OpenTIMS:
         self.close()
 
     def get_sql_connection(self):
-        return sqlite3.connect(self.analysis_directory/"analysis.tdf")
+        return sqlite3.connect(self.analysis_directory / "analysis.tdf")
 
     def tables_names(self):
-        return tables_names(self.analysis_directory/"analysis.tdf")
+        return tables_names(self.analysis_directory / "analysis.tdf")
 
     def table2dict(self, name: str):
-        return table2dict(self.analysis_directory/"analysis.tdf", name)
+        return table2dict(self.analysis_directory / "analysis.tdf", name)
 
     def table2keyed_dict(self, name: str):
         with self.get_sql_connection() as sqlcon:
@@ -135,10 +146,13 @@ class OpenTIMS:
 
     def frame2retention_time(self, frames: FramesType):
         frames = np.r_[frames]
-        assert frames.min() >= self.min_frame, f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
-        assert frames.max() <= self.max_frame, f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
+        assert (
+            frames.min() >= self.min_frame
+        ), f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
+        assert (
+            frames.max() <= self.max_frame
+        ), f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
         return np.array([self.handle.get_frame(i).time for i in frames])
-
 
     def peaks_per_frame_cnts(self, frames: FramesType, convert=True):
         """Return the numbers of peaks in chosen frames.
@@ -153,16 +167,16 @@ class OpenTIMS:
             frames = np.array(frames, dtype=np.uint32)
         return self.handle.no_peaks_in_frames(frames)
 
-
     def _get_empty_arrays(self, size, selected_columns=all_columns):
         """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
-        assert all(c in self.all_columns for c in selected_columns), f"Accepted column names: {self.all_columns}"
+        assert all(
+            c in self.all_columns for c in selected_columns
+        ), f"Accepted column names: {self.all_columns}"
 
-        return {col: np.empty(shape=size if col in selected_columns else 0,
-                              dtype=dtype)
-                for col, dtype in zip(self.all_columns,
-                                      self.all_columns_dtypes)}
-
+        return {
+            col: np.empty(shape=size if col in selected_columns else 0, dtype=dtype)
+            for col, dtype in zip(self.all_columns, self.all_columns_dtypes)
+        }
 
     def query(self, frames: FramesType, columns: ColumnsType = all_columns):
         """Get data from a selection of frames.
@@ -177,25 +191,29 @@ class OpenTIMS:
             columns = (columns,)
 
         columns = tuple(columns)
-        assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
+        assert all(
+            c in self.all_columns for c in columns
+        ), f"Accepted column names: {self.all_columns}"
 
         try:
             frames = np.r_[frames].astype(np.uint32)
-            size   = self.peaks_per_frame_cnts(frames, convert=False)
+            size = self.peaks_per_frame_cnts(frames, convert=False)
             arrays = self._get_empty_arrays(size, columns)
             # now, pack the arrays with data
             self.handle.extract_frames(frames, **arrays)
         except RuntimeError as e:
-            if e.args[0] == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor":
-                raise RuntimeError("Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods.")
+            if (
+                e.args[0]
+                == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor"
+            ):
+                raise RuntimeError(
+                    "Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods."
+                )
             else:
                 raise
         return {c: arrays[c] for c in columns}
 
-
-    def query_iter(self,
-                   frames: FramesType,
-                   columns: ColumnsType=all_columns):
+    def query_iter(self, frames: FramesType, columns: ColumnsType = all_columns):
         """Iterate data from a selection of frames.
 
         Args:
@@ -207,11 +225,12 @@ class OpenTIMS:
         for fr in np.r_[frames]:
             yield self.query(fr, columns)
 
-
-    def rt_query(self,
-                 min_retention_time: float,
-                 max_retention_time: float,
-                 columns: ColumnsType=all_columns):
+    def rt_query(
+        self,
+        min_retention_time: float,
+        max_retention_time: float,
+        columns: ColumnsType = all_columns,
+    ):
         """Get data from a selection of frames based on retention times.
 
         Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
@@ -226,16 +245,17 @@ class OpenTIMS:
         Returns:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = np.searchsorted(self.retention_times,
-                                               (min_retention_time,
-                                                max_retention_time)) + 1 #TODO: check border conditions!!!
+        min_frame, max_frame = (
+            np.searchsorted(
+                self.retention_times, (min_retention_time, max_retention_time)
+            )
+            + 1
+        )  # TODO: check border conditions!!!
         return self.query(slice(min_frame, max_frame), columns)
 
-
-    def rt_query_iter(self,
-                      min_retention_time: float,
-                      max_retention_time: float,
-                      columns=all_columns):
+    def rt_query_iter(
+        self, min_retention_time: float, max_retention_time: float, columns=all_columns
+    ):
         """Iterate data from a selection of frames based on retention times.
 
         Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
@@ -249,11 +269,13 @@ class OpenTIMS:
         Yields:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = np.searchsorted(self.retention_times,
-                                               (min_retention_time,
-                                                max_retention_time)) + 1 #TODO: check border conditions!!!
-        yield from self.query_iter(range(min_frame, max_frame+1), columns)
-
+        min_frame, max_frame = (
+            np.searchsorted(
+                self.retention_times, (min_retention_time, max_retention_time)
+            )
+            + 1
+        )  # TODO: check border conditions!!!
+        yield from self.query_iter(range(min_frame, max_frame + 1), columns)
 
     def frame_array(self, frame: int):
         """Get a 2D array of data for a given frame.
@@ -267,12 +289,13 @@ class OpenTIMS:
         try:
             fr = self.handle.get_frame(frame)
         except IndexError:
-            raise IndexError(f"Frame {frame} is not between {self.min_frame} and {self.max_frame}.")
-        X = np.empty(shape=(fr.num_peaks, 4), dtype=np.uint32, order='F')
+            raise IndexError(
+                f"Frame {frame} is not between {self.min_frame} and {self.max_frame}."
+            )
+        X = np.empty(shape=(fr.num_peaks, 4), dtype=np.uint32, order="F")
         if fr.num_peaks > 0:
             fr.save_to_pybuffer(X)
         return X
-
 
     def frame_arrays(self, frames: FramesType):
         """Get raw data from a selection of frames.
@@ -287,12 +310,13 @@ class OpenTIMS:
         frames = np.array(frames).astype(np.uint32)
         try:
             peaks_cnt = self.handle.no_peaks_in_frames(frames)
-            X = np.empty(shape=(peaks_cnt,4), order='F', dtype=np.uint32)
+            X = np.empty(shape=(peaks_cnt, 4), order="F", dtype=np.uint32)
             self.handle.extract_frames(frames, X)
             return X
         except IndexError:
-            raise IndexError(f"Some frames are not between {self.min_frame} and {self.max_frame}.")
-
+            raise IndexError(
+                f"Some frames are not between {self.min_frame} and {self.max_frame}."
+            )
 
     def frame_arrays_slice(self, frames_slice):
         """Get raw data from a slice of frames.
@@ -305,15 +329,17 @@ class OpenTIMS:
             np.array: raw data from the selection of frames.
         """
         start = self.min_frame if frames_slice.start is None else frames_slice.start
-        stop  = self.max_frame if frames_slice.stop is None else frames_slice.stop
-        step  = 1 if frames_slice.step is None else frames_slice.step
+        stop = self.max_frame if frames_slice.stop is None else frames_slice.stop
+        step = 1 if frames_slice.step is None else frames_slice.step
         peaks_cnt = self.handle.no_peaks_in_slice(start, stop, step)
-        X = np.empty(shape=(peaks_cnt, 4), order='F', dtype=np.uint32)
+        X = np.empty(shape=(peaks_cnt, 4), order="F", dtype=np.uint32)
         self.handle.extract_frames_slice(start, stop, step, X)
         return X
 
-    def get_separate_frames(self, frame_ids, columns: ColumnsType=all_columns):
-        assert all(c in self.all_columns for c in columns), f"Accepted column names: {self.all_columns}"
+    def get_separate_frames(self, frame_ids, columns: ColumnsType = all_columns):
+        assert all(
+            c in self.all_columns for c in columns
+        ), f"Accepted column names: {self.all_columns}"
         if not isinstance(frame_ids, list):
             frame_ids = list(frame_ids)
         col_b = [col in columns for col in all_columns]
@@ -326,7 +352,6 @@ class OpenTIMS:
                     X[all_columns[jj]] = A[jj][ii]
             ret[frame_ids[ii]] = X
         return ret
-
 
     def __getitem__(self, frames: FramesType):
         """Get raw data array for given frames and scans.
@@ -347,10 +372,11 @@ class OpenTIMS:
             return self.frame_arrays_slice(frames)
         return self.frame_arrays(frames)
 
-
-    def get_hash(self,
-                 columns: ColumnsType=('frame','scan','tof','intensity'),
-                 algo=hashlib.blake2b):
+    def get_hash(
+        self,
+        columns: ColumnsType = ("frame", "scan", "tof", "intensity"),
+        algo=hashlib.blake2b,
+    ):
         """Calculate a data-set-wide hash.
 
         Defaults to raw data that are all uint32.
@@ -362,17 +388,18 @@ class OpenTIMS:
             binary str: A hash.
         """
         h = algo()
-        for X in self.query_iter(frames=slice(self.min_frame,
-                                              self.max_frame+1),
-                                 columns=columns):
+        for X in self.query_iter(
+            frames=slice(self.min_frame, self.max_frame + 1), columns=columns
+        ):
             for c in columns:
                 h.update(X[c])
         return h.digest()
 
-
-    def get_hashes(self,
-                   columns: ColumnsType=('frame','scan','tof','intensity'),
-                   algo: typing.Callable=hashlib.blake2b):
+    def get_hashes(
+        self,
+        columns: ColumnsType = ("frame", "scan", "tof", "intensity"),
+        algo: typing.Callable = hashlib.blake2b,
+    ):
         """Calculate a hashes for each frame.
 
         Defaults to raw data that are all uint32.
@@ -383,16 +410,17 @@ class OpenTIMS:
         Returns:
             list: Frame specifc hashes.
         """
-        return [hash_frame(X, columns, algo)
-                for X in self.query_iter(frames=slice(self.min_frame,
-                                                      self.max_frame+1),
-                                         columns=columns)]
-
+        return [
+            hash_frame(X, columns, algo)
+            for X in self.query_iter(
+                frames=slice(self.min_frame, self.max_frame + 1), columns=columns
+            )
+        ]
 
     def retention_time_to_frame(
         self,
         retention_time: float | npt.NDArray[float] | list[float],
-        _buffer: int=1,
+        _buffer: int = 1,
     ) -> np.array:
         """Transform retention times into their corresponding frame numbers.
 
@@ -404,16 +432,19 @@ class OpenTIMS:
         Returns:
             np.array: integers, numbers of respective frames (Tims pushes).
         """
-        retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
-        assert all(retention_time <= self.max_retention_time + _buffer), "Some retention times were higher than the latest one."
+        retention_time = np.array(
+            retention_time
+        )  # if someone passes a float or a pandas.Series
+        assert all(
+            retention_time <= self.max_retention_time + _buffer
+        ), "Some retention times were higher than the latest one."
         res = np.searchsorted(self.retention_times, retention_time)
         return res + 1
-
 
     def MS1_retention_time_to_frame(
         self,
         retention_time: np.float | npt.NDArray[float] | list[float],
-        _buffer: int=1,
+        _buffer: int = 1,
     ) -> np.array:
         """Transform MS1 retention times into their corresponding frame numbers.
 
@@ -426,17 +457,17 @@ class OpenTIMS:
             np.array: integers, numbers of respective frames (Tims pushes).
         """
         # TODO: this allocates extra space and sucks...
-        retention_time = np.array(retention_time)# if someone passes a float or a pandas.Series
+        retention_time = np.array(
+            retention_time
+        )  # if someone passes a float or a pandas.Series
         all_ms1_rts = self.retention_times[self.ms1_frames - 1]
-        assert all(retention_time <= all_ms1_rts[-1] + _buffer), "Some retention times were higher than the last MS1 one."
+        assert all(
+            retention_time <= all_ms1_rts[-1] + _buffer
+        ), "Some retention times were higher than the last MS1 one."
         res = np.searchsorted(all_ms1_rts, retention_time)
         return self.ms1_frames[res]
 
-
-    def frame_to_retention_time(
-        self,
-        frame: FrameType
-    ) -> np.array:
+    def frame_to_retention_time(self, frame: FrameType) -> np.array:
         """Transform frames into their corresponding retention times.
 
         We check if frames are within sensible bounds.
@@ -447,10 +478,9 @@ class OpenTIMS:
         Returns:
             np.array: retention time when a frame finishes [second].
         """
-#        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-#        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        return self.retention_times[frame-1]
-
+        #        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        #        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        return self.retention_times[frame - 1]
 
     def __scan_to_inv_ion_mobility_assertions(
         self,
@@ -458,14 +488,14 @@ class OpenTIMS:
         frame: np.array,
     ) -> None:
         pass
-#        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
-#        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
-#        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-#        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
+    #        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
+    #        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
+    #        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+    #        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
     def scan_to_inv_ion_mobility(
-        self, 
+        self,
         scan: np.array,
         frame: np.array,
     ) -> np.array:
@@ -494,7 +524,7 @@ class OpenTIMS:
         )
 
     def scan_to_inv_ion_mobility_frame_sorted(
-        self, 
+        self,
         scan: np.array,
         frame: np.array,
     ) -> np.array:
@@ -521,7 +551,6 @@ class OpenTIMS:
             result_dtype=np.double,
         )
 
-
     def __inv_ion_mobility_to_scan_assertions(
         self,
         inv_ion_mobility: np.array,
@@ -529,11 +558,10 @@ class OpenTIMS:
         _buffer: float = 0.0,
     ) -> None:
         pass
-        #assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
-        #assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
-        #assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        #assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-
+        # assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
+        # assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
+        # assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        # assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
     def inv_ion_mobility_to_scan(
         self,
@@ -576,7 +604,7 @@ class OpenTIMS:
 
         We check if scans are within sensible bounds.
         Scans correspond to individual emptyings of the second TIMS trap.
-    
+
         This works in O(n).
 
         Arguments:
@@ -596,7 +624,6 @@ class OpenTIMS:
             result_dtype=np.uint32,
         )
 
-
     def __tof_to_mz_assertions(
         self,
         tof: np.array,
@@ -605,12 +632,7 @@ class OpenTIMS:
         assert all(frame >= self.min_frame), "Some frames were below the minimal one."
         assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
-
-    def tof_to_mz(
-        self,
-        tof: np.array,
-        frame: np.array
-    ) -> np.array:
+    def tof_to_mz(self, tof: np.array, frame: np.array) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
 
         Caution!
@@ -636,11 +658,7 @@ class OpenTIMS:
             result_dtype=np.double,
         )
 
-    def tof_to_mz_frame_sorted(
-        self,
-        tof: np.array,
-        frame: np.array
-    ) -> np.array:
+    def tof_to_mz_frame_sorted(self, tof: np.array, frame: np.array) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
 
         Caution!
@@ -665,7 +683,6 @@ class OpenTIMS:
             result_dtype=np.double,
         )
 
-
     def __mz_to_tof_assertions(
         self,
         mz: np.array,
@@ -673,24 +690,23 @@ class OpenTIMS:
         _buffer: float,
     ) -> None:
         pass
-        #assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
-        #assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
-        #assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        #assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-
+        # assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
+        # assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
+        # assert all(frame >= self.min_frame), "Some frames were below the minimal one."
+        # assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
     def mz_to_tof(
         self,
         mz: np.array,
         frame: np.array,
-        _buffer: float=0.0,
+        _buffer: float = 0.0,
     ) -> np.array:
         """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
 
         We check if m/z values are within sensible bounds.
         Time of flight indices are somehow proportional to time of flights.
         We are figuring out how.
-        
+
         This works in O(nlog(n)).
         Not happy, well, there's always 'mz_to_tof_frame_sorted'.
 
@@ -714,14 +730,14 @@ class OpenTIMS:
         self,
         mz: np.array,
         frame: np.array,
-        _buffer: float=0.0,
+        _buffer: float = 0.0,
     ) -> np.array:
         """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
 
         We check if m/z values are within sensible bounds.
         Time of flight indices are somehow proportional to time of flights.
         We are figuring out how.
-        
+
         This works in O(n).
 
         Arguments:

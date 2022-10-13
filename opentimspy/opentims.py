@@ -54,7 +54,7 @@ def hash_frame(X, columns=("frame", "scan", "tof", "intensity"), algo=hashlib.bl
 
 
 FramesType = typing.Union[int, typing.Iterable[int]]
-ColumnsType = typing.Union[str, typing.Iterable[str]]
+COLUMNS_TYPE = typing.Union[str, tuple[str, ...]]
 
 
 class OpenTIMS:
@@ -178,7 +178,7 @@ class OpenTIMS:
             for col, dtype in zip(self.all_columns, self.all_columns_dtypes)
         }
 
-    def query(self, frames: FramesType, columns: ColumnsType = all_columns):
+    def query(self, frames: FramesType, columns: COLUMNS_TYPE = all_columns):
         """Get data from a selection of frames.
 
         Args:
@@ -213,7 +213,7 @@ class OpenTIMS:
                 raise
         return {c: arrays[c] for c in columns}
 
-    def query_iter(self, frames: FramesType, columns: ColumnsType = all_columns):
+    def query_iter(self, frames: FramesType, columns: COLUMNS_TYPE = all_columns):
         """Iterate data from a selection of frames.
 
         Args:
@@ -229,7 +229,7 @@ class OpenTIMS:
         self,
         min_retention_time: float,
         max_retention_time: float,
-        columns: ColumnsType = all_columns,
+        columns: COLUMNS_TYPE = all_columns,
     ):
         """Get data from a selection of frames based on retention times.
 
@@ -336,7 +336,7 @@ class OpenTIMS:
         self.handle.extract_frames_slice(start, stop, step, X)
         return X
 
-    def get_separate_frames(self, frame_ids, columns: ColumnsType = all_columns):
+    def get_separate_frames(self, frame_ids, columns: COLUMNS_TYPE = all_columns):
         assert all(
             c in self.all_columns for c in columns
         ), f"Accepted column names: {self.all_columns}"
@@ -374,7 +374,7 @@ class OpenTIMS:
 
     def get_hash(
         self,
-        columns: ColumnsType = ("frame", "scan", "tof", "intensity"),
+        columns: COLUMNS_TYPE = ("frame", "scan", "tof", "intensity"),
         algo=hashlib.blake2b,
     ):
         """Calculate a data-set-wide hash.
@@ -397,7 +397,7 @@ class OpenTIMS:
 
     def get_hashes(
         self,
-        columns: ColumnsType = ("frame", "scan", "tof", "intensity"),
+        columns: COLUMNS_TYPE = ("frame", "scan", "tof", "intensity"),
         algo: typing.Callable = hashlib.blake2b,
     ):
         """Calculate a hashes for each frame.
@@ -467,6 +467,7 @@ class OpenTIMS:
         res = np.searchsorted(all_ms1_rts, retention_time)
         return self.ms1_frames[res]
 
+    # TODO: this should be numbized or something: we make a copy of frame-1.
     def frame_to_retention_time(self, frame: FrameType) -> np.array:
         """Transform frames into their corresponding retention times.
 

@@ -13,7 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
-import collections
+from functools import cached_property
+
 import functools
 import hashlib
 import numpy as np
@@ -43,6 +44,15 @@ all_columns = (
 all_columns_dtype = (np.uint32,) * 4 + (np.double,) * 3
 column_to_dtype = dict(zip(all_columns, all_columns_dtype))
 
+FRAMES_TYPE = npt.NDArray[np.uint32]
+SCANS_TYPE = npt.NDArray[np.uint32]
+TOFS_TYPE = npt.NDArray[np.uint32]
+INTENSITIES_TYPE = npt.NDArray[np.uint32]
+
+RETENTION_TIMES_TYPE = npt.NDArray[np.float64]
+INV_ION_MOBILITIES_TYPE = npt.NDArray[np.float64]
+MZS_TYPE = npt.NDArray[np.float64]
+
 
 def hash_frame(X, columns=("frame", "scan", "tof", "intensity"), algo=hashlib.blake2b):
     hashes = []
@@ -57,6 +67,7 @@ FramesType = typing.Union[int, typing.Iterable[int]]
 COLUMNS_TYPE = typing.Union[str, tuple[str, ...]]
 
 
+# TODO: make lazy evaluation for loading sqlite data frames
 class OpenTIMS:
     def __init__(self, analysis_directory: str | pathlib.Path):
         """Initialize OpenTIMS.
@@ -68,7 +79,6 @@ class OpenTIMS:
         self.analysis_directory = pathlib.Path(analysis_directory)
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.frames = self.table2dict("Frames")
-        self.frame_properties = self.table2keyed_dict("Frames")
         # make sure it is all sorted by retention time / frame number
         sort_order = np.argsort(self.frames["Id"])
         for column in self.frames:
@@ -81,18 +91,10 @@ class OpenTIMS:
             raise RuntimeError(
                 f"Unsupported TimsCompressionType: {self.GlobalMetadata['TimsCompressionType']}. Updating your acquisition software *might* solve the problem."
             )
-
         self.min_frame = self.frames["Id"][0]
         self.max_frame = self.frames["Id"][-1]
-        # self.ms_types = np.array([self.handle.get_frame(i).msms_type
-        # for i in range(self.min_frame, self.max_frame+1)])
         self.ms_types = self.frames["MsMsType"]
-        self.ms1_frames = np.arange(self.min_frame, self.max_frame + 1)[
-            self.ms_types == 0
-        ]
         self.frames_no = self.max_frame - self.min_frame + 1
-        self._ms1_mask = np.zeros(self.frames_no, dtype=bool)
-        self._ms1_mask[self.ms1_frames - 1] = True
         self.min_scan = 1
         self.max_scan = self.frames["NumScans"].max()
         self.min_intensity = 0
@@ -104,12 +106,23 @@ class OpenTIMS:
         self.max_inv_ion_mobility = float(self.GlobalMetadata["OneOverK0AcqRangeUpper"])
         self.min_mz = float(self.GlobalMetadata["MzAcqRangeLower"])
         self.max_mz = float(self.GlobalMetadata["MzAcqRangeUpper"])
-        # self.min_frame = self.handle.min_frame_id()
-        # self.max_frame = self.handle.max_frame_id()
-        # self.retention_times = self.frame2retention_time(range(self.min_frame, self.max_frame+1))# it's in seconds!
         self.peaks_cnt = self.handle.no_peaks_total()
         self.all_columns = all_columns
         self.all_columns_dtypes = all_columns_dtype
+
+    @cached_property
+    def ms1_frames(self) -> FRAMES_TYPE:
+        return np.arange(self.min_frame, self.max_frame + 1)[self.ms_types == 0]
+
+    @cached_property
+    def _ms1_mask(self) -> npt.NDArray[np.bool_]:
+        _ms1_mask = np.zeros(self.frames_no, dtype=bool)
+        _ms1_mask[self.ms1_frames - 1] = True
+        return _ms1_mask
+
+    @cached_property
+    def frame_properties(self) -> dict[str, npt.NDArray]:
+        return self.table2keyed_dict("Frames")
 
     def __len__(self):
         return self.peaks_cnt

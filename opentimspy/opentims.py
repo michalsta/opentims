@@ -78,11 +78,6 @@ class OpenTIMS:
         self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
-        self.frames = self.table2dict("Frames")
-        # make sure it is all sorted by retention time / frame number
-        sort_order = np.argsort(self.frames["Id"])
-        for column in self.frames:
-            self.frames[column] = self.frames[column][sort_order]
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(
             zip(self.GlobalMetadata["Key"], self.GlobalMetadata["Value"])
@@ -91,24 +86,79 @@ class OpenTIMS:
             raise RuntimeError(
                 f"Unsupported TimsCompressionType: {self.GlobalMetadata['TimsCompressionType']}. Updating your acquisition software *might* solve the problem."
             )
-        self.min_frame = self.frames["Id"][0]
-        self.max_frame = self.frames["Id"][-1]
-        self.ms_types = self.frames["MsMsType"]
-        self.frames_no = self.max_frame - self.min_frame + 1
-        self.min_scan = 1
-        self.max_scan = self.frames["NumScans"].max()
-        self.min_intensity = 0
-        self.max_intensity = self.frames["MaxIntensity"].max()
-        self.retention_times = self.frames["Time"]  # it's in seconds!
-        self.min_retention_time = self.retention_times[0]
-        self.max_retention_time = self.retention_times[-1]
-        self.min_inv_ion_mobility = float(self.GlobalMetadata["OneOverK0AcqRangeLower"])
-        self.max_inv_ion_mobility = float(self.GlobalMetadata["OneOverK0AcqRangeUpper"])
-        self.min_mz = float(self.GlobalMetadata["MzAcqRangeLower"])
-        self.max_mz = float(self.GlobalMetadata["MzAcqRangeUpper"])
         self.peaks_cnt = self.handle.no_peaks_total()
         self.all_columns = all_columns
         self.all_columns_dtypes = all_columns_dtype
+
+    @property
+    def min_inv_ion_mobility(self) -> float:
+        return float(self.GlobalMetadata["OneOverK0AcqRangeLower"])
+
+    @property
+    def max_inv_ion_mobility(self) -> float:
+        return float(self.GlobalMetadata["OneOverK0AcqRangeUpper"])
+
+    @property
+    def min_mz(self) -> float:
+        return float(self.GlobalMetadata["MzAcqRangeLower"])
+
+    @property
+    def max_mz(self) -> float:
+        return float(self.GlobalMetadata["MzAcqRangeUpper"])
+
+    @cached_property
+    def frames(self) -> dict[str, npt.NDArray]:
+        frames = self.table2dict("Frames")
+        # make sure it is all sorted by retention time / frame number
+        sort_order = np.argsort(frames["Id"])
+        for column in frames:
+            frames[column] = frames[column][sort_order]
+        return frames
+
+    @property
+    def retention_times(self) -> RETENTION_TIMES_TYPE:
+        """Unit: seconds."""
+        return self.frames["Time"]
+
+    @property
+    def min_retention_time(self) -> int:
+        return self.retention_times[0]
+
+    @property
+    def max_retention_time(self) -> int:
+        return self.retention_times[-1]
+
+    @property
+    def min_frame(self) -> int:
+        return self.frames["Id"][0]
+
+    @property
+    def max_frame(self) -> int:
+        return self.frames["Id"][-1]
+
+    @property
+    def frames_no(self) -> int:
+        return self.max_frame - self.min_frame + 1
+
+    @property
+    def min_scan(self) -> int:
+        return 1
+
+    @cached_property
+    def max_scan(self) -> int:
+        return self.frames["NumScans"].max()
+
+    @property
+    def min_intensity(self) -> int:
+        return 0
+
+    @cached_property
+    def max_intensity(self) -> int:
+        return self.frames["MaxIntensity"].max()
+
+    @property
+    def ms_types(self) -> npt.NDArray[np.uint32]:
+        return self.frames["MsMsType"]
 
     @cached_property
     def ms1_frames(self) -> FRAMES_TYPE:
@@ -119,6 +169,10 @@ class OpenTIMS:
         _ms1_mask = np.zeros(self.frames_no, dtype=bool)
         _ms1_mask[self.ms1_frames - 1] = True
         return _ms1_mask
+
+    @cached_property
+    def ms2_frames(self) -> FRAMES_TYPE:
+        return np.arange(self.min_frame, self.max_frame + 1)[~self._ms1_mask]
 
     @cached_property
     def frame_properties(self) -> dict[str, npt.NDArray]:

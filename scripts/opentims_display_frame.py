@@ -76,8 +76,8 @@ with OpenTIMS(args.path) as OT:
     if args.silent:
         progressbar = lambda x: x
     else:
-        from tqdm import tqdm as progressbar
-        progressbar = lambda x: tqdm(x, desc=sys.argv[0])
+        from tqdm import tqdm
+        progressbar = lambda x: tqdm(x, desc=sys.argv[0], total=len(frames))
 
     if args.save:
         from multiprocessing import Pool
@@ -87,5 +87,5 @@ with OpenTIMS(args.path) as OT:
         multiproc = lambda x: map(worker, sorted(x))
 
 
-    for frame_id in progressbar(multiproc(frames), total=len(frames)):
+    for frame_id in progressbar(multiproc(frames)):
         pass

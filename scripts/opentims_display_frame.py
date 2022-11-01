@@ -33,13 +33,14 @@ parser.add_argument("-o", "--output" help="Output directory if using -s", type=P
 args=parser.parse_args()
 
 
+from matplotlib import pyplot as plt
+
 with OpenTIMS(args.path) as OT:
     max_intens = OT.max_intensity
     if args.scan_range is None:
         args.scan_range = Range(1, OT.max_scan+1)
 
     def worker(frame_id):
-        from matplotlib import pyplot as plt
         frame = OT.query(frame_id, columns='scan mz intensity'.split())
         plotting.do_plot(
                 plt,

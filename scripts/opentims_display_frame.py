@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import sys
 from pathlib import Path
-from opentimspy import OpenTIMS, set_num_threads, plotting
-from matplotlib import pyplot as plt
 from collections import namedtuple
 from functools import partial
 import numpy as np
@@ -26,7 +24,7 @@ parser.add_argument("--mz-range", help="Custom mz range, example: 400.0-600.0", 
 parser.add_argument("--scan-range", help="Custom scan range, example: 200-300", type=partial(rangeize, conversion=int), default=None)
 parser.add_argument("--mz-resolution", help="Custom mz binning resolution for plot. Default: 1.0", type=float, default=1.0)
 parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
-parser.add_argument("-o", "--output" help="Output directory if using -s", type=Path, default=Path("."))
+parser.add_argument("-o", "--output", help="Output directory if using -s", type=Path, default=Path("."))
 
 
 
@@ -34,6 +32,7 @@ args=parser.parse_args()
 
 
 from matplotlib import pyplot as plt
+from opentimspy import OpenTIMS, set_num_threads, plotting
 
 with OpenTIMS(args.path) as OT:
     max_intens = OT.max_intensity
@@ -78,6 +77,7 @@ with OpenTIMS(args.path) as OT:
         progressbar = lambda x: x
     else:
         from tqdm import tqdm as progressbar
+        progressbar = lambda x: tqdm(x, desc=sys.argv[0])
 
     if args.save:
         from multiprocessing import Pool

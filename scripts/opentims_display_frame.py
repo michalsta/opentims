@@ -5,7 +5,6 @@ from collections import namedtuple
 from functools import partial
 import numpy as np
 
-set_num_threads(1)
 
 Range = namedtuple("Range", "min max".split())
 
@@ -33,6 +32,7 @@ args=parser.parse_args()
 
 from matplotlib import pyplot as plt
 from opentimspy import OpenTIMS, set_num_threads, plotting
+set_num_threads(1)
 
 with OpenTIMS(args.path) as OT:
     max_intens = OT.max_intensity

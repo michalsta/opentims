@@ -26,6 +26,8 @@ parser.add_argument("--mz-range", help="Custom mz range, example: 400.0-600.0", 
 parser.add_argument("--scan-range", help="Custom scan range, example: 200-300", type=partial(rangeize, conversion=int), default=None)
 parser.add_argument("--mz-resolution", help="Custom mz binning resolution for plot. Default: 1.0", type=float, default=1.0)
 parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
+parser.add_argument("-o", "--output" help="Output directory if using -s", type=Path, default=Path("."))
+
 
 
 args=parser.parse_args()
@@ -54,7 +56,7 @@ with OpenTIMS(args.path) as OT:
                 max_intens=max_intens)
         plt.title("Frame "+str(frame_id))
         if args.save:
-            plt.savefig(f"frame_{frame_id:06d}.png", dpi=600, bbox_inches="tight", pad_inches=0)
+            plt.savefig(args.output / f"frame_{frame_id:06d}.png", dpi=600, bbox_inches="tight", pad_inches=0)
         else:
             plt.show()
         plt.close()

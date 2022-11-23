@@ -47,7 +47,7 @@ with OpenTIMS(args.path) as OT:
                 frame,
                 axes='mz scan'.split(),
                 xax_min=args.mz_range.min,
-                xax_max=min(OT.max_mz, args.mz_range.max),
+                xax_max=min(OT.max_mz+1, args.mz_range.max),
                 xax_res=args.mz_resolution,
                 yax_min=args.scan_range.min,
                 yax_max=args.scan_range.max,

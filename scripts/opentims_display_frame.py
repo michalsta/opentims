@@ -32,6 +32,7 @@ args=parser.parse_args()
 
 from matplotlib import pyplot as plt
 from opentimspy import OpenTIMS, set_num_threads, plotting
+from opentimspy.misc import parse_slice
 set_num_threads(1)
 
 with OpenTIMS(args.path) as OT:

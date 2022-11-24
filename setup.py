@@ -168,14 +168,10 @@ setup(
     setup_requires=["pybind11"],
     install_requires=["pybind11", "numpy"],
     ext_modules=ext_modules,
-    scripts=[
-        "scripts/opentims_extract_tdf.py",
-        "scripts/opentims_display_frame.py",
-        "scripts/opentims_verify.py",
-    ],
+    scripts=glob("scripts/*.py"),
     package_dir={"opentimspy": "opentimspy"},
     package_data={
         "opentimspy": ["opentims++/*.h", "opentims++/*/*.h", "opentims++/*.hpp"]
     },
-    extras_require={"bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"]},
+    extras_require={"bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"], "plotting":["matplotlib"]},
 )

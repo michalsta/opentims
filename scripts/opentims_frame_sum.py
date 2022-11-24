@@ -26,6 +26,7 @@ parser.add_argument("--mz-resolution", help="Custom mz binning resolution for pl
 parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
 parser.add_argument("--title", help="Add this title to plot", type=str, default="")
 parser.add_argument("-o", "--output", help="Output file if using -s", type=Path, default=Path("plot.png"))
+parser.add_argument("-t", "--transform", help="Transform the intensities before plotting", type=str, default="", choices="log10 sqrt id".split())
 
 
 
@@ -73,7 +74,7 @@ with OpenTIMS(args.path) as OT:
             yax_max=args.scan_range.max,
             yax_res=None,
             intens_cutoff=args.intensity,
-            log_scale=True,
+            transform=args.transform,
             max_intens=max_intens)
     plt.title(args.title)
     if args.save:

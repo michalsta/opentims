@@ -48,7 +48,16 @@ def no_idxes(ax_min, ax_max, ax_res):
         return ax_max - ax_min
     return int((ax_max - ax_min)/ax_res)
 
-def mk_bitmap(frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_res=1.0, yax_min=0, yax_max=1000, yax_res=None, intens_cutoff=0, log_scale=True):
+
+transforms = {
+        'log10' : lambda x: np.log10(x+1.0),
+        'sqrt' : np.sqrt,
+        '' : lambda x: x,
+        None : lambda x: x,
+        'id' : lambda x: x,
+}
+
+def mk_bitmap(frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_res=1.0, yax_min=0, yax_max=1000, yax_res=None, intens_cutoff=0, transform=''):
     xax, yax = axes
 
     X = frame_dct[xax]
@@ -67,8 +76,7 @@ def mk_bitmap(frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_r
     if intens_cutoff > 0:
         IMG[IMG<intens_cutoff] = 0
 
-    if log_scale:
-        IMG = np.log10(IMG+1)
+    IMG = transforms[transform](IMG)
 
     return IMG
 
@@ -77,11 +85,10 @@ def resolution_offset(resolution):
         return 0.5
     return 0.5*resolution
 
-def do_plot(plt, frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_res = 1.0, yax_min=0, yax_max=1000, yax_res=None, intens_cutoff=0, log_scale = True, max_intens = 1000):
+def do_plot(plt, frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xax_res = 1.0, yax_min=0, yax_max=1000, yax_res=None, intens_cutoff=0, transform='', max_intens = 1000):
 
-    IMG = mk_bitmap(frame_dct, axes, xax_min, xax_max, xax_res, yax_min, yax_max, yax_res, intens_cutoff, log_scale)
-    if log_scale:
-        max_intens = np.log10(max_intens+1)
+    IMG = mk_bitmap(frame_dct, axes, xax_min, xax_max, xax_res, yax_min, yax_max, yax_res, intens_cutoff, transform=transform)
+    max_intens = transforms[transform](max_intens)
 
     plt.subplots(figsize=(6,4))
     plt.margins(0,0)
@@ -96,5 +103,8 @@ def do_plot(plt, frame_dct, axes=['mz', 'scan'], xax_min=0.0, xax_max=2000.0, xa
     )
     plt.xlabel(axes[0])
     plt.ylabel(axes[1])
-    plt.colorbar(label="log10(intensity)", shrink=0.4, aspect=6)
+    if transform in [None, '']:
+        plt.colorbar(label="intensity", shrink=0.4, aspect=6)
+    else:
+        plt.colorbar(label=transform + "(intensity)", shrink=0.4, aspect=6)
 

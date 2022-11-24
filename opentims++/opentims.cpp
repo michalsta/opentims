@@ -667,7 +667,10 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
 
 void TimsDataHandle::per_frame_TIC(uint32_t* result)
 {
-    std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(max_peaks_in_frame());
+    const size_t m_peaks_in_frame = max_peaks_in_frame();
+    if(m_peaks_in_frame == 0)
+        return;
+    std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(m_peaks_in_frame);
 
     for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
     {

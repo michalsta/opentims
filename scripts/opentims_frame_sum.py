@@ -21,12 +21,13 @@ parser.add_argument("--silent", help="Do not display progressbar", action='store
 parser.add_argument("-p", "--processes", help="Number of subprocesses to use. Will use as many as there are detected cores in your system if omitted.", type=int, default=None)
 parser.add_argument("--mz-range", help="Custom mz range, example: 400.0-600.0", type=partial(rangeize, conversion=float), default=Range(0, 2000))
 parser.add_argument("--rt-range", help="Additionally clamp to RT range (constraining further the frames argument), example: 400.0-600.0", type=partial(rangeize, conversion=float), default=None)
-parser.add_argument("--scan-range", help="Custom scan range, example: 200-300", type=partial(rangeize, conversion=int), default=None)
+parser.add_argument("--scan-range", help="Custom scan range, inclusive, example: 200-300", type=partial(rangeize, conversion=int), default=None)
+parser.add_argument("--frame-range", help="Custom frame range, inclusive, example: 200-300. It will further constrain the <frames> argument.", type=partial(rangeize, conversion=int), default=None)
 parser.add_argument("--mz-resolution", help="Custom mz binning resolution for plot. Default: 1.0", type=float, default=1.0)
 parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
 parser.add_argument("--title", help="Add this title to plot", type=str, default="")
 parser.add_argument("-o", "--output", help="Output file if using -s", type=Path, default=Path("plot.png"))
-parser.add_argument("-t", "--transform", help="Transform the intensities before plotting", type=str, default="", choices="log10 sqrt id".split())
+parser.add_argument("-t", "--transform", help="Transform the intensities before plotting", type=str, default="", choices="log10 sqrt id none None".split())
 
 
 
@@ -60,8 +61,9 @@ with OpenTIMS(args.path) as OT:
     frames.discard(0)
     if not (args.rt_range is None):
         frames = set(frameid for frameid in frames if args.rt_range.min <= OT.frame_properties[frameid].Time <= args.rt_range.max)
+    if not (args.frame_range is None):
+        frames = set(frameid for frameid in frames if args.frame_range.min <= frameid <= args.frame_range.max)
 
-    print(list(sorted(frames)))
     frame = OT.query(list(sorted(frames)), columns='scan mz intensity'.split())
     plotting.do_plot(
             plt,
@@ -75,7 +77,8 @@ with OpenTIMS(args.path) as OT:
             yax_res=None,
             intens_cutoff=args.intensity,
             transform=args.transform,
-            max_intens=max_intens)
+            max_intens=max_intens,
+            aspect='auto')
     plt.title(args.title)
     if args.save:
         plt.savefig(args.output, dpi=600, bbox_inches="tight", pad_inches=0)

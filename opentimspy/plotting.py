@@ -15,7 +15,7 @@ def make_dense(
         xmax : np.uint32,
         ymax : np.uint32,
     ):
-    A = np.zeros(shape=(xmax,ymax), dtype=np.uint32)
+    A = np.zeros(shape=(xmax+1,ymax+1), dtype=np.uint32)
     for ii in range(len(X)):
         A[X[ii], Y[ii]] += intens[ii]
 

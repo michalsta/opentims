@@ -49,6 +49,8 @@ def translate_values_frame_sorted(
     if frame_sorted.dtype != np.uint32:
         frame_sorted = frame_sorted.astype(np.uint32)
     result = np.empty(x_frame_sorted.shape, dtype=result_dtype)
+    if len(result) == 0:
+        return result
     i_prev = 0
     frame_id_prev = frame_sorted[0]
     for i, frame_id in enumerate(frame_sorted):

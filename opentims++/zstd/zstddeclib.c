@@ -37,7 +37,6 @@
 #undef  XXH_INLINE_ALL
 #define XXH_INLINE_ALL
 #define ZSTD_LEGACY_SUPPORT 0
-#define ZSTD_STRIP_ERROR_STRINGS
 
 /**** start inlining common/debug.c ****/
 /* ******************************************************************

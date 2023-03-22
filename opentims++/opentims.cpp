@@ -31,6 +31,7 @@
 
 
 #include "platform.h"
+#include "zstd/zstd.h"
 
 #ifdef OPENTIMS_BUILDING_R
 #include "mio.h"
@@ -118,7 +119,9 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
     {
         std::string err = "Error uncompressing frame, error code: ";
         err += std::to_string(dec_result);
-        err += ". File is either corrupted, or in a (yet) unsupported variant of the format.";
+        err += " (";
+        err += ZSTD_getErrorName(dec_result);
+        err += "). File is either corrupted, or in a (yet) unsupported variant of the format.";
         throw std::runtime_error(err);
     }
 

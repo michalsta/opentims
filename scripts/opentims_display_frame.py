@@ -25,6 +25,7 @@ parser.add_argument("--mz-resolution", help="Custom mz binning resolution for pl
 parser.add_argument("--intensity", help="Clamp all intensities below this threshold to 0 (for simple noise removal)", type=int, default=0)
 parser.add_argument("-o", "--output", help="Output directory if using -s", type=Path, default=Path("."))
 parser.add_argument("-t", "--transform", help="Transform the intensities before plotting", type=str, default="", choices="log10 sqrt id".split())
+parser.add_argument("-m", "--movie", help="Create a movie out of saved frames, save it to provided path", type=Path, default=None)
 
 
 
@@ -92,3 +93,7 @@ with OpenTIMS(args.path) as OT:
 
     for frame_id in progressbar(multiproc(frames)):
         pass
+
+if args.movie:
+    import subprocess
+    subprocess.run(f'''ffmpeg -y -framerate 10 -pattern_type glob -i '{args.output / '*.png'}' -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2"  -c:v libx264 -r 50 -pix_fmt yuv420p {args.movie}''', shell=True)

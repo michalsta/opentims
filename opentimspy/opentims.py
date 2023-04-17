@@ -13,24 +13,24 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
-from functools import cached_property
 
 import functools
 import hashlib
-import numpy as np
-import numpy.typing as npt
 import pathlib
 import sqlite3
 import typing
+from functools import cached_property
 
+import numpy as np
+import numpy.typing as npt
 import opentimspy
 
-from .sql import tables_names, table2dict, table2keyed_dict
 from .dimension_translations import (
     cast_to_numpy_arrays,
     translate_values_frame_sorted,
     translate_values_frames_not_guaranteed_sorted,
 )
+from .sql import table2dict, table2keyed_dict, tables_names
 
 all_columns = (
     "frame",
@@ -64,7 +64,7 @@ def hash_frame(X, columns=("frame", "scan", "tof", "intensity"), algo=hashlib.bl
 
 
 FramesType = typing.Union[int, typing.Iterable[int]]
-COLUMNS_TYPE = typing.Union[str, tuple[str, ...]]
+COLUMNS_TYPE = typing.Union[str, typing.Tuple[str, ...]]
 
 
 # TODO: make lazy evaluation for loading sqlite data frames

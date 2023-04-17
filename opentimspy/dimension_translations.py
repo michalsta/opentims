@@ -1,5 +1,7 @@
-import numpy as np
 from typing import Callable, List, Union
+
+import numpy as np
+import numpy.typing as npt
 
 
 # def is_sorted(xx: np.array) -> bool:
@@ -10,14 +12,14 @@ from typing import Callable, List, Union
 #         x = x_prev
 #     return True
 ## 80 times slower on sorted input...
-def is_sorted(xx: np.array) -> bool:
+def is_sorted(xx: npt.NDArray) -> bool:
     return np.all(xx[:-1] <= xx[1:])
 
 
-#type defs
-TranslationInt = Union[np.array, int, List[int]]
-TranslationFloat = Union[np.array, float, List[float]]
-FrameType = Union[np.array, int, List[int], List[int]]
+# type defs
+TranslationInt = Union[npt.NDArray, int, List[int]]
+TranslationFloat = Union[npt.NDArray, float, List[float]]
+FrameType = Union[npt.NDArray, int, List[int], List[int]]
 
 
 def cast_to_numpy_arrays(
@@ -29,21 +31,29 @@ def cast_to_numpy_arrays(
     if isinstance(frame, list):
         frame = np.array(frame, dtype=np.uint32)
     if isinstance(x, (float, int)):
-        x = np.array([x])# type will be changed later: this is a scalar anyway
+        x = np.array([x])  # type will be changed later: this is a scalar anyway
     if isinstance(x, list):
-        x = np.array(x)# OK, this is potentially more expensive, simply use arrays to avoid that.
+        x = np.array(
+            x
+        )  # OK, this is potentially more expensive, simply use arrays to avoid that.
     return (x, frame)
 
 
 def translate_values_frame_sorted(
-    x_frame_sorted: np.array,
-    frame_sorted: np.array,
+    x_frame_sorted: npt.NDArray,
+    frame_sorted: npt.NDArray,
     bruker_translator_foo: Callable,
     x_dtype,
     result_dtype,
-) -> np.array:
-    assert x_dtype in (np.double, np.uint32), f"Wrong x_dtype: Bruker code only uses np.double and np.uint32, not {x_dtype}."
-    assert result_dtype in (np.double, np.uint32), f"Wrong result_dtype: Bruker code only uses np.double and np.uint32, not {x_dtype}."
+) -> npt.NDArray:
+    assert x_dtype in (
+        np.double,
+        np.uint32,
+    ), f"Wrong x_dtype: Bruker code only uses np.double and np.uint32, not {x_dtype}."
+    assert result_dtype in (
+        np.double,
+        np.uint32,
+    ), f"Wrong result_dtype: Bruker code only uses np.double and np.uint32, not {x_dtype}."
     if x_frame_sorted.dtype != x_dtype:
         x_frame_sorted = x_frame_sorted.astype(x_dtype)
     if frame_sorted.dtype != np.uint32:
@@ -61,18 +71,18 @@ def translate_values_frame_sorted(
             )
             i_prev = i
         frame_id_prev = frame_id
-    result[i_prev:len(result)] = bruker_translator_foo(
+    result[i_prev : len(result)] = bruker_translator_foo(
         frame_id_prev,
-        x_frame_sorted[i_prev:len(result)],
+        x_frame_sorted[i_prev : len(result)],
     )
     return result
 
 
 def translate_values_frames_not_guaranteed_sorted(
-    x: np.array,
-    frame: np.array,
+    x: npt.NDArray,
+    frame: npt.NDArray,
     **kwargs,
-) -> np.array:
+) -> npt.NDArray:
     frames_are_sorted = is_sorted(frame)
     if frames_are_sorted:
         frame_sorted = frame

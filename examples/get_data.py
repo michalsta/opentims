@@ -1,5 +1,5 @@
-import sys
 import pathlib
+import sys
 from pprint import pprint
 
 import opentimspy
@@ -11,12 +11,24 @@ from opentimspy import OpenTIMS
 # Check whether the Bruker binary converter is available. If yes, it will be used
 # by default, without any setup necessary. If no, the extra columns will be missing.
 if opentimspy.bruker_bridge_present:
-    all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
+    all_columns = (
+        "frame",
+        "scan",
+        "tof",
+        "intensity",
+        "mz",
+        "inv_ion_mobility",
+        "retention_time",
+    )
 else:
-    print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
-    print("Install the Python module 'opentims_bruker_bridge' if you are on Linux or Windows.")
+    print(
+        "Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations."
+    )
+    print(
+        "Install the Python module 'opentims_bruker_bridge' if you are on Linux or Windows."
+    )
     print("Otherwise, you will be able to use only these columns:")
-    all_columns = ('frame','scan','tof','intensity','retention_time')
+    all_columns = ("frame", "scan", "tof", "intensity", "retention_time")
 
 
 try:
@@ -31,19 +43,18 @@ with OpenTIMS(path) as D:
     header = '"' + '"\t"'.join(all_columns) + '"'
     print(header)
 
-
     # Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
-    for frame_id in D.frames['Id']:
+    for frame_id in D.frames["Id"]:
         frame = D.query(frame_id)
         peak_idx = 0
         # Frame is stored as a dict of column vectors
-        while peak_idx < len(frame['frame']):
+        while peak_idx < len(frame["frame"]):
             row = [str(frame[colname][peak_idx]) for colname in all_columns]
-            print('\t'.join(row))
+            print("\t".join(row))
             peak_idx += 1
 
 
-'''
+"""
 Advanced usage below. Uncomment to run it.
 
 print(D)
@@ -52,7 +63,7 @@ print(D.frames)
 print(D[1])
 
 print(len(D)) # The number of peaks.
-# 404183877	
+# 404183877 
 
 
 # Return combined intensity for each frame. This has to iterate over the whole dataset, and will take a while.
@@ -180,4 +191,4 @@ pprint(D[1:10])
 #        [     9,    913, 204042,     10],
 #        [     9,    914, 358144,      9],
 #        [     9,    915, 354086,      9]], dtype=uint32)
-'''
+"""

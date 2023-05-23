@@ -30,7 +30,7 @@ if args.frames != "":
             frames.add(int(frame_desc))
 
 
-out_file = sys.stdout if args.output is None else args.output.open()
+out_file = sys.stdout if args.output is None else args.output.open(mode="wt")
 
 with OpenTIMS(args.path) as D:
     if args.frames == "":

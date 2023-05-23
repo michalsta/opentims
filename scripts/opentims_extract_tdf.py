@@ -53,4 +53,4 @@ with OpenTIMS(args.path) as D:
             peak_idx += 1
 
 if args.output is not None:
-    out.file.close()
+    out_file.close()

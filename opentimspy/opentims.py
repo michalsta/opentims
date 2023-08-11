@@ -77,6 +77,14 @@ class OpenTIMS:
         """
         self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)
+        if not self.analysis_directory.exists():
+            raise RuntimeError(f"No such directory: {str(self.analysis_directory)}")
+        if not self.analysis_directory.is_dir():
+            raise RuntimeError(f"Is not a directory: {str(self.analysis_directory)}")
+        if not (self.analysis_directory / 'analysis.tdf').exists():
+            raise RuntimeError(f"Missing: {str(self.analysis_directory / 'analysis.tdf')}")
+        if not (self.analysis_directory / 'analysis.tdf_bin').exists():
+            raise RuntimeError(f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}")
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(

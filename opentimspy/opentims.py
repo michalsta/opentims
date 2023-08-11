@@ -253,11 +253,11 @@ class OpenTIMS:
             for col, dtype in zip(self.all_columns, self.all_columns_dtypes)
         }
 
-    def query(self, frames: FramesType, columns: COLUMNS_TYPE = all_columns):
+    def query(self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns):
         """Get data from a selection of frames.
 
         Args:
-            frames (int, iterable): Frames to choose. Passing an integer results in extracting that one frame.
+            frames (int, iterable, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
             columns (tuple): which columns to extract? Defaults to all possible columns.
         Returns:
             dict: columns to numpy array mapping.
@@ -269,6 +269,9 @@ class OpenTIMS:
         assert all(
             c in self.all_columns for c in columns
         ), f"Accepted column names: {self.all_columns}"
+
+        if frames is None:
+            frames = self.frames['Id']
 
         try:
             frames = np.r_[frames].astype(np.uint32)
@@ -288,17 +291,24 @@ class OpenTIMS:
                 raise
         return {c: arrays[c] for c in columns}
 
-    def query_iter(self, frames: FramesType, columns: COLUMNS_TYPE = all_columns):
+    def query_iter(self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns):
         """Iterate data from a selection of frames.
 
         Args:
-            frames (int, iterable, slice): Frames to choose. Passing an integer results in extracting that one frame.
+            frames (int, iterable, slice, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
             columns (tuple): which columns to extract? Defaults to all possible columns.
         Yields:
             dict: columnt to numpy array mapping.
         """
-        for fr in np.r_[frames]:
-            yield self.query(fr, columns)
+        if frames is None:
+            for frame_id in self.frames['Id']:
+                yield self.query(frame_id, columns)
+        else:
+            for fr in np.r_[frames]:
+                yield self.query(fr, columns)
+
+    def __iter__(self):
+        yield from self.query_iter()
 
     def rt_query(
         self,

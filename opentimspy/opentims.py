@@ -150,11 +150,11 @@ class OpenTIMS:
 
     @property
     def min_scan(self) -> int:
-        return 1
+        return 0
 
     @cached_property
     def max_scan(self) -> int:
-        return self.frames["NumScans"].max()
+        return self.frames["NumScans"].max() - 1
 
     @property
     def min_intensity(self) -> int:

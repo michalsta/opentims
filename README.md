@@ -65,8 +65,9 @@ install_github("michalsta/opentims", subdir="opentimsr")
 If that does not work, first clone the repository and then install manually with:
 ```bash
 git clone https://github.com/michalsta/opentims
+cd opentims
 R CMD build opentimsr
-R CDM INSTALL opentims_*.tar.gz
+R CMD INSTALL opentimsr_*.tar.gz
 ```
 On windows, replace `R` with `R.exe`.
 You can download git [from here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).

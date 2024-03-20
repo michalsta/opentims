@@ -105,7 +105,6 @@ setMethod("[",
             return(tdf_get_indexes(x@handle, i))
         })
 
-
 #' Select a range of frames to extract.
 #'
 #' This is similar to using the from:to:by operator in Python.
@@ -113,7 +112,9 @@ setMethod("[",
 #' @param x OpenTIMS data instance.
 #' @param from The first frame to extract.
 #' @param to The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.
-#' @param by Extract each by-th frame
+#' @param by Extract each by-th frame.
+#' @param na.rm Needed to comply with the generic. There should not be any NA frames, 
+#' since the from and to are checked against the limits of the data.
 #' @examples
 #' \dontrun{
 #' D = OpenTIMS('path/to/your/folder.d')
@@ -121,7 +122,7 @@ setMethod("[",
 #' }
 setMethod("range", 
           "OpenTIMS",
-          function(x, from, to, by=1L){ 
+          function(x, from, to, by=1L, na.rm=FALSE){ 
             from = as.integer(from)
             to  = as.integer(to)
             by  = as.integer(by)
@@ -130,8 +131,6 @@ setMethod("range",
                       by >= 0)
             tdf_get_range(x@handle, from, to, by)
           })
-
-
 
 #' Extract tables from sqlite database analysis.tdf.
 #'
@@ -146,7 +145,7 @@ setMethod("range",
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(head(table2df(D, "Frames"))) # Extract table "Frames".
 #' }
-table2df = function(opentims, names){
+table2df <- function(opentims, names){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     on.exit(DBI::dbDisconnect(sql_conn))
@@ -166,7 +165,7 @@ table2df = function(opentims, names){
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(tables_names(D)) 
 #' }
-tables_names = function(opentims){
+tables_names <- function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     on.exit(DBI::dbDisconnect(sql_conn))
@@ -186,7 +185,7 @@ tables_names = function(opentims){
 #' }
 #' @importFrom methods new
 #' @export
-OpenTIMS = function(path.d){
+OpenTIMS <- function(path.d){
     # getting tables from SQlite 
     analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
@@ -247,7 +246,7 @@ OpenTIMS = function(path.d){
 #' D = OpenTIMS('path/to/your/folder.d')
 #' min_max_measurements(D) # this gives a small data-frame with min and max values.
 #' }
-min_max_measurements = function(opentims){
+min_max_measurements <- function(opentims){
     data.frame(stat=c('min','max'),
                frame=c(opentims@min_frame,opentims@max_frame),
                scan=c(opentims@min_scan, opentims@max_scan),
@@ -270,7 +269,7 @@ min_max_measurements = function(opentims){
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(MS1(D)) 
 #' }
-MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
+MS1 <- function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 
 
 #' Explore the contentents of the sqlite .tdf database.
@@ -284,7 +283,7 @@ MS1 = function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 #' D = OpenTIMS('path/to/your/folder.d')
 #' explore.tdf.tables(D) 
 #' }
-explore.tdf.tables = function(opentims, ...){
+explore.tdf.tables <- function(opentims, ...){
     for(table_name in tables_names(opentims)){
         print(table_name)
         df = table2df(opentims, table_name)
@@ -306,7 +305,7 @@ explore.tdf.tables = function(opentims, ...){
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(peaks_per_frame_cnts(D)) 
 #' }
-peaks_per_frame_cnts = function(opentims){
+peaks_per_frame_cnts <- function(opentims){
   opentims@frames$NumPeaks
 }
 
@@ -321,7 +320,7 @@ peaks_per_frame_cnts = function(opentims){
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(retention_times(D)) 
 #' }
-retention_times = function(opentims){
+retention_times <- function(opentims){
   opentims@frames$Time
 }
 
@@ -342,7 +341,7 @@ retention_times = function(opentims){
 #' print(query(D, c(1,20, 53)) # extract all columns
 #' print(query(D, c(1,20, 53), columns=c('scan','intensity')) # only 'scan' and 'intensity'
 #' }
-query = function(opentims,
+query <- function(opentims,
                  frames,
                  columns=all_columns){
   col = opentims@all_columns %in% columns
@@ -383,7 +382,7 @@ query = function(opentims,
 #' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
 #' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
 #' }
-query_slice = function(opentims,
+query_slice <- function(opentims,
                        from=NULL,
                        to=NULL,
                        by=1,
@@ -409,8 +408,8 @@ query_slice = function(opentims,
 }
 
 
-get_left_frame = function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
-get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
+get_left_frame <- function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
+get_right_frame <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
 
 
 #' Get the retention time for each frame.
@@ -428,7 +427,7 @@ get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.ope
 #' D = OpenTIMS('path/to/your/folder.d')
 #' print(rt_query(D, 10, 100)) # frames between tenth and a hundreth second of the experiment
 #' }
-rt_query = function(opentims,
+rt_query <- function(opentims,
                     min_retention_time,
                     max_retention_time,
                     columns=all_columns){
@@ -464,7 +463,7 @@ rt_query = function(opentims,
 #' \dontrun{
 #' download_bruker_proprietary_code("your/prefered/destination/folder")
 #' }
-download_bruker_proprietary_code = function(
+download_bruker_proprietary_code <- function(
   target.folder, 
   net_url=paste0("https://raw.githubusercontent.com/MatteoLacki/",
                  "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
@@ -510,7 +509,7 @@ download_bruker_proprietary_code = function(
 #' D = OpenTIMS('path/to/your/folder.d')
 #' CloseTIMS(D)
 #' }
-CloseTIMS = function(opentims){
+CloseTIMS <- function(opentims){
     tdf_close(opentims@handle)
 }
 
@@ -528,7 +527,7 @@ CloseTIMS = function(opentims){
 #' so_path = download_bruker_proprietary_code("your/prefered/destination/folder")
 #' setup_bruker_so(so_path)
 #' }
-setup_bruker_so = function(path) .setup_bruker_so(path)
+setup_bruker_so <- function(path) .setup_bruker_so(path)
 
 
 #' Set the number of threads to be used for data processing by OpenTIMS
@@ -542,6 +541,6 @@ setup_bruker_so = function(path) .setup_bruker_so(path)
 #' \dontrun{
 #' opentims_set_threads(1)
 #' }
-opentims_set_threads = function(n){
+opentims_set_threads <- function(n){
     tdf_set_num_threads(n)
 }

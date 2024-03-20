@@ -4,7 +4,7 @@
 \alias{range,OpenTIMS-method}
 \title{Select a range of frames to extract.}
 \usage{
-\S4method{range}{OpenTIMS}(x, from, to, by = 1L)
+\S4method{range}{OpenTIMS}(x, from, to, by = 1L, na.rm = FALSE)
 }
 \arguments{
 \item{x}{OpenTIMS data instance.}
@@ -14,6 +14,9 @@
 \item{to}{The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.}
 
 \item{by}{Extract each by-th frame}
+
+\item{na.rm}{Needed to comply with the generic. There should not be any NA frames, 
+since the from and to are checked against the limits of the data.}
 }
 \description{
 This is similar to using the from:to:by operator in Python.

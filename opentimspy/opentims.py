@@ -138,11 +138,11 @@ class OpenTIMS:
 
     @property
     def min_frame(self) -> int:
-        return self.frames["Id"][0]
+        return self.frames["Id"].min()
 
     @property
     def max_frame(self) -> int:
-        return self.frames["Id"][-1]
+        return self.frames["Id"].max()
 
     @property
     def frames_no(self) -> int:

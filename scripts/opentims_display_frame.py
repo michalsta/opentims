@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from collections import namedtuple
 from functools import partial
-import numpy as np
 
 
 Range = namedtuple("Range", "min max".split())
@@ -32,6 +31,9 @@ parser.add_argument("-m", "--movie", help="Create a movie out of saved frames, s
 
 args=parser.parse_args()
 
+if args.movie and not args.save:
+    print("If -m/--movie is present, then -s/--save is also required, and -o strongly suggested")
+    sys.exit(1)
 
 from matplotlib import pyplot as plt
 from opentimspy import OpenTIMS, set_num_threads, plotting

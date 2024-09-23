@@ -38,7 +38,7 @@ use_clang = False #(
 #)
 # use_ccache = (not windows) and spawn.find_executable('ccache') != None and native_build
 use_ccache = os.path.exists("./use_ccache")
-'''
+
 # Prefer clang on UNIX if available
 if use_clang:
     if use_ccache:
@@ -53,10 +53,9 @@ else:
     else:
         # leave defaults
         pass
-'''
+
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
-    return ""
     if windows:
         return ["/O2"]
     if asan:

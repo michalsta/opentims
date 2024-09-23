@@ -31,11 +31,11 @@ elif platform.system().startswith("CYGWIN"):
 # native_build = "CIBUILDWHEEL" not in os.environ and 'darwin' not in platform.system().lower() and not 'aarch' in platform.machine().lower()
 native_build = False  # For now, Ubuntu ships with GCC on which -march=native is broken... and it just fails in too many situations.
 
-use_clang = False #(
-#    (not windows)
-#    and spawn.find_executable("clang++") != None
-#    and os.getenv("OPENTIMS_USE_DEFAULT_CXX") == None
-#)
+use_clang = (
+    (not windows)
+    and spawn.find_executable("clang++") != None
+    and os.getenv("OPENTIMS_USE_DEFAULT_CXX") == None
+)
 # use_ccache = (not windows) and spawn.find_executable('ccache') != None and native_build
 use_ccache = os.path.exists("./use_ccache")
 

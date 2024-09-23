@@ -84,7 +84,7 @@ TimsFrame TimsFrame::TimsFrameFromSql(char** sql_row, TimsDataHandle& parent_han
             atol(sql_row[3]),
             100.0 / atof(sql_row[4]),
             atof(sql_row[5]),
-            std::strtoul(sql_row[6], nullptr, 10) + parent_handle.tims_data_bin.data(),
+            std::strtoull(sql_row[6], nullptr, 10) + parent_handle.tims_data_bin.data(),
             parent_handle
     );
 }

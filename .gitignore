@@ -55,3 +55,6 @@ build
 
 #general
 *.class
+
+# Raw folders for testing.
+*.d

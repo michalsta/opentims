@@ -21,7 +21,7 @@ Description: A free, open-source package designed for
     spectrometers.
     Fast, free, crossplatform, with no reading through
     EULAs or messing with binary .dll files involved.
-License: GPL-3
+License: MIT
 URL: https://github.com/michalsta/opentims
 Depends:
     R (>= 3.0.0)

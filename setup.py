@@ -59,10 +59,10 @@ def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
         return ["/O2"]
     if asan:
-        return "-Og -g -std=c++17 -fsanitize=address".split()
+        return "-Og -g -std=c++20 -fsanitize=address".split()
     res = ["-g", "-O3"]
     if std_flag:
-        res.append("-std=c++17")
+        res.append("-std=c++20")
     if warnings:
         res.extend(["-Wall", "-Wextra"])
     if native_build:

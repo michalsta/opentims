@@ -1,1 +1,1 @@
-../../opentims++/opentims.h
+#include "../../opentims++/opentimsr_types.h"

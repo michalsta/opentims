@@ -61,6 +61,8 @@ library(devtools)
 
 install_github("michalsta/opentims", subdir="opentimsr")
 ```
+On Windows the last command might give you a warning about tar stopping with non-zero exit code. It's safe to ignore.
+
 
 If that does not work, first clone the repository and then install manually with:
 ```bash

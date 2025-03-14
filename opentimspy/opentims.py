@@ -852,3 +852,21 @@ class OpenTIMS:
         res = np.empty(shape=self.max_frame, dtype=np.uint32)
         self.handle.per_frame_TIC(res)
         return res
+
+
+    def frames_as_tensor(self, frames: List[int] | npt.ArrayLike[int], mz_bin_width: float = 1.0):
+        """Get frames as a tensor.
+
+        Args:
+            frames (list): A list of frames to extract.
+            mz_bin_width (float): Width of m/z bins.
+
+        Returns:
+            np.array: 3D tensor with frames, scans, and m/z bins.
+        """
+        frames = np.array(frames)
+        scans = self.max_scan+1
+        mz_bins = int(self.max_mz / mz_bin_width)
+        res = np.zeros((scans, mz_bins), dtype=np.uint64)
+        self.handle.add_frames_to_tensor(frames, res, mz_bin_width)
+        return res

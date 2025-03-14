@@ -11,7 +11,7 @@ from distutils import sysconfig, spawn
 
 import platform
 
-build_asan = False
+build_asan = True
 
 # If we're not on Windows, assume something POSIX-compatible (either Linux, OSX, *BSD or Cygwin) with a working gcc-like compiler
 windows = platform.system() == "Windows"

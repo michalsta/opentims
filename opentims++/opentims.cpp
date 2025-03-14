@@ -27,6 +27,7 @@
 #include <memory>
 #include <limits>
 #include <thread>
+#include <span>
 #include <unordered_map>
 
 
@@ -447,8 +448,8 @@ TimsDataHandle::~TimsDataHandle()
 
 
 TimsFrame& TimsDataHandle::get_frame(uint32_t frame_no)
-{ 
-    return frame_descs.at(frame_no); 
+{
+    return frame_descs.at(frame_no);
 }
 
 std::unordered_map<uint32_t, TimsFrame>& TimsDataHandle::get_frame_descs()
@@ -572,7 +573,7 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
 
 void TimsDataHandle::extract_frames_slice(uint32_t start,
                                           uint32_t end,
-                                          uint32_t step, 
+                                          uint32_t step,
                                           uint32_t* frame_ids,
                                           uint32_t* scan_ids,
                                           uint32_t* tofs,
@@ -683,5 +684,44 @@ void TimsDataHandle::per_frame_TIC(uint32_t* result)
         for(size_t ii = 0; ii < n_peaks; ii++)
             acc += intensities[ii];
         result[it->first - 1] = acc;
+    }
+}
+
+
+
+void TimsDataHandle::tensorize_frames(const std::span<uint64_t>& frame_nos,
+                                      uint64_t* tensor,
+                                      size_t scan_dim,
+                                      size_t no_mz_bins,
+                                      double mz_bin_size)
+{
+    uint32_t max_peaks = 0;
+    for(size_t frame_num : frame_nos)
+    {
+        std::cerr << "Frame: " << frame_num << std::endl;
+        TimsFrame& frame = get_frame(frame_num);
+        max_peaks = (std::max)(max_peaks, frame.num_peaks);
+        if(scan_dim <= frame.num_scans)
+            throw std::runtime_error("Scan dimension of tensor is too small to contain scan data. At least " + std::to_string(frame.num_scans+1) + " scans are required.");
+    }
+
+    std::unique_ptr<uint32_t[]> scan_ids = std::make_unique<uint32_t[]>(max_peaks);
+    std::unique_ptr<double[]> mzs = std::make_unique<double[]>(max_peaks);
+    std::unique_ptr<uint32_t[]> intensities = std::make_unique<uint32_t[]>(max_peaks);
+
+    for(size_t frame_num : frame_nos)
+    {
+        TimsFrame& frame = get_frame(frame_num);
+        frame.save_to_buffs(nullptr, scan_ids.get(), nullptr, intensities.get(), mzs.get(), nullptr, nullptr, zstd_dctx);
+        for(size_t ii = 0; ii < frame.num_peaks; ii++)
+        {
+            std::cerr << "Frame: " << frame_num << ", scan: " << scan_ids[ii] << ", tof: " << frame._tofs_buffer[ii] << ", intensity: " << intensities[ii] << ", mz: " << mzs[ii] << std::endl;
+            size_t scan_id = scan_ids[ii];
+            size_t mz_bin = static_cast<size_t>(mzs[ii] / mz_bin_size);
+            if(mz_bin >= no_mz_bins)
+                continue;
+            size_t offset = scan_id * no_mz_bins + mz_bin;
+            tensor[offset] += intensities[ii];
+        }
     }
 }

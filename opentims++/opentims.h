@@ -23,6 +23,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <span>
 
 #include "platform.h"
 
@@ -103,7 +104,7 @@ class TimsFrame
               TimsDataHandle& parent_hndl
             );
 
-    static TimsFrame TimsFrameFromSql(char** sql_row, 
+    static TimsFrame TimsFrameFromSql(char** sql_row,
                                       TimsDataHandle& parent_handle);
 
     inline size_t data_size_ints() const { return num_scans + num_peaks + num_peaks; };
@@ -134,7 +135,7 @@ public:
      * repeated access to the frame is necessary, before the access, and to call close()
      * afterward.
      *
-     * @param decompression_buffer optional, a pre-allocated buffer which will be used for 
+     * @param decompression_buffer optional, a pre-allocated buffer which will be used for
      *        the decompression.
      *        If null, a pre-allocated buffer from parent TimsDataFrame will be used,
      *        making this method non-thread-safe. If TimsFrame is to be used in multithreaded
@@ -379,7 +380,7 @@ public:
      * @param retention_times       Retention times (in seconds).
      */
     void extract_frames_slice(uint32_t start,
-                              uint32_t end, 
+                              uint32_t end,
                               uint32_t step,
                               uint32_t* frame_ids,
                               uint32_t* scan_ids,
@@ -448,6 +449,12 @@ public:
     void per_frame_TIC(uint32_t* result);
 
     friend int tims_sql_callback(void* out, int cols, char** row, char** colnames);
+
+    void tensorize_frames(const std::span<uint64_t>& frame_nos,
+                          uint64_t* tensor,
+                          size_t scan_dim,
+                          size_t mz_dim,
+                          double mz_bin_size);
 
     friend class TimsFrame;
 };

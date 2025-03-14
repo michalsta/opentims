@@ -307,6 +307,26 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                     return ret;
                 }
         )
+        .def("add_frames_to_tensor",
+            [](
+                TimsDataHandle& dh,
+                const py::array_t<uint64_t>& frame_nos,
+                const py::array_t<uint64_t>& tensor,
+                double mz_bin_size
+            )
+            {
+                std::cerr << "Adding frames to tensor" << std::endl;
+                py::buffer_info frame_nos_info = frame_nos.request();
+                py::buffer_info tensor_info = tensor.request();
+                dh.tensorize_frames(
+                    std::span<uint64_t>(static_cast<uint64_t*>(frame_nos_info.ptr), frame_nos_info.size),
+                    static_cast<uint64_t*>(tensor_info.ptr),
+                    tensor_info.shape[1],
+                    tensor_info.shape[2],
+                    mz_bin_size
+                );
+            }
+        )
         ;
 
     m.def("setup_bruker_so", [](const std::string& path)

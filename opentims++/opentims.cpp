@@ -44,6 +44,7 @@
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
+#include "sqlite_helper.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -273,7 +274,6 @@ int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
 }
 
 #ifndef OPENTIMS_BUILDING_R
-namespace{
 class RAIILocaleHelper
 {
     const std::locale previous_locale;
@@ -281,35 +281,6 @@ class RAIILocaleHelper
     RAIILocaleHelper() : previous_locale(std::locale::global(std::locale("C"))) {};
     ~RAIILocaleHelper() { std::locale::global(previous_locale); };
 };
-
-class RAIISqlite
-{
-    sqlite3* db_conn;
- public:
-    RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
-    {
-        if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
-            throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
-    }
-    ~RAIISqlite()
-    {
-        if(db_conn != nullptr)
-            sqlite3_close(db_conn);
-    }
-    void query(const std::string& sql, int (*callback)(void*,int,char**,char**), void* arg)
-    {
-        char* error = NULL;
-
-        if(sqlite3_exec(db_conn, sql.c_str(), callback, arg, &error) != SQLITE_OK)
-        {
-	    std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
-	    sqlite3_free(error);
-	    throw std::runtime_error(err_msg);
-        }
-    }
-
-};
-}
 #endif
 
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)

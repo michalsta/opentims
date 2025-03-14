@@ -22,3 +22,4 @@
 #include "converters.cpp"
 #include "thread_mgr.cpp"
 #include "so_manager.cpp"
+#include "sqlite_helper.cpp"

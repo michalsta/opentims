@@ -29,6 +29,9 @@ except ImportError:
         ctypes.CDLL(cpp_lib.get_filename(), ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
+import _sqlite3
+opentimspy_cpp.setup_sqlite_so(_sqlite3.__file__)
+
 
 bruker_bridge_present = False
 bruker_bridge_initialized = False

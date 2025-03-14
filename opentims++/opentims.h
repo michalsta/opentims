@@ -103,7 +103,7 @@ class TimsFrame
               TimsDataHandle& parent_hndl
             );
 
-    static TimsFrame TimsFrameFromSql(char** sql_row, 
+    static TimsFrame TimsFrameFromSql(char** sql_row,
                                       TimsDataHandle& parent_handle);
 
     inline size_t data_size_ints() const { return num_scans + num_peaks + num_peaks; };
@@ -134,7 +134,7 @@ public:
      * repeated access to the frame is necessary, before the access, and to call close()
      * afterward.
      *
-     * @param decompression_buffer optional, a pre-allocated buffer which will be used for 
+     * @param decompression_buffer optional, a pre-allocated buffer which will be used for
      *        the decompression.
      *        If null, a pre-allocated buffer from parent TimsDataFrame will be used,
      *        making this method non-thread-safe. If TimsFrame is to be used in multithreaded
@@ -207,10 +207,6 @@ private:
     std::unique_ptr<uint32_t[]> _intensities_buffer;
 
     ZSTD_DCtx* zstd_dctx;
-
-#ifndef OPENTIMS_BUILDING_R
-    sqlite3* db_conn;
-#endif
 
 public:
     size_t get_decomp_buffer_size() const { return decomp_buffer_size; };
@@ -379,7 +375,7 @@ public:
      * @param retention_times       Retention times (in seconds).
      */
     void extract_frames_slice(uint32_t start,
-                              uint32_t end, 
+                              uint32_t end,
                               uint32_t step,
                               uint32_t* frame_ids,
                               uint32_t* scan_ids,
@@ -437,8 +433,6 @@ public:
 
     //! Expermental API - use discouraged.
     const std::unique_ptr<uint32_t[]>& intensities_buffer() { return _intensities_buffer; };
-
-//    const sqlite3* db_connection() { return db_conn; };
 
     //! Obtain the Total Ionic Current for each frame present in the spectrum
     /** The data is saved to the argument buffer - which must be able to hold at least

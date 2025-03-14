@@ -296,7 +296,6 @@ class RAIISqlite
         if(db_conn != nullptr)
             sqlite3_close(db_conn);
     }
-    sqlite3* release_connection() { sqlite3* ret = db_conn; db_conn = nullptr; return ret; }
     void query(const std::string& sql, int (*callback)(void*,int,char**,char**), void* arg)
     {
         char* error = NULL;
@@ -323,9 +322,6 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 
     DB.query(sql, tims_sql_callback, this);
     DB.query("SELECT Value FROM GlobalMetadata WHERE Key == \"TimsCompressionType\";", check_compression, nullptr);
-
-    db_conn = DB.release_connection();
-
 #endif
 }
 
@@ -351,9 +347,6 @@ void TimsDataHandle::init()
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir)
 : tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
-#ifndef OPENTIMS_BUILDING_R
-, db_conn(nullptr)
-#endif
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
@@ -438,17 +431,12 @@ TimsDataHandle::~TimsDataHandle()
 {
     if(zstd_dctx != nullptr)
         ZSTD_freeDCtx(zstd_dctx);
-#ifndef OPENTIMS_BUILDING_R
-    if(db_conn != nullptr)
-        sqlite3_close(db_conn);
-#endif
-    // std::cout << "KABOOM!!!" << std::endl; // JUST A TEST: this can be triggered by Python GC with pybind11.
 }
 
 
 TimsFrame& TimsDataHandle::get_frame(uint32_t frame_no)
-{ 
-    return frame_descs.at(frame_no); 
+{
+    return frame_descs.at(frame_no);
 }
 
 std::unordered_map<uint32_t, TimsFrame>& TimsDataHandle::get_frame_descs()
@@ -572,7 +560,7 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
 
 void TimsDataHandle::extract_frames_slice(uint32_t start,
                                           uint32_t end,
-                                          uint32_t step, 
+                                          uint32_t step,
                                           uint32_t* frame_ids,
                                           uint32_t* scan_ids,
                                           uint32_t* tofs,

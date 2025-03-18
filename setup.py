@@ -11,7 +11,8 @@ from distutils import sysconfig, spawn
 
 import platform
 
-build_asan = True
+build_asan = False
+fast_build = "OPENTIMSPY_FAST_BUILD" in os.environ
 
 # If we're not on Windows, assume something POSIX-compatible (either Linux, OSX, *BSD or Cygwin) with a working gcc-like compiler
 windows = platform.system() == "Windows"
@@ -59,7 +60,10 @@ def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
         return ["/O2"]
     if asan:
-        return "-Og -g -std=c++20 -fsanitize=address".split()
+        ret = "-Og -g -std=c++20 -fsanitize=address".split()
+        if fast_build:
+            ret.append("-DOPENTIMSPY_FAST_BUILD")
+        return ret
     res = ["-g", "-O3"]
     if std_flag:
         res.append("-std=c++20")
@@ -67,6 +71,8 @@ def get_cflags(asan=False, warnings=True, std_flag=False):
         res.extend(["-Wall", "-Wextra"])
     if native_build:
         res.extend(["-march=native", "-mtune=native"])
+    if fast_build:
+        res.append("-DOPENTIMSPY_FAST_BUILD")
     return res
 
 
@@ -91,59 +97,73 @@ class get_pybind_include(object):
             sys.exit(1)
 
 
-if dual_build:
+if fast_build:
     ext_modules = [
-        Extension(
-            name="libopentims_support",
-            sources=[
-                os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                os.path.join("opentims++", "zstd", "zstddeclib.c"),
-            ],
-            extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
-            libraries=[] if windows else "pthread dl".split(),
-            include_dirs=[get_pybind_include()],
-        ),
-        Extension(
-            name="opentimspy_cpp",
-            sources=[
-                os.path.join("opentims++", "opentims_pybind11.cpp"),
-            ],
-            extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
-            libraries=[] if windows else "pthread dl".split(),
-            include_dirs=[get_pybind_include()],
-            undef_macros=[] if not build_asan else ["NDEBUG"],
-        ),
-        Extension(
-            name="libopentims_cpp",
-            sources=[os.path.join("opentims++", "opentims_all.cpp")],
-            extra_compile_args=get_cflags(asan=False, std_flag=True),
-            libraries=[] if windows else "pthread dl".split(),
-        ),
-    ]
+            Extension(
+                name="opentimspy_cpp",
+                sources=[
+                    os.path.join("opentims++", "opentims_all.cpp"),
+                    os.path.join("opentims++", "opentims_pybind11.cpp"),
+                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                ],
+                extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
+                libraries=[] if windows else "pthread dl".split(),
+                include_dirs=[get_pybind_include()],
+            )]
 else:
-    ext_modules = [
-        Extension(
-            name="opentimspy_cpp",
-            sources=[
-                os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                os.path.join("opentims++", "opentims_pybind11.cpp"),
-            ],
-            extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
-            libraries="" if windows else "pthread dl".split(),
-            include_dirs=[get_pybind_include()],
-        ),
-        Extension(
-            name="libopentims_cpp",
-            sources=[
-                os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                os.path.join("opentims++", "libopentims_py.cpp"),
-            ],
-            extra_compile_args=get_cflags(asan=False, std_flag=True),
-            libraries=[] if windows else "pthread dl".split(),
-        ),
-    ]
+    if dual_build:
+        ext_modules = [
+            Extension(
+                name="libopentims_support",
+                sources=[
+                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                ],
+                extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
+                libraries=[] if windows else "pthread dl".split(),
+                include_dirs=[get_pybind_include()],
+            ),
+            Extension(
+                name="opentimspy_cpp",
+                sources=[
+                    os.path.join("opentims++", "opentims_pybind11.cpp"),
+                ],
+                extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
+                libraries=[] if windows else "pthread dl".split(),
+                include_dirs=[get_pybind_include()],
+                undef_macros=[] if not build_asan else ["NDEBUG"],
+            ),
+            Extension(
+                name="libopentims_cpp",
+                sources=[os.path.join("opentims++", "opentims_all.cpp")],
+                extra_compile_args=get_cflags(asan=False, std_flag=True),
+                libraries=[] if windows else "pthread dl".split(),
+            ),
+        ]
+    else:
+        ext_modules = [
+            Extension(
+                name="opentimspy_cpp",
+                sources=[
+                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                    os.path.join("opentims++", "opentims_pybind11.cpp"),
+                ],
+                extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
+                libraries="" if windows else "pthread dl".split(),
+                include_dirs=[get_pybind_include()],
+            ),
+            Extension(
+                name="libopentims_cpp",
+                sources=[
+                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
+                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                    os.path.join("opentims++", "libopentims_py.cpp"),
+                ],
+                extra_compile_args=get_cflags(asan=False, std_flag=True),
+                libraries=[] if windows else "pthread dl".split(),
+            ),
+        ]
 
 
 setup(

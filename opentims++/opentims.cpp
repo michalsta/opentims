@@ -45,6 +45,7 @@
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
+#include "sqlite_helper.h"
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -274,7 +275,6 @@ int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
 }
 
 #ifndef OPENTIMS_BUILDING_R
-namespace{
 class RAIILocaleHelper
 {
     const std::locale previous_locale;
@@ -282,36 +282,6 @@ class RAIILocaleHelper
     RAIILocaleHelper() : previous_locale(std::locale::global(std::locale("C"))) {};
     ~RAIILocaleHelper() { std::locale::global(previous_locale); };
 };
-
-class RAIISqlite
-{
-    sqlite3* db_conn;
- public:
-    RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
-    {
-        if(sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
-            throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + sqlite3_errmsg(db_conn));
-    }
-    ~RAIISqlite()
-    {
-        if(db_conn != nullptr)
-            sqlite3_close(db_conn);
-    }
-    sqlite3* release_connection() { sqlite3* ret = db_conn; db_conn = nullptr; return ret; }
-    void query(const std::string& sql, int (*callback)(void*,int,char**,char**), void* arg)
-    {
-        char* error = NULL;
-
-        if(sqlite3_exec(db_conn, sql.c_str(), callback, arg, &error) != SQLITE_OK)
-        {
-	    std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
-	    sqlite3_free(error);
-	    throw std::runtime_error(err_msg);
-        }
-    }
-
-};
-}
 #endif
 
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
@@ -324,9 +294,6 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 
     DB.query(sql, tims_sql_callback, this);
     DB.query("SELECT Value FROM GlobalMetadata WHERE Key == \"TimsCompressionType\";", check_compression, nullptr);
-
-    db_conn = DB.release_connection();
-
 #endif
 }
 
@@ -352,9 +319,6 @@ void TimsDataHandle::init()
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir)
 : tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
-#ifndef OPENTIMS_BUILDING_R
-, db_conn(nullptr)
-#endif
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
@@ -439,11 +403,6 @@ TimsDataHandle::~TimsDataHandle()
 {
     if(zstd_dctx != nullptr)
         ZSTD_freeDCtx(zstd_dctx);
-#ifndef OPENTIMS_BUILDING_R
-    if(db_conn != nullptr)
-        sqlite3_close(db_conn);
-#endif
-    // std::cout << "KABOOM!!!" << std::endl; // JUST A TEST: this can be triggered by Python GC with pybind11.
 }
 
 

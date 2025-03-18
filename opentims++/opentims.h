@@ -209,10 +209,6 @@ private:
 
     ZSTD_DCtx* zstd_dctx;
 
-#ifndef OPENTIMS_BUILDING_R
-    sqlite3* db_conn;
-#endif
-
 public:
     size_t get_decomp_buffer_size() const { return decomp_buffer_size; };
     std::unique_ptr<Tof2MzConverter> tof2mz_converter;
@@ -438,8 +434,6 @@ public:
 
     //! Expermental API - use discouraged.
     const std::unique_ptr<uint32_t[]>& intensities_buffer() { return _intensities_buffer; };
-
-//    const sqlite3* db_connection() { return db_conn; };
 
     //! Obtain the Total Ionic Current for each frame present in the spectrum
     /** The data is saved to the argument buffer - which must be able to hold at least

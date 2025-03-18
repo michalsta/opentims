@@ -8,3 +8,4 @@
 #include "tof2mz_converter.h"
 #include "converters.h"
 #include "thread_mgr.h"
+#include "sqlite_helper.h"

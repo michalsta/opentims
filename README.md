@@ -61,6 +61,8 @@ library(devtools)
 
 install_github("michalsta/opentims", subdir="opentimsr")
 ```
+On Windows the last command might give you a warning about tar stopping with non-zero exit code. It's safe to ignore.
+
 
 If that does not work, first clone the repository and then install manually with:
 ```bash
@@ -445,8 +447,7 @@ Please visit the project and follow language-specific instructions for its insta
 
 ## Licence
 
-OpenTIMS is released under the terms of GNU GPL v3 licence, as
-published by the Free Software Foundation. Full text below.
+OpenTIMS is released under the terms of MIT licence. Full text below in LICENCE file.
 If you require other licensing terms please contact the authors.
 
 OpenTIMS contains built-in versions of the following software:

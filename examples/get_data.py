@@ -45,7 +45,7 @@ with OpenTIMS(path) as D:
 
     # Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
     for frame_id in D.frames["Id"]:
-        frame = D.query(frame_id)
+        frame = D.query(frame_id, columns=all_columns) 
         peak_idx = 0
         # Frame is stored as a dict of column vectors
         while peak_idx < len(frame["frame"]):

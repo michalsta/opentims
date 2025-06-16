@@ -286,7 +286,7 @@ class OpenTIMS:
 
         Args:
             frames (int, iterable, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
-            columns (tuple|str|dict): which columns to extract? Be default, provide a tuple with column name strings. If you provide one string, it will be a column. If you provide a dictionary, it should map column names to arrays you provide yourself for the outputs instead of having to trouble us. The latter makes sense if you want to store data on disk in a memory mapped files.
+            columns (tuple|str|dict): which columns to extract? Be default, provide a tuple with column name strings. If you provide one string, it will be a column. If you provide a dictionary, it should map column names to arrays you provide yourself for the outputs instead of having to trouble us. The latter makes sense if you want to store data on disk in a memory mapped files. We do check if your arrays match necessry column types and size.
         Returns:
             dict: columns to numpy array mapping.
         """

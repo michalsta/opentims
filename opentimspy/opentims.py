@@ -81,10 +81,14 @@ class OpenTIMS:
             raise RuntimeError(f"No such directory: {str(self.analysis_directory)}")
         if not self.analysis_directory.is_dir():
             raise RuntimeError(f"Is not a directory: {str(self.analysis_directory)}")
-        if not (self.analysis_directory / 'analysis.tdf').exists():
-            raise RuntimeError(f"Missing: {str(self.analysis_directory / 'analysis.tdf')}")
-        if not (self.analysis_directory / 'analysis.tdf_bin').exists():
-            raise RuntimeError(f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}")
+        if not (self.analysis_directory / "analysis.tdf").exists():
+            raise RuntimeError(
+                f"Missing: {str(self.analysis_directory / 'analysis.tdf')}"
+            )
+        if not (self.analysis_directory / "analysis.tdf_bin").exists():
+            raise RuntimeError(
+                f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}"
+            )
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(
@@ -242,7 +246,11 @@ class OpenTIMS:
             frames = np.array(frames, dtype=np.uint32)
         return self.handle.no_peaks_in_frames(frames)
 
-    def _get_empty_arrays(self, size, selected_columns=all_columns):
+    def _get_empty_arrays(
+        self,
+        size,
+        selected_columns=all_columns,
+    ):
         """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
         assert all(
             c in self.all_columns for c in selected_columns
@@ -253,32 +261,55 @@ class OpenTIMS:
             for col, dtype in zip(self.all_columns, self.all_columns_dtypes)
         }
 
-    def query(self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns):
+    def _sanitize_user_provided_arrays(
+        self,
+        size: int,
+        arrays: dict[str, npt.NDArray],
+    ) -> dict[str, npt.NDArray]:
+        final_arrays = {}
+        for col, col_dtype in zip(self.all_columns, self.all_columns_dtypes):
+            if col in arrays:
+                arr = arrays[col]
+                assert arr.dtype == col_dtype
+                assert len(arr) == size
+            else:
+                arr = np.empty(shape=0, dtype=col_dtype)
+            final_arrays[col] = arr
+        return final_arrays
+
+    def query(
+        self,
+        frames: FramesType = None,
+        columns: COLUMNS_TYPE | dict[str, npt.NDArray] = all_columns,
+    ):
         """Get data from a selection of frames.
 
         Args:
             frames (int, iterable, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
-            columns (tuple): which columns to extract? Defaults to all possible columns.
+            columns (tuple|str|dict): which columns to extract? Be default, provide a tuple with column name strings. If you provide one string, it will be a column. If you provide a dictionary, it should map column names to arrays you provide yourself for the outputs instead of having to trouble us. The latter makes sense if you want to store data on disk in a memory mapped files.
         Returns:
             dict: columns to numpy array mapping.
         """
         if isinstance(columns, str):
             columns = (columns,)
 
-        columns = tuple(columns)
         assert all(
             c in self.all_columns for c in columns
         ), f"Accepted column names: {self.all_columns}"
 
         if frames is None:
-            frames = self.frames['Id']
+            frames = self.frames["Id"]
 
         try:
             frames = np.r_[frames].astype(np.uint32)
             size = self.peaks_per_frame_cnts(frames, convert=False)
-            arrays = self._get_empty_arrays(size, columns)
-            # now, pack the arrays with data
-            self.handle.extract_frames(frames, **arrays)
+            arrays = (
+                self._sanitize_user_provided_arrays(size, columns)
+                if isinstance(columns, dict)
+                else self._get_empty_arrays(size, columns)
+            )
+
+            self.handle.extract_frames(frames, **arrays)  # packs arrays with data
         except RuntimeError as e:
             if (
                 e.args[0]
@@ -291,7 +322,9 @@ class OpenTIMS:
                 raise
         return {c: arrays[c] for c in columns}
 
-    def query_iter(self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns):
+    def query_iter(
+        self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns
+    ):
         """Iterate data from a selection of frames.
 
         Args:
@@ -301,7 +334,7 @@ class OpenTIMS:
             dict: columnt to numpy array mapping.
         """
         if frames is None:
-            for frame_id in self.frames['Id']:
+            for frame_id in self.frames["Id"]:
                 yield self.query(frame_id, columns)
         else:
             for fr in np.r_[frames]:

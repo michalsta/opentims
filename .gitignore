@@ -58,3 +58,6 @@ build
 
 # Raw folders for testing.
 *.d
+
+# Matteos development.
+__devel.py

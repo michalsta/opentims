@@ -63,7 +63,7 @@ def hash_frame(X, columns=("frame", "scan", "tof", "intensity"), algo=hashlib.bl
     return hashes
 
 
-FramesType = typing.Union[int, typing.Iterable[int]]
+FRAMES_TYPE = typing.Union[int, typing.Iterable[int]]
 COLUMNS_TYPE = typing.Union[str, typing.Tuple[str, ...]]
 
 
@@ -223,7 +223,7 @@ class OpenTIMS:
         with self.get_sql_connection() as sqlcon:
             return table2keyed_dict(sqlcon, name)
 
-    def frame2retention_time(self, frames: FramesType):
+    def frame2retention_time(self, frames: FRAMES_TYPE):
         frames = np.r_[frames]
         assert (
             frames.min() >= self.min_frame
@@ -233,7 +233,7 @@ class OpenTIMS:
         ), f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
         return np.array([self.handle.get_frame(i).time for i in frames])
 
-    def peaks_per_frame_cnts(self, frames: FramesType, convert=True):
+    def peaks_per_frame_cnts(self, frames: FRAMES_TYPE, convert=True):
         """Return the numbers of peaks in chosen frames.
 
         Args:
@@ -279,7 +279,7 @@ class OpenTIMS:
 
     def query(
         self,
-        frames: FramesType = None,
+        frames: FRAMES_TYPE = None,
         columns: COLUMNS_TYPE | dict[str, npt.NDArray] = all_columns,
     ):
         """Get data from a selection of frames.
@@ -323,7 +323,7 @@ class OpenTIMS:
         return {c: arrays[c] for c in columns}
 
     def query_iter(
-        self, frames: FramesType = None, columns: COLUMNS_TYPE = all_columns
+        self, frames: FRAMES_TYPE = None, columns: COLUMNS_TYPE = all_columns
     ):
         """Iterate data from a selection of frames.
 
@@ -415,7 +415,7 @@ class OpenTIMS:
             fr.save_to_pybuffer(X)
         return X
 
-    def frame_arrays(self, frames: FramesType):
+    def frame_arrays(self, frames: FRAMES_TYPE):
         """Get raw data from a selection of frames.
 
         Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
@@ -471,7 +471,7 @@ class OpenTIMS:
             ret[frame_ids[ii]] = X
         return ret
 
-    def __getitem__(self, frames: FramesType):
+    def __getitem__(self, frames: FRAMES_TYPE):
         """Get raw data array for given frames and scans.
 
         Contains only those types that share the underlying type (uint32), which consists of 'frame','scan','tof', and 'intensity'.
@@ -885,3 +885,50 @@ class OpenTIMS:
         res = np.empty(shape=self.max_frame, dtype=np.uint32)
         self.handle.per_frame_TIC(res)
         return res
+
+    def count_frame_scan_occurrences(
+        self,
+        frames: FRAMES_TYPE | None = None,
+        counts: npt.NDArray | None = None,
+    ):
+        """Count the number of (frame,scan) pairs among all events.
+
+        Parameters
+        ----------
+        frames : FRAMES_TYPE or None, optional
+            The frame index or indices for which to count scan events. Can be an int,
+            array-like of ints, or None. If None, all frame IDs in `self.frames["Id"]`
+            are used.
+        counts : numpy.ndarray or None, optional
+            A 2D NumPy array of shape (max_frame + 1, max_scan + 1) used to store the counts.
+            If None, a new array of zeros with dtype `np.uint64` and appropriate shape is created.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D array where entry (i, j) represents the number of times scan `j` appears
+            in frame `i`.
+
+        Raises
+        ------
+        AssertionError
+            If `counts` is provided and is not a NumPy array.
+        """
+        if counts is None:
+            counts = np.zeros(
+                dtype=np.uint64,
+                shape=(self.max_frame + 1, self.max_scan + 1),
+            )
+        assert isinstance(counts, np.ndarray)
+
+        if frames is None:
+            frames = self.frames["Id"]
+
+        if isinstance(frames, int):
+            frames = np.array([frames], dtype=np.uint32)
+
+        for frame in frames:
+            scans = self.query(frame, columns="scan")["scan"]
+            scans, occurrences = np.unique(scans, return_counts=True)
+            counts[frame, scans] = occurrences
+        return counts

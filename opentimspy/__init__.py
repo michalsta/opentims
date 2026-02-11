@@ -20,20 +20,11 @@ try:
     import opentimspy_cpp
 except ImportError:
     import ctypes
-    import sys
+    import importlib.util
 
-    if sys.version_info >= (3, 12):
-        import importlib.util
-
-        def _get_native_lib_path(name):
-            spec = importlib.util.find_spec(name)
-            return spec.origin if spec is not None else None
-    else:
-        import pkgutil
-
-        def _get_native_lib_path(name):
-            loader = pkgutil.get_loader(name)
-            return loader.get_filename() if loader is not None else None
+    def _get_native_lib_path(name):
+        spec = importlib.util.find_spec(name)
+        return spec.origin if spec is not None else None
 
     support_lib_path = _get_native_lib_path("libopentims_support")
     if support_lib_path is not None:

@@ -20,13 +20,27 @@ try:
     import opentimspy_cpp
 except ImportError:
     import ctypes
-    import pkgutil
-    support_lib = pkgutil.get_loader("libopentims_support")
-    if not support_lib is None:
-        ctypes.CDLL(support_lib.get_filename(), ctypes.RTLD_GLOBAL)
-    cpp_lib = pkgutil.get_loader("libopentims_cpp")
-    if not cpp_lib is None:
-        ctypes.CDLL(cpp_lib.get_filename(), ctypes.RTLD_GLOBAL)
+    import sys
+
+    if sys.version_info >= (3, 12):
+        import importlib.util
+
+        def _get_native_lib_path(name):
+            spec = importlib.util.find_spec(name)
+            return spec.origin if spec is not None else None
+    else:
+        import pkgutil
+
+        def _get_native_lib_path(name):
+            loader = pkgutil.get_loader(name)
+            return loader.get_filename() if loader is not None else None
+
+    support_lib_path = _get_native_lib_path("libopentims_support")
+    if support_lib_path is not None:
+        ctypes.CDLL(support_lib_path, ctypes.RTLD_GLOBAL)
+    cpp_lib_path = _get_native_lib_path("libopentims_cpp")
+    if cpp_lib_path is not None:
+        ctypes.CDLL(cpp_lib_path, ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
 import _sqlite3

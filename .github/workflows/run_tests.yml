@@ -3,7 +3,7 @@ name: Build
 on:
     push:
         branches:
-            - ci_test
+            - ci-test
             - master
         tags:
             - 'v*'

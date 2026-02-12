@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pathlib
+import importlib.metadata
 
 try:
     import libopentims_support
@@ -90,4 +91,4 @@ def set_num_threads(n):
     '''
     opentimspy_cpp.set_num_threads(n)
 
-__version__ = "1.0.16"
+__version__ = importlib.metadata.version("opentimspy")

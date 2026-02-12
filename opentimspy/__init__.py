@@ -42,6 +42,7 @@ if not ("_sqlite3" in sys.builtin_module_names):
     libpath = ctypes.util.find_library("sqlite3")
     if libpath is None:
         import _sqlite3
+
         libpath = _sqlite3.__file__
 
     opentimspy_cpp.setup_sqlite_so(libpath)
@@ -53,6 +54,7 @@ bruker_bridge_initialized = False
 try:
     # Try to find and load Bruker's dll for data conversion
     import opentims_bruker_bridge as obb
+
     bruker_bridge_present = True
 except ImportError:
     pass
@@ -70,25 +72,35 @@ if bruker_bridge_present:
             excuses.append(e)
     if not bruker_bridge_initialized:
         errmsg = []
-        errmsg.append(f"Failed to initialize the Bruker binary library for conversion. {len(excuses)} attempts were made, and here are the reasons they failed:\n\n")
+        errmsg.append(
+            f"Failed to initialize the Bruker binary library for conversion. {len(excuses)} attempts were made, and here are the reasons they failed:\n\n"
+        )
         for so_path, excuse in zip(so_paths, excuses):
             errmsg.append("Path " + so_path + " failed:")
             errmsg.append(str(excuse))
             errmsg.append("")
         errmsg.append("")
-        errmsg.append("Please either fix one of the above errors, or uninstall opentims_bruker_bridge module.")
+        errmsg.append(
+            "Please either fix one of the above errors, or uninstall opentims_bruker_bridge module."
+        )
 
-        raise ImportError('\n'.join(errmsg))
+        raise ImportError("\n".join(errmsg))
 
 
 def get_module_dir():
     return pathlib.Path(__file__).parent
 
 
-from opentimspy.opentims import OpenTIMS, column_to_dtype, all_columns, all_columns_dtype
+from opentimspy.opentims import (
+    OpenTIMS,
+    column_to_dtype,
+    all_columns,
+    all_columns_dtype,
+)
+
 
 def set_num_threads(n):
-    '''
+    """
     Set the numer of worker threads that OpenTIMS is allowed to use
     during its calculations. Note: a setting of 1 still means OpenTIMS
     might spawn a separate worker thread, just that at most 1 thread
@@ -96,7 +108,8 @@ def set_num_threads(n):
 
     A setting of 0 means to use all available cores (this is the default
     behaviour)
-    '''
+    """
     opentimspy_cpp.set_num_threads(n)
+
 
 __version__ = importlib.metadata.version("opentimspy")

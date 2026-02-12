@@ -5,7 +5,7 @@ def parse_slice(value):
     Parses a `slice()` from string, like `start:stop:step`.
     """
     if value:
-        parts = value.split(':')
+        parts = value.split(":")
         if len(parts) == 1:
             # slice(stop)
             parts = [None, parts[0]]

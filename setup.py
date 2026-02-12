@@ -100,17 +100,18 @@ class get_pybind_include(object):
 
 if fast_build:
     ext_modules = [
-            Extension(
-                name="opentimspy_cpp",
-                sources=[
-                    os.path.join("opentims++", "opentims_all.cpp"),
-                    os.path.join("opentims++", "opentims_pybind11.cpp"),
-                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                ],
-                extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
-                libraries=[] if windows else "pthread dl".split(),
-                include_dirs=[get_pybind_include()],
-            )]
+        Extension(
+            name="opentimspy_cpp",
+            sources=[
+                os.path.join("opentims++", "opentims_all.cpp"),
+                os.path.join("opentims++", "opentims_pybind11.cpp"),
+                os.path.join("opentims++", "zstd", "zstddeclib.c"),
+            ],
+            extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
+            libraries=[] if windows else "pthread dl".split(),
+            include_dirs=[get_pybind_include()],
+        )
+    ]
 else:
     if dual_build:
         ext_modules = [
@@ -120,7 +121,9 @@ else:
                     os.path.join("opentims++", "sqlite", "sqlite3.c"),
                     os.path.join("opentims++", "zstd", "zstddeclib.c"),
                 ],
-                extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
+                extra_compile_args=get_cflags(
+                    asan=False, warnings=False, std_flag=False
+                ),
                 libraries=[] if windows else "pthread dl".split(),
                 include_dirs=[get_pybind_include()],
             ),
@@ -199,5 +202,9 @@ setup(
     package_data={
         "opentimspy": ["opentims++/*.h", "opentims++/*/*.h", "opentims++/*.hpp"]
     },
-    extras_require={"bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"], "plotting":["matplotlib"], "pytest":["pytest"]},
+    extras_require={
+        "bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"],
+        "plotting": ["matplotlib"],
+        "pytest": ["pytest"],
+    },
 )

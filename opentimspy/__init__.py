@@ -16,11 +16,14 @@
 import pathlib
 import importlib.metadata
 
+import ctypes
+import ctypes.util
+import sys
+
 try:
     import libopentims_support
     import opentimspy_cpp
 except ImportError:
-    import ctypes
     import importlib.util
 
     def _get_native_lib_path(name):
@@ -35,8 +38,13 @@ except ImportError:
         ctypes.CDLL(cpp_lib_path, ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
-import _sqlite3
-opentimspy_cpp.setup_sqlite_so(_sqlite3.__file__)
+if not ("_sqlite3" in sys.builtin_module_names):
+    libpath = ctypes.util.find_library("sqlite3")
+    if libpath is None:
+        import _sqlite3
+        libpath = _sqlite3.__file__
+
+    opentimspy_cpp.setup_sqlite_so(_sqlite3.__file__)
 
 
 bruker_bridge_present = False

@@ -30,7 +30,6 @@ jobs:
         # env:
         #   CIBW_SOME_OPTION: value
         env:
-          CIBW_SKIP: cp27-* pp27-* pp*-*
             #CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
           GITHUB_BUILDING_WHEELS: 1
 

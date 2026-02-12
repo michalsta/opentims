@@ -2,11 +2,12 @@
 import sys
 import os
 import os.path
+import shutil
 from glob import glob
 
 import setuptools
 from distutils.core import setup, Extension
-from distutils import sysconfig, spawn
+from distutils import sysconfig
 
 
 import platform
@@ -34,10 +35,10 @@ native_build = False  # For now, Ubuntu ships with GCC on which -march=native is
 
 use_clang = (
     (not windows)
-    and spawn.find_executable("clang++") != None
+    and shutil.which("clang++") != None
     and os.getenv("OPENTIMS_USE_DEFAULT_CXX") == None
 )
-# use_ccache = (not windows) and spawn.find_executable('ccache') != None and native_build
+# use_ccache = (not windows) and shutil.which('ccache') != None and native_build
 use_ccache = os.path.exists("./use_ccache")
 
 # Prefer clang on UNIX if available

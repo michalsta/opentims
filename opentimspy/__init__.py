@@ -44,7 +44,7 @@ if not ("_sqlite3" in sys.builtin_module_names):
         import _sqlite3
         libpath = _sqlite3.__file__
 
-    opentimspy_cpp.setup_sqlite_so(_sqlite3.__file__)
+    opentimspy_cpp.setup_sqlite_so(libpath)
 
 
 bruker_bridge_present = False

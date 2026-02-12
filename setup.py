@@ -199,5 +199,5 @@ setup(
     package_data={
         "opentimspy": ["opentims++/*.h", "opentims++/*/*.h", "opentims++/*.hpp"]
     },
-    extras_require={"bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"], "plotting":["matplotlib"]},
+    extras_require={"bruker_proprietary": ["opentims_bruker_bridge>=1.0.3"], "plotting":["matplotlib"], "pytest":["pytest"]},
 )

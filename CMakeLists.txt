@@ -5,7 +5,9 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 REQUIRED)
 find_package(Threads REQUIRED)
 
-pybind11_add_module(opentimspy_cpp opentims++/opentims_pybind11.cpp)
+
+# Build the pybind11 extension as a Python module
+pybind11_add_module(opentimspy_cpp MODULE opentims++/opentims_pybind11.cpp)
 
 # Link pthread and dl if not on Windows
 if (UNIX AND NOT APPLE)
@@ -18,7 +20,7 @@ target_compile_options(opentimspy_cpp PRIVATE -O3 -g -Wall -Wextra)
 target_include_directories(opentimspy_cpp PRIVATE ${CMAKE_SOURCE_DIR}/opentims++)
 
 # Install Python package files
-install(TARGETS opentimspy_cpp DESTINATION opentimspy)
+install(TARGETS opentimspy_cpp LIBRARY DESTINATION opentimspy)
 install(DIRECTORY opentimspy/ DESTINATION opentimspy FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE)
 file(GLOB OPENTIMS_HEADERS
     "${CMAKE_SOURCE_DIR}/opentims++/*.h"

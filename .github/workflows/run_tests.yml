@@ -44,4 +44,4 @@ jobs:
           python -m pytest .
       - name: Show sqlite3 backend
         run: |
-          python -c "import opentimspy; print('SQLite3 backend:', opentimspy._sqlite3_backend)"
+          python test/print_sqlite_backend.py

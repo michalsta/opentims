@@ -13,7 +13,7 @@ from distutils import sysconfig
 import platform
 
 build_asan = False
-fast_build = True
+fast_build = "OPENTIMSPY_FAST_BUILD" in os.environ
 
 # If we're not on Windows, assume something POSIX-compatible (either Linux, OSX, *BSD or Cygwin) with a working gcc-like compiler
 windows = platform.system() == "Windows"
@@ -98,14 +98,14 @@ class get_pybind_include(object):
             sys.exit(1)
 
 
-if fast_build:
+if True:
     ext_modules = [
         Extension(
             name="opentimspy_cpp",
             sources=[
-#                os.path.join("opentims++", "opentims_all.cpp"),
+                #os.path.join("opentims++", "opentims_all.cpp"),
                 os.path.join("opentims++", "opentims_pybind11.cpp"),
-#                os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                os.path.join("opentims++", "zstd", "zstddeclib.c"),
             ],
             extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=False),
             libraries=[] if windows else "pthread dl".split(),

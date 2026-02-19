@@ -13,67 +13,24 @@ from distutils import sysconfig
 import platform
 
 build_asan = False
-fast_build = "OPENTIMSPY_FAST_BUILD" in os.environ
 
 # If we're not on Windows, assume something POSIX-compatible (either Linux, OSX, *BSD or Cygwin) with a working gcc-like compiler
 windows = platform.system() == "Windows"
 
-# Dual-build: work-around for the fact that we have both C and C++ files in the extension, and sometimes need
-# to split it into two. Windows and CYGWIN for now seems to need dual_build set to False, OSX to True, Linux seems fine
-# with either setting.
-dual_build = not windows
-
 if platform.system() == "Windows":
     assert not build_asan
-    dual_build = False
-elif platform.system().startswith("CYGWIN"):
-    dual_build = False
-
-
-# native_build = "CIBUILDWHEEL" not in os.environ and 'darwin' not in platform.system().lower() and not 'aarch' in platform.machine().lower()
-native_build = False  # For now, Ubuntu ships with GCC on which -march=native is broken... and it just fails in too many situations.
-
-use_clang = (
-    (not windows)
-    and shutil.which("clang++") != None
-    and os.getenv("OPENTIMS_USE_DEFAULT_CXX") == None
-)
-# use_ccache = (not windows) and shutil.which('ccache') != None and native_build
-use_ccache = os.path.exists("./use_ccache")
-
-# Prefer clang on UNIX if available
-if use_clang:
-    if use_ccache:
-        os.environ["CXX"] = "ccache g++"
-        os.environ["CC"] = "ccache gcc"
-    else:
-        os.environ["CXX"] = "clang++"
-else:
-    if use_ccache:
-        os.environ["CXX"] = "ccache c++"
-        os.environ["CC"] = "ccache cc"
-    else:
-        # leave defaults
-        pass
-
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
         return ["/O2", "/std:c++20"]
     if asan:
         ret = "-Og -g -std=c++20 -fsanitize=address".split()
-        if fast_build:
-            ret.append("-DOPENTIMSPY_FAST_BUILD")
         return ret
     res = ["-g", "-O3"]
     if std_flag:
         res.append("-std=c++20")
     if warnings:
         res.extend(["-Wall", "-Wextra"])
-    if native_build:
-        res.extend(["-march=native", "-mtune=native"])
-    if fast_build:
-        res.append("-DOPENTIMSPY_FAST_BUILD")
     return res
 
 
@@ -98,76 +55,19 @@ class get_pybind_include(object):
             sys.exit(1)
 
 
-if True:
-    ext_modules = [
-        Extension(
-            name="opentimspy_cpp",
-            sources=[
-                #os.path.join("opentims++", "opentims_all.cpp"),
-                os.path.join("opentims++", "opentims_pybind11.cpp"),
-                #os.path.join("opentims++", "zstd", "zstddeclib.c"),
-            ],
-            extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=True),
-            libraries=[] if windows else "pthread dl".split(),
-            include_dirs=[get_pybind_include()],
-        )
-    ]
-else:
-    if dual_build:
-        ext_modules = [
-            Extension(
-                name="libopentims_support",
-                sources=[
-                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                ],
-                extra_compile_args=get_cflags(
-                    asan=False, warnings=False, std_flag=False
-                ),
-                libraries=[] if windows else "pthread dl".split(),
-                include_dirs=[get_pybind_include()],
-            ),
-            Extension(
-                name="opentimspy_cpp",
-                sources=[
-                    os.path.join("opentims++", "opentims_pybind11.cpp"),
-                ],
-                extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
-                libraries=[] if windows else "pthread dl".split(),
-                include_dirs=[get_pybind_include()],
-                undef_macros=[] if not build_asan else ["NDEBUG"],
-            ),
-            Extension(
-                name="libopentims_cpp",
-                sources=[os.path.join("opentims++", "opentims_all.cpp")],
-                extra_compile_args=get_cflags(asan=False, std_flag=True),
-                libraries=[] if windows else "pthread dl".split(),
-            ),
-        ]
-    else:
-        ext_modules = [
-            Extension(
-                name="opentimspy_cpp",
-                sources=[
-                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                    os.path.join("opentims++", "opentims_pybind11.cpp"),
-                ],
-                extra_compile_args=get_cflags(asan=build_asan, std_flag=True),
-                libraries="" if windows else "pthread dl".split(),
-                include_dirs=[get_pybind_include()],
-            ),
-            Extension(
-                name="libopentims_cpp",
-                sources=[
-                    os.path.join("opentims++", "sqlite", "sqlite3.c"),
-                    os.path.join("opentims++", "zstd", "zstddeclib.c"),
-                    os.path.join("opentims++", "libopentims_py.cpp"),
-                ],
-                extra_compile_args=get_cflags(asan=False, std_flag=True),
-                libraries=[] if windows else "pthread dl".split(),
-            ),
-        ]
+ext_modules = [
+    Extension(
+        name="opentimspy_cpp",
+        sources=[
+            #os.path.join("opentims++", "opentims_all.cpp"),
+            os.path.join("opentims++", "opentims_pybind11.cpp"),
+            #os.path.join("opentims++", "zstd", "zstddeclib.c"),
+        ],
+        extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=True),
+        libraries=[] if windows else "pthread dl".split(),
+        include_dirs=[get_pybind_include()],
+    )
+]
 
 
 setup(

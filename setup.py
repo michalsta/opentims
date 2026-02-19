@@ -105,7 +105,7 @@ if True:
             sources=[
                 #os.path.join("opentims++", "opentims_all.cpp"),
                 os.path.join("opentims++", "opentims_pybind11.cpp"),
-                os.path.join("opentims++", "zstd", "zstddeclib.c"),
+                #os.path.join("opentims++", "zstd", "zstddeclib.c"),
             ],
             extra_compile_args=get_cflags(asan=False, warnings=False, std_flag=True),
             libraries=[] if windows else "pthread dl".split(),

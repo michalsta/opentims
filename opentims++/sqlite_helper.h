@@ -1,18 +1,7 @@
 #pragma once
 
 #ifndef OPENTIMS_BUILDING_R
-//#include "sqlite/sqlite3.h"
 
-//#ifndef OPENTIMSPY_FAST_BUILD
-//namespace ot_sqlite
-//{
-//    using ::sqlite3_open_v2;
-//    using ::sqlite3_close;
-//    using ::sqlite3_exec;
-//    using ::sqlite3_free;
-//    using ::sqlite3_errmsg;
-//};
-//#else
 #include <optional>
 class ot_sqlite
 {
@@ -60,9 +49,7 @@ public:
 class RAIISqlite
 {
     sqlite3* db_conn;
-#ifdef OPENTIMSPY_FAST_BUILD
     static std::optional<LoadedLibraryHandle> sqlite_so_handle;
-#endif
 
  public:
     RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
@@ -88,6 +75,3 @@ class RAIISqlite
     }
 
 };
-
-
-//#endif

@@ -38,14 +38,19 @@ except ImportError:
         ctypes.CDLL(cpp_lib_path, ctypes.RTLD_GLOBAL)
     import opentimspy_cpp
 
+_sqlite3_backend = "Python builtin"
+
 if not ("_sqlite3" in sys.builtin_module_names):
     libpath = ctypes.util.find_library("sqlite3")
     if libpath is None:
         import _sqlite3
-
         libpath = _sqlite3.__file__
+        _sqlite3_backend = "Python's _sqlite3 module: " + libpath
+    else:
+         _sqlite3_backend = "System sqlite3 library: " + libpath
 
     opentimspy_cpp.setup_sqlite_so(libpath)
+
 
 
 bruker_bridge_present = False

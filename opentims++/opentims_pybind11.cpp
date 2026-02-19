@@ -20,11 +20,8 @@
 #include <pybind11/stl.h>
 #include <cstdint>
 #include "platform.h"
-#ifdef OPENTIMS_WINDOWS
 #include "opentims_all.cpp"
-#else
-#include "opentims_all.h"
-#endif
+#include "zstd/zstddeclib.c"
 
 namespace py = pybind11;
 using namespace pybind11::literals;

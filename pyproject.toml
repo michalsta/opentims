@@ -1,5 +1,59 @@
+
+
 [build-system]
-requires = ["setuptools", "wheel", "pybind11"]
-#[project]
-#name="opentimspy"
-#requires-python = ">=3.6"
+requires = ["scikit-build-core", "pybind11", "numpy"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "opentimspy"
+version = "1.0.18"
+description = "opentimspy: An open-source parser of Bruker Tims Data File (.tdf)."
+readme = "README.md"
+authors = [
+	{ name = "Mateusz Krzysztof Łącki (MatteoLacki)", email = "matteo.lacki@gmail.com" },
+	{ name = "Michał Startek (michalsta)", email = "michal.startek@mimuw.edu.pl" }
+]
+license = { file = "LICENCE" }
+keywords = ["timsTOFpro", "Bruker TDF", "data science", "mass spectrometry"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: Science/Research",
+	"Topic :: Scientific/Engineering :: Chemistry",
+	"Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Programming Language :: Python :: 3.14"
+]
+requires-python = ">=3.6"
+dependencies = [
+	"pybind11",
+	"numpy"
+]
+
+[project.optional-dependencies]
+bruker_proprietary = ["opentims_bruker_bridge>=1.0.3"]
+plotting = ["matplotlib"]
+pytest = ["pytest"]
+
+# [project.scripts]
+# opentims_display_frame = "scripts/opentims_display_frame.py"
+# opentims_extract_tdf = "scripts/opentims_extract_tdf.py"
+# opentims_frame_sum = "scripts/opentims_frame_sum.py"
+# opentims_summary = "scripts/opentims_summary.py"
+# opentims_verify = "scripts/opentims_verify.py"
+
+
+[tool.scikit-build]
+minimum-version = "0.7"
+wheel.packages = ["opentimspy"]
+sdist.include = ["opentims++/*.h", "opentims++/*/*.h", "opentims++/*.hpp"]
+cmake.verbose = true
+cmake.args = [
+	"-DCMAKE_CXX_STANDARD=20",
+	"-DCMAKE_BUILD_TYPE=Release"
+]

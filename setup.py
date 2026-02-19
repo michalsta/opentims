@@ -59,7 +59,7 @@ else:
 
 def get_cflags(asan=False, warnings=True, std_flag=False):
     if windows:
-        return ["/O2"]
+        return ["/O2", "/std:c++20"]
     if asan:
         ret = "-Og -g -std=c++20 -fsanitize=address".split()
         if fast_build:

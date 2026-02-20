@@ -19,7 +19,7 @@ LoadedLibraryHandle::LoadedLibraryHandle(const std::string& path) : os_handle(nu
 
 LoadedLibraryHandle::~LoadedLibraryHandle()
 {
-    if(os_handle != nullptr && os_handle != RTLD_DEFAULT))
+    if(os_handle != nullptr && os_handle != RTLD_DEFAULT)
         dlclose(os_handle);
     // Deliberately not handling errors in dlclose() call here.
 }

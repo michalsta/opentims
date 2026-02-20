@@ -316,8 +316,6 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                                 });
     m.def("setup_sqlite_so", []([[maybe_unused]] const std::string& path)
                                 {
-                            #ifdef OPENTIMSPY_FAST_BUILD
                                     ot_sqlite::sqlite_so_handle.emplace(path);
-                            #endif
                                 });
 }

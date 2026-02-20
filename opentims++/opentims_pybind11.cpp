@@ -92,9 +92,9 @@ extract_separate_frames(
         if(get_scan_ids) scan_ids.push_back(py::array_t<uint32_t, py::array::c_style>(size));
         if(get_tofs) tofs.push_back(py::array_t<uint32_t, py::array::c_style>(size));
         if(get_intensities) intensities.push_back(py::array_t<uint32_t, py::array::c_style>(size));
-        if(get_mzs) mzs.push_back(py::array_t<uint32_t, py::array::c_style>(size));
-        if(get_inv_ion_mobilities) inv_ion_mobilities.push_back(py::array_t<uint32_t, py::array::c_style>(size));
-        if(get_retention_times) retention_times.push_back(py::array_t<uint32_t, py::array::c_style>(size));
+        if(get_mzs) mzs.push_back(py::array_t<double, py::array::c_style>(size));
+        if(get_inv_ion_mobilities) inv_ion_mobilities.push_back(py::array_t<double, py::array::c_style>(size));
+        if(get_retention_times) retention_times.push_back(py::array_t<double, py::array::c_style>(size));
     }
 
     dh.extract_frames(frames_to_get,

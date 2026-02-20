@@ -15,7 +15,11 @@ if (UNIX AND NOT APPLE)
 endif()
 
 target_compile_features(opentimspy_cpp PRIVATE cxx_std_20)
-target_compile_options(opentimspy_cpp PRIVATE -O3 -g -Wall -Wextra)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    target_compile_options(opentimspy_cpp PRIVATE -O3 -g -Wall -Wextra)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    target_compile_options(opentimspy_cpp PRIVATE /O2)
+endif()
 
 target_include_directories(opentimspy_cpp PRIVATE ${CMAKE_SOURCE_DIR}/opentims++)
 

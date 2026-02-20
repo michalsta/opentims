@@ -20,25 +20,10 @@ import ctypes
 import ctypes.util
 import sys
 
-try:
-    #import libopentims_support
-    import opentimspy.opentimspy_cpp as opentimspy_cpp
-except ImportError:
-    import importlib.util
-
-    def _get_native_lib_path(name):
-        spec = importlib.util.find_spec(name)
-        return spec.origin if spec is not None else None
-
-    support_lib_path = _get_native_lib_path("libopentims_support")
-    if support_lib_path is not None:
-        ctypes.CDLL(support_lib_path, ctypes.RTLD_GLOBAL)
-    cpp_lib_path = _get_native_lib_path("libopentims_cpp")
-    if cpp_lib_path is not None:
-        ctypes.CDLL(cpp_lib_path, ctypes.RTLD_GLOBAL)
-    import opentimspy.opentimspy_cpp as opentimspy_cpp
+import opentimspy.opentimspy_cpp as opentimspy_cpp
 
 _sqlite3_backend = "Python builtin"
+libpath = ""
 
 if not ("_sqlite3" in sys.builtin_module_names):
     libpath = ctypes.util.find_library("sqlite3")
@@ -49,7 +34,7 @@ if not ("_sqlite3" in sys.builtin_module_names):
     else:
          _sqlite3_backend = "System sqlite3 library: " + libpath
 
-    opentimspy_cpp.setup_sqlite_so(libpath)
+opentimspy_cpp.setup_sqlite_so(libpath)
 
 
 

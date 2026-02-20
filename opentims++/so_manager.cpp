@@ -7,14 +7,19 @@
 // RAII-style wrapper for results of dlopen()
 LoadedLibraryHandle::LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
 {
-    os_handle = dlopen(path.c_str(), RTLD_NOW);
-    if(os_handle == nullptr)
-        throw std::runtime_error(std::string("dlopen(") + path + ") failed, reason: " + dlerror());
+    if(path.empty())
+        os_handle = RTLD_DEFAULT;
+    else
+    {
+        os_handle = dlopen(path.c_str(), RTLD_NOW);
+        if(os_handle == nullptr)
+            throw std::runtime_error(std::string("dlopen(") + path + ") failed, reason: " + dlerror());
+    }
 }
 
 LoadedLibraryHandle::~LoadedLibraryHandle()
 {
-    if(os_handle != nullptr)
+    if(os_handle != nullptr && os_handle != RTLD_DEFAULT))
         dlclose(os_handle);
     // Deliberately not handling errors in dlclose() call here.
 }
@@ -26,14 +31,23 @@ LoadedLibraryHandle::~LoadedLibraryHandle()
 
 LoadedLibraryHandle::LoadedLibraryHandle(const std::string& path) : os_handle(nullptr)
 {
-    os_handle = LoadLibraryExA(path.c_str(), nullptr, 0);
-    if(os_handle == nullptr)
-        throw std::runtime_error(std::string("LoadLibraryExA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
+    if(path.empty())
+    {
+        os_handle = GetModuleHandle(nullptr); // Use the default handle for the current process
+        if(os_handle == nullptr)
+            throw std::runtime_error("GetModuleHandle(nullptr) failed, reason: " + std::to_string(GetLastError()));
+    }
+    else
+    {
+        os_handle = LoadLibraryExA(path.c_str(), nullptr, 0);
+        if(os_handle == nullptr)
+            throw std::runtime_error(std::string("LoadLibraryExA(") + path + ") failed, reason: " + std::to_string(GetLastError()));
+    }
 }
 
 LoadedLibraryHandle::~LoadedLibraryHandle()
 {
-    if(os_handle != nullptr)
+    if(os_handle != nullptr && os_handle != GetModuleHandle(nullptr)) // Avoid freeing the default handle
         FreeLibrary(os_handle);
 }
 

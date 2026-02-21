@@ -7,7 +7,7 @@ find_package(Threads REQUIRED)
 
 
 # Build the pybind11 extension as a Python module
-pybind11_add_module(opentimspy_cpp MODULE opentims++/opentims_pybind11.cpp)
+pybind11_add_module(opentimspy_cpp MODULE src/opentims++/opentims_pybind11.cpp)
 
 # Link pthread and dl if not on Windows
 if (UNIX AND NOT APPLE)
@@ -21,15 +21,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(opentimspy_cpp PRIVATE /O2)
 endif()
 
-target_include_directories(opentimspy_cpp PRIVATE ${CMAKE_SOURCE_DIR}/opentims++)
+target_include_directories(opentimspy_cpp PRIVATE ${CMAKE_SOURCE_DIR}/src/opentims++)
 
 # Install Python package files
 install(TARGETS opentimspy_cpp LIBRARY DESTINATION opentimspy)
-install(DIRECTORY opentimspy/ DESTINATION opentimspy FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE)
+install(DIRECTORY src/opentimspy/ DESTINATION opentimspy FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE)
 file(GLOB OPENTIMS_HEADERS
-    "${CMAKE_SOURCE_DIR}/opentims++/*.h"
-    "${CMAKE_SOURCE_DIR}/opentims++/*.hpp"
-    "${CMAKE_SOURCE_DIR}/opentims++/*/*.h"
-    "${CMAKE_SOURCE_DIR}/opentims++/*/*.hpp"
+    "${CMAKE_SOURCE_DIR}/src/opentims++/*.h"
+    "${CMAKE_SOURCE_DIR}/src/opentims++/*.hpp"
+    "${CMAKE_SOURCE_DIR}/src/opentims++/*/*.h"
+    "${CMAKE_SOURCE_DIR}/src/opentims++/*/*.hpp"
 )
 install(FILES ${OPENTIMS_HEADERS} DESTINATION opentimspy/opentims++)

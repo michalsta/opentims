@@ -55,7 +55,7 @@ pytest = ["pytest", "pandas"]
 [tool.scikit-build]
 minimum-version = "0.7"
 wheel.packages = ["opentimspy"]
-sdist.include = ["opentims++/*.h", "opentims++/*/*.h", "opentims++/*.hpp"]
+sdist.include = ["src/opentims++/*.h", "src/opentims++/*/*.h", "src/opentims++/*.hpp"]
 cmake.verbose = true
 cmake.args = [
 	"-DCMAKE_CXX_STANDARD=20",

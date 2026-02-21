@@ -42,7 +42,7 @@ dependencies = [
 [project.optional-dependencies]
 bruker_proprietary = ["opentims_bruker_bridge>=1.0.3"]
 plotting = ["matplotlib"]
-pytest = ["pytest", "opentims_bruker_bridge>=1.0.3", "pandas"]
+pytest = ["pytest", "pandas"]
 
 # [project.scripts]
 # opentims_display_frame = "scripts/opentims_display_frame.py"

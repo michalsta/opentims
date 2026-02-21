@@ -20,7 +20,10 @@ row_id,frame,scan,tof,intensity,mz,inv_ion_mobility,retention_time
 
 data_path = Path(__file__).parent / "test.d"
 
-def test_read():
+import pytest
+@pytest.mark.skipif(not bruker_bridge_present, reason="Bruker bridge not present, so no Bruker conversion available")
+def test_bruker():
+    assert bruker_bridge_present
     with OpenTIMS(data_path) as OT:
         frame = OT.query(columns=available_columns)
     pddf = pd.DataFrame(frame)
@@ -28,11 +31,10 @@ def test_read():
     assert pddf.scan.equals(test_data.scan.astype(np.uint32))
     assert pddf.tof.equals(test_data.tof.astype(np.uint32))
     assert pddf.intensity.equals(test_data.intensity.astype(np.uint32))
-    if bruker_bridge_present:
-        assert np.allclose(pddf.mz, test_data.mz, atol=1e-6)
-        assert np.allclose(pddf.inv_ion_mobility, test_data.inv_ion_mobility, atol=1e-6)
-        assert np.allclose(pddf.retention_time, test_data.retention_time, atol=1e-6)
+    assert np.allclose(pddf.mz, test_data.mz, atol=1e-6)
+    assert np.allclose(pddf.inv_ion_mobility, test_data.inv_ion_mobility, atol=1e-6)
+    assert np.allclose(pddf.retention_time, test_data.retention_time, atol=1e-6)
 
 
 if __name__ == "__main__":
-    test_read()
+    test_bruker()

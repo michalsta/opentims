@@ -41,6 +41,7 @@ all_columns = (
     "inv_ion_mobility",
     "retention_time",
 )
+available_columns = all_columns if opentimspy.bruker_bridge_present else all_columns[:4]
 all_columns_dtype = (np.uint32,) * 4 + (np.double,) * 3
 column_to_dtype = dict(zip(all_columns, all_columns_dtype))
 

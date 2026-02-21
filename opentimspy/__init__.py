@@ -86,6 +86,7 @@ from opentimspy.opentims import (
     column_to_dtype,
     all_columns,
     all_columns_dtype,
+    available_columns,
 )
 
 

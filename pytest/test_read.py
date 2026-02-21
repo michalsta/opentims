@@ -1,7 +1,8 @@
-from opentimspy import OpenTIMS
+from opentimspy import OpenTIMS, available_columns, bruker_bridge_present
 import pandas as pd
 import numpy as np
 from io import StringIO
+from pathlib import Path
 
 test_data = pd.read_csv(StringIO("""
 row_id,frame,scan,tof,intensity,mz,inv_ion_mobility,retention_time
@@ -17,19 +18,20 @@ row_id,frame,scan,tof,intensity,mz,inv_ion_mobility,retention_time
 4,2,83,315625,10,1018.2541692375131,1.5470677622680686,0.751175
 """))
 
-print(test_data)
+data_path = Path(__file__).parent / "test.d"
 
 def test_read():
-    with OpenTIMS("test.d") as OT:
-        frame = OT.query()
+    with OpenTIMS(data_path) as OT:
+        frame = OT.query(columns=available_columns)
     pddf = pd.DataFrame(frame)
     assert pddf.frame.equals(test_data.frame.astype(np.uint32))
     assert pddf.scan.equals(test_data.scan.astype(np.uint32))
     assert pddf.tof.equals(test_data.tof.astype(np.uint32))
     assert pddf.intensity.equals(test_data.intensity.astype(np.uint32))
-    assert np.allclose(pddf.mz, test_data.mz, atol=1e-6)
-    assert np.allclose(pddf.inv_ion_mobility, test_data.inv_ion_mobility, atol=1e-6)
-    assert np.allclose(pddf.retention_time, test_data.retention_time, atol=1e-6)
+    if bruker_bridge_present:
+        assert np.allclose(pddf.mz, test_data.mz, atol=1e-6)
+        assert np.allclose(pddf.inv_ion_mobility, test_data.inv_ion_mobility, atol=1e-6)
+        assert np.allclose(pddf.retention_time, test_data.retention_time, atol=1e-6)
 
 
 if __name__ == "__main__":

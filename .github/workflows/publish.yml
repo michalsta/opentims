@@ -1,0 +1,30 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build_wheels:
+    uses: ./.github/workflows/build_wheels.yml
+
+  tests:
+    uses: ./.github/workflows/run_tests.yml
+
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [build_wheels, tests]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts from Build workflow
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

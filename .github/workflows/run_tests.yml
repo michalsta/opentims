@@ -5,7 +5,7 @@ on:
         branches:
             - ci-test
             - master
-  workflow_call:
+    workflow_call:
 
 jobs:
   run_pytest:

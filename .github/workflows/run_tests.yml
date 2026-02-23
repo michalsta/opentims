@@ -5,8 +5,6 @@ on:
         branches:
             - ci-test
             - master
-        tags:
-            - 'v*'
 
 jobs:
   run_pytest:

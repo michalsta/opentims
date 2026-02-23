@@ -4,7 +4,6 @@ from pathlib import Path
 from collections import namedtuple
 from functools import partial
 
-
 Range = namedtuple("Range", "min max".split())
 
 

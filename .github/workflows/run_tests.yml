@@ -5,6 +5,7 @@ on:
         branches:
             - ci-test
             - master
+            - devel
     workflow_call:
 
 jobs:

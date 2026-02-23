@@ -22,17 +22,18 @@ import sys
 
 import opentimspy.opentimspy_cpp as opentimspy_cpp
 
-_sqlite3_backend = "Python builtin"
-libpath = ""
 
-if not ("_sqlite3" in sys.builtin_module_names):
-    libpath = ctypes.util.find_library("sqlite3")
-    if libpath is None:
+libpath = ctypes.util.find_library("sqlite3")
+if libpath is None:
+    if not ("_sqlite3" in sys.builtin_module_names):
+        _sqlite3_backend = "Python builtin"
+        libpath = ""
+    else:
         import _sqlite3
         libpath = _sqlite3.__file__
         _sqlite3_backend = "Python's _sqlite3 module: " + libpath
-    else:
-         _sqlite3_backend = "System sqlite3 library: " + libpath
+else:
+        _sqlite3_backend = "System sqlite3 library: " + libpath
 
 opentimspy_cpp.setup_sqlite_so(libpath)
 

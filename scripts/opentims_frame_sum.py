@@ -5,7 +5,6 @@ from collections import namedtuple
 from functools import partial
 import numpy as np
 
-
 Range = namedtuple("Range", "min max".split())
 
 

@@ -21,7 +21,12 @@ row_id,frame,scan,tof,intensity,mz,inv_ion_mobility,retention_time
 data_path = Path(__file__).parent / "test.d"
 
 import pytest
-@pytest.mark.skipif(not bruker_bridge_present, reason="Bruker bridge not present, so no Bruker conversion available")
+
+
+@pytest.mark.skipif(
+    not bruker_bridge_present,
+    reason="Bruker bridge not present, so no Bruker conversion available",
+)
 def test_bruker():
     assert bruker_bridge_present
     with OpenTIMS(data_path) as OT:

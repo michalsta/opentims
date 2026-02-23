@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - ci-test
+  workflow_call:
 
 jobs:
   build_wheels:

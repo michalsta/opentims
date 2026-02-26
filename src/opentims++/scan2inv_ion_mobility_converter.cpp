@@ -73,7 +73,7 @@ BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataH
     tims_scannum_to_inv_ion_mobility = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_scannum_to_oneoverk0");
     tims_inv_ion_mobility_to_scannum = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_oneoverk0_to_scannum");
 
-    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, AnalyisGlobalPressureCompensation);
+    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, NoPressureCompensation);
 
     if(bruker_file_handle == 0)
         throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());

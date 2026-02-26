@@ -66,7 +66,7 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
     tims_index_to_mz = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_index_to_mz");
     tims_mz_to_index = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_mz_to_index");
 
-    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, AnalyisGlobalPressureCompensation);
+    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, NoPressureCompensation);
 
     if(bruker_file_handle == 0)
         throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());

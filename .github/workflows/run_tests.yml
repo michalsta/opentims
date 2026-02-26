@@ -55,3 +55,11 @@ jobs:
           python -m pip install opentims_bruker_bridge
           python -m pytest .
           python test_bruker.py
+      - name: Test with pytest and git bridge
+        if: matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest'
+        working-directory: ./pytest
+        run: |
+          python -m pip uninstall opentims_bruker_bridge -y
+          python -m pip install git+https://github.com/MatteoLacki/opentims_bruker_bridge.git
+          python -m pytest .
+          python test_bruker.py

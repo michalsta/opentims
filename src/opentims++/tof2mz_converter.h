@@ -42,7 +42,7 @@ class Tof2MzConverter
 class ErrorTof2MzConverter : public Tof2MzConverter
 {
  public:
-    ErrorTof2MzConverter(TimsDataHandle&);
+    ErrorTof2MzConverter(TimsDataHandle&, pressure_compensation_strategy pcs = NoPressureCompensation);
     void convert(uint32_t, double*, const double*, uint32_t) override final;
     void convert(uint32_t, double*, const uint32_t*, uint32_t) override final;
     void inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size) override final;
@@ -63,7 +63,7 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
     std::string get_tims_error();
 
  public:
-    BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path);
+    BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path, pressure_compensation_strategy pcs = NoPressureCompensation);
     ~BrukerTof2MzConverter();
 
     void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) override final;
@@ -76,14 +76,14 @@ class BrukerTof2MzConverter final : public Tof2MzConverter
 class Tof2MzConverterFactory
 {
  public:
-    virtual std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) = 0;
+    virtual std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) = 0;
     virtual ~Tof2MzConverterFactory();
 };
 
 class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
  public:
-    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) override final;
+    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
 class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
@@ -93,14 +93,14 @@ class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
  public:
     BrukerTof2MzConverterFactory(const char* _dll_path);
     BrukerTof2MzConverterFactory(const std::string& _dll_path);
-    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH) override final;
+    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
 class DefaultTof2MzConverterFactory final
 {
     static std::unique_ptr<Tof2MzConverterFactory> fac_instance;
  public:
-    static std::unique_ptr<Tof2MzConverter> produceDefaultConverterInstance(TimsDataHandle& TDH);
+    static std::unique_ptr<Tof2MzConverter> produceDefaultConverterInstance(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation);
 
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {

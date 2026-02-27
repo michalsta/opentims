@@ -136,7 +136,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         );
 
     py::class_<TimsDataHandle>(m, "TimsDataHandle")
-        .def(py::init<const std::string &>())
+        .def(py::init<const std::string &, pressure_compensation_strategy>())
         .def("no_peaks_total", &TimsDataHandle::no_peaks_total)
         .def("min_frame_id", &TimsDataHandle::min_frame_id)
         .def("max_frame_id", &TimsDataHandle::max_frame_id)
@@ -305,6 +305,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 }
         )
         ;
+
+    py::enum_<pressure_compensation_strategy>(m, "pressure_compensation_strategy")
+        .value("NoPressureCompensation", pressure_compensation_strategy::NoPressureCompensation)
+        .value("AnalyisGlobalPressureCompensation", pressure_compensation_strategy::AnalyisGlobalPressureCompensation)
+        .value("PerFramePressureCompensation", pressure_compensation_strategy::PerFramePressureCompensation)
+        .value("PerFramePressureCompensationWithMissingReference", pressure_compensation_strategy::PerFramePressureCompensationWithMissingReference);
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {

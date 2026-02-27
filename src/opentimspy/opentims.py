@@ -24,6 +24,7 @@ from functools import cached_property
 import numpy as np
 import numpy.typing as npt
 import opentimspy
+from opentimspy.opentimspy_cpp import pressure_compensation_strategy
 
 from .dimension_translations import (
     cast_to_numpy_arrays,
@@ -70,7 +71,7 @@ COLUMNS_TYPE = typing.Union[str, typing.Tuple[str, ...]]
 
 # TODO: make lazy evaluation for loading sqlite data frames
 class OpenTIMS:
-    def __init__(self, analysis_directory: str | pathlib.Path):
+    def __init__(self, analysis_directory: str | pathlib.Path, pcs: pressure_compensation_strategy = pressure_compensation_strategy.NoPressureCompensation):
         """Initialize OpenTIMS.
 
         Args:
@@ -90,7 +91,7 @@ class OpenTIMS:
             raise RuntimeError(
                 f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}"
             )
-        self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory))
+        self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory), pcs)
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(
             zip(self.GlobalMetadata["Key"], self.GlobalMetadata["Value"])

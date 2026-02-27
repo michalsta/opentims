@@ -297,7 +297,7 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 }
 
 
-void TimsDataHandle::init()
+void TimsDataHandle::init(pressure_compensation_strategy pcs)
 {
     _min_frame_id = (std::numeric_limits<uint32_t>::max)();
     _max_frame_id = (std::numeric_limits<uint32_t>::min)();
@@ -312,21 +312,21 @@ void TimsDataHandle::init()
 
     zstd_dctx = ZSTD_createDCtx();
 
-    tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this);
-    scan2inv_ion_mobility_converter = DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this);
+    tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this, pcs);
+    scan2inv_ion_mobility_converter = DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this, pcs);
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir)
+TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir, pressure_compensation_strategy pcs)
 : tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
 #endif
-    init();
+    init(pcs);
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir)
-: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf", tims_data_dir)
+TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs)
+: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf", tims_data_dir, pcs)
 {}
 
 #ifdef OPENTIMS_BUILDING_R

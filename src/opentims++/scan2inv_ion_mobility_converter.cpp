@@ -65,7 +65,7 @@ std::string BrukerScan2InvIonMobilityConverter::get_tims_error()
     return std::string(buf.get());
 }
 
-BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path) : lib_handle(lib_path), bruker_file_handle(0)
+BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path, pressure_compensation_strategy pcs) : lib_handle(lib_path), bruker_file_handle(0)
 {
     tims_open = lib_handle.symbol_lookup<tims_open_v2_fun_t>("tims_open_v2");
     tims_get_last_error_string = lib_handle.symbol_lookup<tims_get_last_error_string_fun_t>("tims_get_last_error_string");
@@ -73,7 +73,7 @@ BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataH
     tims_scannum_to_inv_ion_mobility = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_scannum_to_oneoverk0");
     tims_inv_ion_mobility_to_scannum = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_oneoverk0_to_scannum");
 
-    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, NoPressureCompensation);
+    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, pcs);
 
     if(bruker_file_handle == 0)
         throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
@@ -127,7 +127,7 @@ Scan2InvIonMobilityConverterFactory::~Scan2InvIonMobilityConverterFactory() {}
  * ErrorScan2InvIonMobilityConverterFactory implementation
  */
 
-std::unique_ptr<Scan2InvIonMobilityConverter> ErrorScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH)
+std::unique_ptr<Scan2InvIonMobilityConverter> ErrorScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH, pressure_compensation_strategy)
 {
     return std::make_unique<ErrorScan2InvIonMobilityConverter>(TDH);
 }
@@ -140,18 +140,18 @@ BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFac
 
 BrukerScan2InvIonMobilityConverterFactory::BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path) : dll_path(_dll_path), lib_hndl(_dll_path) {}
 
-std::unique_ptr<Scan2InvIonMobilityConverter> BrukerScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH)
+std::unique_ptr<Scan2InvIonMobilityConverter> BrukerScan2InvIonMobilityConverterFactory::produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
-    return std::make_unique<BrukerScan2InvIonMobilityConverter>(TDH, dll_path.c_str());
+    return std::make_unique<BrukerScan2InvIonMobilityConverter>(TDH, dll_path.c_str(), pcs);
 }
 
 /*
  * DefaultScan2InvIonMobilityConverterFactory implementation
  */
-std::unique_ptr<Scan2InvIonMobilityConverter> DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(TimsDataHandle& TDH)
+std::unique_ptr<Scan2InvIonMobilityConverter> DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
     if(!fac_instance)
         fac_instance = std::make_unique<ErrorScan2InvIonMobilityConverterFactory>();
 
-    return fac_instance->produce(TDH);
+    return fac_instance->produce(TDH, pcs);
 }

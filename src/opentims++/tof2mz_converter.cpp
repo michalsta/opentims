@@ -26,7 +26,7 @@ std::string Tof2MzConverter::description() { return "Tof2MzConverter default"; }
 /*
  * ErrorTof2MzConverter implementation
  */
-ErrorTof2MzConverter::ErrorTof2MzConverter(TimsDataHandle&) {}
+ErrorTof2MzConverter::ErrorTof2MzConverter(TimsDataHandle&, pressure_compensation_strategy) {}
 
 void ErrorTof2MzConverter::convert(uint32_t, double*, const double*, uint32_t)
 {
@@ -58,7 +58,7 @@ std::string BrukerTof2MzConverter::get_tims_error()
     return std::string(buf.get());
 }
 
-BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path) : lib_handle(lib_path), bruker_file_handle(0)
+BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::string& lib_path, pressure_compensation_strategy pcs) : lib_handle(lib_path), bruker_file_handle(0)
 {
     tims_open = lib_handle.symbol_lookup<tims_open_v2_fun_t>("tims_open_v2");
     tims_get_last_error_string = lib_handle.symbol_lookup<tims_get_last_error_string_fun_t>("tims_get_last_error_string");
@@ -66,7 +66,7 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
     tims_index_to_mz = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_index_to_mz");
     tims_mz_to_index = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_mz_to_index");
 
-    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, NoPressureCompensation);
+    bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, pcs);
 
     if(bruker_file_handle == 0)
         throw std::runtime_error("tims_open(" + TDH.tims_dir_path + ") failed. Reason: " + get_tims_error());
@@ -112,9 +112,9 @@ Tof2MzConverterFactory::~Tof2MzConverterFactory() {}
 /*
  * ErrorTof2MzConverterFactory
  */
-std::unique_ptr<Tof2MzConverter> ErrorTof2MzConverterFactory::produce(TimsDataHandle& TDH)
+std::unique_ptr<Tof2MzConverter> ErrorTof2MzConverterFactory::produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
-    return std::make_unique<ErrorTof2MzConverter>(TDH);
+    return std::make_unique<ErrorTof2MzConverter>(TDH, pcs);
 }
 
 /*
@@ -131,19 +131,19 @@ BrukerTof2MzConverterFactory::BrukerTof2MzConverterFactory(const std::string& _d
     lib_hndl(_dll_path)
     {}
 
-std::unique_ptr<Tof2MzConverter> BrukerTof2MzConverterFactory::produce(TimsDataHandle& TDH)
+std::unique_ptr<Tof2MzConverter> BrukerTof2MzConverterFactory::produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
-    return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str());
+    return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str(), pcs);
 }
 
 /*
  * DefaultTof2MzConverterFactory implementation
  */
 
-std::unique_ptr<Tof2MzConverter> DefaultTof2MzConverterFactory::produceDefaultConverterInstance(TimsDataHandle& TDH)
+std::unique_ptr<Tof2MzConverter> DefaultTof2MzConverterFactory::produceDefaultConverterInstance(TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
     if(!fac_instance)
         fac_instance = std::make_unique<ErrorTof2MzConverterFactory>();
 
-    return fac_instance->produce(TDH);
+    return fac_instance->produce(TDH, pcs);
 }

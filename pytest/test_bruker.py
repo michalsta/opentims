@@ -1,4 +1,4 @@
-from opentimspy import OpenTIMS, available_columns, bruker_bridge_present
+from opentimspy import OpenTIMS, available_columns, bruker_bridge_present, pressure_compensation_strategy
 import pandas as pd
 import numpy as np
 from io import StringIO
@@ -29,7 +29,7 @@ import pytest
 )
 def test_bruker():
     assert bruker_bridge_present
-    with OpenTIMS(data_path) as OT:
+    with OpenTIMS(data_path, pcs=pressure_compensation_strategy.NoPressureCompensation) as OT:
         frame = OT.query(columns=available_columns)
     pddf = pd.DataFrame(frame)
     assert pddf.frame.equals(test_data.frame.astype(np.uint32))

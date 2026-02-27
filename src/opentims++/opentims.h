@@ -25,6 +25,7 @@
 #include <unordered_map>
 
 #include "platform.h"
+#include "bruker_api.h"
 
 #ifndef OPENTIMS_BUILDING_R
 #include "sqlite/sqlite3.h"
@@ -214,7 +215,7 @@ public:
     std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 
 private:
-    void init();
+    void init(pressure_compensation_strategy pcs);
 
 #ifdef OPENTIMS_BUILDING_R
     void* setupFromAnalysisList(const Rcpp::List& analysis_tdf);
@@ -222,7 +223,9 @@ private:
 
     TimsDataHandle(const std::string& tims_tdf_bin_path,
                    const std::string& tims_tdf_path,
-                   const std::string& tims_data_dir);
+                   const std::string& tims_data_dir,
+                   pressure_compensation_strategy pcs = NoPressureCompensation
+                );
 
     void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
     void set_converter(std::unique_ptr<Scan2InvIonMobilityConverter>&& converter);
@@ -237,11 +240,11 @@ public:
      * @param Path to the dataset (typically a *.d directory, containing a analysis.tdf
      * and analysis.tdf_bin files).
      */
-    TimsDataHandle(const std::string& tims_data_dir);
+    TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs = NoPressureCompensation);
 
 #ifdef OPENTIMS_BUILDING_R
     //! Internal use only.
-    TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf);
+    TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf, pressure_compensation_strategy pcs = NoPressureCompensation);
 #endif /* OPENTIMS_BUILDING_R */
 
     //! Close and deallocate the TimsTOF data handle (destructor).

@@ -75,7 +75,7 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
     std::string get_tims_error();
 
  public:
-    BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path);
+    BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path, pressure_compensation_strategy pcs = NoPressureCompensation);
     ~BrukerScan2InvIonMobilityConverter();
 
     void convert(uint32_t frame_id, double* inv_ion_mobilities, const double* scans, uint32_t size) override final;
@@ -91,14 +91,14 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
 class Scan2InvIonMobilityConverterFactory
 {
  public:
-    virtual std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH) = 0;
+    virtual std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) = 0;
     virtual ~Scan2InvIonMobilityConverterFactory();
 };
 
 class ErrorScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilityConverterFactory
 {
  public:
-    std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH) override final;
+    std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
 class BrukerScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilityConverterFactory
@@ -108,14 +108,14 @@ class BrukerScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobili
  public:
     BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path);
     BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path);
-    std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH) override final;
+    std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
 class DefaultScan2InvIonMobilityConverterFactory final
 {
     static std::unique_ptr<Scan2InvIonMobilityConverterFactory> fac_instance;
  public:
-    static std::unique_ptr<Scan2InvIonMobilityConverter> produceDefaultConverterInstance(TimsDataHandle& TDH);
+    static std::unique_ptr<Scan2InvIonMobilityConverter> produceDefaultConverterInstance(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation);
 
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {

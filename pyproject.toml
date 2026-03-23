@@ -40,7 +40,7 @@ dependencies = [
 "Repository" = "https://github.com/michalsta/opentims.git"
 
 [project.optional-dependencies]
-bruker_proprietary = ["opentims_bruker_bridge>=1.0.3"]
+bruker_proprietary = ["opentims_bruker_bridge>=1.2.0"]
 plotting = ["matplotlib"]
 pytest = ["pytest", "pandas"]
 

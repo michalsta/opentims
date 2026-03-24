@@ -22,6 +22,8 @@ public:
 #else // OPENTIMS_LINK_SQLITE_STATICALLY
 
 #include <optional>
+#include "so_manager.h"
+#include "sqlite/sqlite3.h"
 class ot_sqlite
 {
 public:
@@ -66,10 +68,10 @@ public:
 #endif // OPENTIMS_LINK_SQLITE_STATICALLY
 #endif // OPENTIMS_BUILDING_R
 
+#ifndef OPENTIMS_BUILDING_R
 class RAIISqlite
 {
     sqlite3* db_conn;
-    static std::optional<LoadedLibraryHandle> sqlite_so_handle;
 
  public:
     RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
@@ -95,3 +97,4 @@ class RAIISqlite
     }
 
 };
+#endif // OPENTIMS_BUILDING_R

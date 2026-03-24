@@ -94,4 +94,14 @@ def set_num_threads(n):
     opentimspy_cpp.set_num_threads(n)
 
 
+def setup_opensource():
+    """
+    Set up open-source converters for m/z and ion mobility.
+    Call this if the Bruker bridge is not available and you want
+    to use the built-in open-source conversion routines instead
+    of getting an error on data access.
+    """
+    opentimspy_cpp.setup_opensource()
+
+
 __version__ = importlib.metadata.version("opentimspy")

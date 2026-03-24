@@ -247,8 +247,13 @@ int scan_max_callback(void* out, int cols, char** row, char** colnames)
 } // anonymous namespace
 
 std::unique_ptr<Scan2InvIonMobilityConverter> OpenSourceScan2ImConverterFactory::produce(
-    TimsDataHandle& TDH, pressure_compensation_strategy)
+    TimsDataHandle& TDH, pressure_compensation_strategy pcs)
 {
+    if (pcs != NoPressureCompensation)
+        throw std::runtime_error(
+            "Pressure compensation is not supported by the open-source ion mobility converter. "
+            "Use Bruker's proprietary library for pressure compensation, or disable it.");
+
     std::string tdf_path = TDH.get_tims_dir_path() + "/analysis.tdf";
     RAIISqlite db(tdf_path);
 

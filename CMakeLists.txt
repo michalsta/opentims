@@ -24,7 +24,7 @@ set(OPENTIMS_CPP_SOURCES
 #------------------------------------------------------------------------------
 if (OPENTIMS_BUILD_CPP_LIB)
     add_library(opentims_cpp STATIC ${OPENTIMS_CPP_SOURCES})
-    target_include_directories(opentims_cpp PUBLIC "${OPENTIMS_SRC_DIR}")
+    target_include_directories(opentims_cpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_compile_features(opentims_cpp PRIVATE cxx_std_20)
     set_target_properties(opentims_cpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

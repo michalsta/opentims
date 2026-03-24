@@ -32,9 +32,23 @@ all_columns = (
     "inv_ion_mobility",
     "retention_time",
 )
-available_columns = all_columns if opentimspy.bruker_bridge_present else all_columns[:4]
+available_columns = (
+    list(all_columns) if opentimspy.bruker_bridge_present else list(all_columns[:4])
+)
 all_columns_dtype = (np.uint32,) * 4 + (np.double,) * 3
 column_to_dtype = dict(zip(all_columns, all_columns_dtype))
+
+
+def setup_opensource():
+    """Set up open-source converters for m/z and ion mobility.
+
+    Call this if the Bruker bridge is not available and you want
+    to use the built-in open-source conversion routines instead
+    of getting an error on data access.
+    """
+    opentimspy.opentimspy_cpp.setup_opensource()
+    available_columns[:] = list(all_columns)
+
 
 FRAMES_TYPE = npt.NDArray[np.uint32]
 SCANS_TYPE = npt.NDArray[np.uint32]
@@ -61,7 +75,11 @@ COLUMNS_TYPE = typing.Union[str, typing.Tuple[str, ...]]
 
 # TODO: make lazy evaluation for loading sqlite data frames
 class OpenTIMS:
-    def __init__(self, analysis_directory: str | pathlib.Path, pcs: pressure_compensation_strategy = pressure_compensation_strategy.NoPressureCompensation):
+    def __init__(
+        self,
+        analysis_directory: str | pathlib.Path,
+        pcs: pressure_compensation_strategy = pressure_compensation_strategy.NoPressureCompensation,
+    ):
         """Initialize OpenTIMS.
 
         Args:
@@ -81,7 +99,9 @@ class OpenTIMS:
             raise RuntimeError(
                 f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}"
             )
-        self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(str(analysis_directory), pcs)
+        self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(
+            str(analysis_directory), pcs
+        )
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(
             zip(self.GlobalMetadata["Key"], self.GlobalMetadata["Value"])

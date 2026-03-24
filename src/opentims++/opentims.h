@@ -201,6 +201,7 @@ private:
 
 public:
     size_t get_decomp_buffer_size() const { return decomp_buffer_size; };
+    const std::string& get_tims_dir_path() const { return tims_dir_path; };
     std::unique_ptr<Tof2MzConverter> tof2mz_converter;
     std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 

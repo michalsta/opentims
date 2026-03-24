@@ -10,7 +10,9 @@
 #include <string>
 
 void setup_bruker(const std::string& path);
+void setup_opensource();
 
 extern "C" {
     void setup_bruker_c(const char* path);
+    void setup_opensource_c();
 }

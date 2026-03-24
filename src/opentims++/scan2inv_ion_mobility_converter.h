@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <string>
 #include "bruker_api.h"
 #include "platform.h"
 
@@ -113,3 +115,37 @@ class DefaultScan2InvIonMobilityConverterFactory final
         fac_instance = std::make_unique<FactoryType>(std::forward<Args>(args)...);
     }
 };
+
+#ifndef OPENTIMS_BUILDING_R
+
+/**
+ * Open-source scan-to-inverse-ion-mobility converter (linear model).
+ *
+ * 1/K0 = intercept + slope * scan_index
+ *
+ * where intercept = OneOverK0AcqRangeUpper and slope is derived from
+ * the acquisition range and maximum number of scans per frame.
+ */
+class OpenSourceScan2ImConverter : public Scan2InvIonMobilityConverter
+{
+public:
+    OpenSourceScan2ImConverter(double im_min, double im_max, uint32_t scan_max_index);
+
+    void convert(uint32_t frame_id, double* inv_ion_mobilities, const double* scans, uint32_t size) override;
+    void convert(uint32_t frame_id, double* inv_ion_mobilities, const uint32_t* scans, uint32_t size) override;
+    void inverse_convert(uint32_t frame_id, uint32_t* scans, const double* inv_ion_mobilities, uint32_t size) override;
+    std::string description() const override;
+
+private:
+    double intercept_;
+    double slope_;
+};
+
+class OpenSourceScan2ImConverterFactory : public Scan2InvIonMobilityConverterFactory
+{
+public:
+    std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH,
+        pressure_compensation_strategy pcs = NoPressureCompensation) override;
+};
+
+#endif // OPENTIMS_BUILDING_R

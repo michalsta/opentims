@@ -178,8 +178,10 @@ public:
 
 class BrukerTof2MzConverter;
 class Tof2MzConverter;
+class Tof2MzConverterFactory;
 class BrukerScan2InvIonMobilityConverter;
 class Scan2InvIonMobilityConverter;
+class Scan2InvIonMobilityConverterFactory;
 
 class TimsDataHandle
 {
@@ -210,7 +212,9 @@ public:
     std::unique_ptr<Scan2InvIonMobilityConverter> scan2inv_ion_mobility_converter;
 
 private:
-    void init(pressure_compensation_strategy pcs);
+    void init(pressure_compensation_strategy pcs,
+             Tof2MzConverterFactory* tof_factory = nullptr,
+             Scan2InvIonMobilityConverterFactory* im_factory = nullptr);
 
 #ifdef OPENTIMS_BUILDING_R
     void* setupFromAnalysisList(const Rcpp::List& analysis_tdf);
@@ -219,7 +223,9 @@ private:
     TimsDataHandle(const std::string& tims_tdf_bin_path,
                    const std::string& tims_tdf_path,
                    const std::string& tims_data_dir,
-                   pressure_compensation_strategy pcs = NoPressureCompensation
+                   pressure_compensation_strategy pcs = NoPressureCompensation,
+                   Tof2MzConverterFactory* tof_factory = nullptr,
+                   Scan2InvIonMobilityConverterFactory* im_factory = nullptr
                 );
 
     void set_converter(std::unique_ptr<Tof2MzConverter>&& converter);
@@ -235,7 +241,10 @@ public:
      * @param Path to the dataset (typically a *.d directory, containing a analysis.tdf
      * and analysis.tdf_bin files).
      */
-    TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs = NoPressureCompensation);
+    TimsDataHandle(const std::string& tims_data_dir,
+                   pressure_compensation_strategy pcs = NoPressureCompensation,
+                   Tof2MzConverterFactory* tof_factory = nullptr,
+                   Scan2InvIonMobilityConverterFactory* im_factory = nullptr);
 
 #ifdef OPENTIMS_BUILDING_R
     //! Internal use only.

@@ -95,6 +95,6 @@ class DefaultTof2MzConverterFactory final
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {
         static_assert(std::is_base_of<Tof2MzConverterFactory, FactoryType>::value, "FactoryType must be a subclass of Tof2MzConverterFactory");
-        fac_instance = std::make_unique<FactoryType>(std::forward<Args...>(args...));
+        fac_instance = std::make_unique<FactoryType>(std::forward<Args>(args)...);
     }
 };

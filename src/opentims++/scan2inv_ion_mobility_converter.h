@@ -110,6 +110,6 @@ class DefaultScan2InvIonMobilityConverterFactory final
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {
         static_assert(std::is_base_of<Scan2InvIonMobilityConverterFactory, FactoryType>::value, "FactoryType must be a subclass of Scan2InvIonMobilityConverterFactory");
-        fac_instance = std::make_unique<FactoryType>(std::forward<Args...>(args...));
+        fac_instance = std::make_unique<FactoryType>(std::forward<Args>(args)...);
     }
 };

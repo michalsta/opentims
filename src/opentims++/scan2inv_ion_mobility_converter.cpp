@@ -142,6 +142,14 @@ std::unique_ptr<Scan2InvIonMobilityConverter> BrukerScan2InvIonMobilityConverter
     return std::make_unique<BrukerScan2InvIonMobilityConverter>(TDH, dll_path.c_str(), pcs);
 }
 
+BrukerScan2InvIonMobilityConverterFactory& BrukerScan2InvIonMobilityConverterFactory::instance(const std::string& path)
+{
+    static BrukerScan2InvIonMobilityConverterFactory inst(path);
+    if (inst.dll_path != path)
+        throw std::runtime_error("BrukerScan2InvIonMobilityConverterFactory: already initialized with '" + inst.dll_path + "', cannot reinitialize with '" + path + "'");
+    return inst;
+}
+
 /*
  * DefaultScan2InvIonMobilityConverterFactory implementation
  */

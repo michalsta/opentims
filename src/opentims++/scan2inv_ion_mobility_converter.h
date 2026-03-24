@@ -90,6 +90,12 @@ class Scan2InvIonMobilityConverterFactory
 class ErrorScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobilityConverterFactory
 {
  public:
+    static ErrorScan2InvIonMobilityConverterFactory& instance()
+    {
+        static ErrorScan2InvIonMobilityConverterFactory inst;
+        return inst;
+    }
+
     std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -100,6 +106,7 @@ class BrukerScan2InvIonMobilityConverterFactory final : public Scan2InvIonMobili
  public:
     BrukerScan2InvIonMobilityConverterFactory(const char* _dll_path);
     BrukerScan2InvIonMobilityConverterFactory(const std::string& _dll_path);
+    static BrukerScan2InvIonMobilityConverterFactory& instance(const std::string& path);
     std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -144,6 +151,12 @@ private:
 class OpenSourceScan2ImConverterFactory : public Scan2InvIonMobilityConverterFactory
 {
 public:
+    static OpenSourceScan2ImConverterFactory& instance()
+    {
+        static OpenSourceScan2ImConverterFactory inst;
+        return inst;
+    }
+
     std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH,
         pressure_compensation_strategy pcs = NoPressureCompensation) override;
 };

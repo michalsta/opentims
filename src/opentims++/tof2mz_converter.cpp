@@ -133,6 +133,14 @@ std::unique_ptr<Tof2MzConverter> BrukerTof2MzConverterFactory::produce(TimsDataH
     return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str(), pcs);
 }
 
+BrukerTof2MzConverterFactory& BrukerTof2MzConverterFactory::instance(const std::string& path)
+{
+    static BrukerTof2MzConverterFactory inst(path);
+    if (inst.dll_path != path)
+        throw std::runtime_error("BrukerTof2MzConverterFactory: already initialized with '" + inst.dll_path + "', cannot reinitialize with '" + path + "'");
+    return inst;
+}
+
 /*
  * DefaultTof2MzConverterFactory implementation
  */

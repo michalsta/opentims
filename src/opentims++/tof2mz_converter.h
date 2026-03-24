@@ -75,6 +75,12 @@ class Tof2MzConverterFactory
 class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
  public:
+    static ErrorTof2MzConverterFactory& instance()
+    {
+        static ErrorTof2MzConverterFactory inst;
+        return inst;
+    }
+
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -85,6 +91,7 @@ class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
  public:
     BrukerTof2MzConverterFactory(const char* _dll_path);
     BrukerTof2MzConverterFactory(const std::string& _dll_path);
+    static BrukerTof2MzConverterFactory& instance(const std::string& path);
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -135,6 +142,12 @@ private:
 class OpenSourceTof2MzConverterFactory : public Tof2MzConverterFactory
 {
 public:
+    static OpenSourceTof2MzConverterFactory& instance()
+    {
+        static OpenSourceTof2MzConverterFactory inst;
+        return inst;
+    }
+
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH,
         pressure_compensation_strategy pcs = NoPressureCompensation) override;
 };

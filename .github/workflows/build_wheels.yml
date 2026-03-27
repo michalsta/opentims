@@ -29,7 +29,7 @@ jobs:
             arch: arm64
             cibw_skip: ""
             cibw_arch: ARM64
-          - os: macos-14
+          - os: macos-15
             arch: x86_64
             cibw_skip: ""
             cibw_arch: x86_64

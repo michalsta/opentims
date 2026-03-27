@@ -50,7 +50,6 @@ def setup_opensource():
     available_columns[:] = list(all_columns)
 
 
-FRAMES_TYPE = npt.NDArray[np.uint32]
 SCANS_TYPE = npt.NDArray[np.uint32]
 TOFS_TYPE = npt.NDArray[np.uint32]
 INTENSITIES_TYPE = npt.NDArray[np.uint32]
@@ -597,7 +596,7 @@ class OpenTIMS:
         return self.ms1_frames[res]
 
     # TODO: this should be numbized or something: we make a copy of frame-1.
-    def frame_to_retention_time(self, frame: FrameType) -> np.array:
+    def frame_to_retention_time(self, frame: FRAMES_TYPE) -> np.array:
         """Transform frames into their corresponding retention times.
 
         We check if frames are within sensible bounds.

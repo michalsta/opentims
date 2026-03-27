@@ -144,11 +144,11 @@ class OpenTIMS:
         return self.frames["Time"]
 
     @property
-    def min_retention_time(self) -> int:
+    def min_retention_time(self) -> float:
         return self.retention_times[0]
 
     @property
-    def max_retention_time(self) -> int:
+    def max_retention_time(self) -> float:
         return self.retention_times[-1]
 
     @property

@@ -17,7 +17,7 @@ jobs:
             arch: x86_64
             cibw_skip: ""
             cibw_arch: x86_64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             arch: aarch64
             cibw_skip: "pp*"
             cibw_arch: aarch64
@@ -25,7 +25,7 @@ jobs:
             arch: x86_64
             cibw_skip: ""
             cibw_arch: AMD64
-          - os: windows-latest
+          - os: windows-11-arm
             arch: arm64
             cibw_skip: ""
             cibw_arch: ARM64

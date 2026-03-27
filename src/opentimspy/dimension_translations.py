@@ -19,7 +19,7 @@ def is_sorted(xx: npt.NDArray) -> bool:
 # type defs
 TranslationInt = Union[npt.NDArray, int, List[int]]
 TranslationFloat = Union[npt.NDArray, float, List[float]]
-FrameType = Union[npt.NDArray, int, List[int], List[int]]
+FrameType = Union[npt.NDArray, int, List[int]]
 
 
 def cast_to_numpy_arrays(

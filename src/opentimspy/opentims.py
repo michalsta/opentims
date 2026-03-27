@@ -65,7 +65,7 @@ class OpenTIMS:
         """Initialize OpenTIMS.
 
         Args:
-            analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_raw'.
+            analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_bin'.
         """
         self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)

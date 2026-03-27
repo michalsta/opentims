@@ -6,8 +6,8 @@ It comes with bindings to `Python` (through `opentimspy`) and `R` languages (thr
 In `Python`, we extract data into `NumPy` arrays that are optimized for speed and come with a universe of useful methods for their quick manipulation.
 In `R`, we extract data into the native `data.frame` object.
 
-With `OpenTIMS` you can access data contained in the `analysis.tdf_raw` file hapilly produced by your mass spectrometer of choice (as long as it is timsTOF Pro).
-It also parses some of the information out of the `SQLite` data base contained in the `analysis.raw` file.
+With `OpenTIMS` you can access data contained in the `analysis.tdf_bin` file hapilly produced by your mass spectrometer of choice (as long as it is timsTOF Pro).
+It also parses some of the information out of the `SQLite` data base contained in the `analysis.tdf` file.
 You should have both of these files in one folder to start using our software.
 
 We can also get your data faster in `C++` (and so to `Python` and `R`):

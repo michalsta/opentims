@@ -2,7 +2,28 @@
 
 #ifndef OPENTIMS_BUILDING_R
 
+#ifdef OPENTIMS_LINK_SQLITE_STATICALLY
+// When linking sqlite3 statically (e.g., as part of a larger project like OpenMS),
+// use direct function calls instead of dlopen-based symbol lookup.
+#include <sqlite3.h>
+#include <string>
+#include <stdexcept>
+
+class ot_sqlite
+{
+public:
+    static int sqlite3_open_v2(const char* s, sqlite3** ptr, int flags, const char*) { return ::sqlite3_open_v2(s, ptr, flags, NULL); }
+    static int sqlite3_close(sqlite3* db) { return ::sqlite3_close(db); }
+    static int sqlite3_exec(sqlite3* db, const char* query, int (*callback)(void*,int,char**,char**), void* arg, char **err) { return ::sqlite3_exec(db, query, callback, arg, err); }
+    static void sqlite3_free(void* ptr) { ::sqlite3_free(ptr); }
+    static const char* sqlite3_errmsg(sqlite3* db) { return ::sqlite3_errmsg(db); }
+};
+
+#else // OPENTIMS_LINK_SQLITE_STATICALLY
+
 #include <optional>
+#include "so_manager.h"
+#include "sqlite/sqlite3.h"
 class ot_sqlite
 {
 public:
@@ -44,12 +65,13 @@ public:
     }
 
 };
-#endif
+#endif // OPENTIMS_LINK_SQLITE_STATICALLY
+#endif // OPENTIMS_BUILDING_R
 
+#ifndef OPENTIMS_BUILDING_R
 class RAIISqlite
 {
     sqlite3* db_conn;
-    static std::optional<LoadedLibraryHandle> sqlite_so_handle;
 
  public:
     RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
@@ -75,3 +97,4 @@ class RAIISqlite
     }
 
 };
+#endif // OPENTIMS_BUILDING_R

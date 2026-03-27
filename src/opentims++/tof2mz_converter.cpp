@@ -7,6 +7,13 @@
 
 #include "tof2mz_converter.h"
 
+#ifndef OPENTIMS_BUILDING_R
+#include "sqlite_helper.h"
+#include <cmath>
+#include <cstring>
+#include <stdexcept>
+#endif
+
 std::unique_ptr<Tof2MzConverterFactory> DefaultTof2MzConverterFactory::fac_instance;
 
 Tof2MzConverter::~Tof2MzConverter() {}
@@ -126,6 +133,14 @@ std::unique_ptr<Tof2MzConverter> BrukerTof2MzConverterFactory::produce(TimsDataH
     return std::make_unique<BrukerTof2MzConverter>(TDH, dll_path.c_str(), pcs);
 }
 
+BrukerTof2MzConverterFactory& BrukerTof2MzConverterFactory::instance(const std::string& path)
+{
+    static BrukerTof2MzConverterFactory inst(path);
+    if (inst.dll_path != path)
+        throw std::runtime_error("BrukerTof2MzConverterFactory: already initialized with '" + inst.dll_path + "', cannot reinitialize with '" + path + "'");
+    return inst;
+}
+
 /*
  * DefaultTof2MzConverterFactory implementation
  */
@@ -137,3 +152,119 @@ std::unique_ptr<Tof2MzConverter> DefaultTof2MzConverterFactory::produceDefaultCo
 
     return fac_instance->produce(TDH, pcs);
 }
+
+#ifndef OPENTIMS_BUILDING_R
+
+/*
+ * OpenSourceTof2MzConverter implementation
+ */
+
+OpenSourceTof2MzConverter::OpenSourceTof2MzConverter(
+    double mz_min, double mz_max, uint32_t tof_max_index, bool is_otof_control)
+{
+    if (is_otof_control)
+    {
+        mz_min -= 5.0;
+        mz_max += 5.0;
+    }
+    intercept_ = std::sqrt(mz_min);
+    slope_ = (std::sqrt(mz_max) - std::sqrt(mz_min)) / static_cast<double>(tof_max_index);
+}
+
+void OpenSourceTof2MzConverter::convert(uint32_t, double* mzs, const double* tofs, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; ++i)
+    {
+        double val = intercept_ + slope_ * tofs[i];
+        mzs[i] = val * val;
+    }
+}
+
+void OpenSourceTof2MzConverter::convert(uint32_t, double* mzs, const uint32_t* tofs, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; ++i)
+    {
+        double val = intercept_ + slope_ * static_cast<double>(tofs[i]);
+        mzs[i] = val * val;
+    }
+}
+
+void OpenSourceTof2MzConverter::inverse_convert(uint32_t, uint32_t* tofs, const double* mzs, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; ++i)
+    {
+        double val = (std::sqrt(mzs[i]) - intercept_) / slope_;
+        tofs[i] = val > 0.0 ? static_cast<uint32_t>(val + 0.5) : 0;
+    }
+}
+
+std::string OpenSourceTof2MzConverter::description()
+{
+    return "OpenSourceTof2MzConverter (linear-in-sqrt)";
+}
+
+void OpenSourceTof2MzConverter::updateCalibration(double new_intercept, double new_slope)
+{
+    intercept_ = new_intercept;
+    slope_ = new_slope;
+}
+
+/*
+ * OpenSourceTof2MzConverterFactory implementation
+ */
+
+namespace {
+struct Tof2MzMetadata
+{
+    double mz_min = 0;
+    double mz_max = 0;
+    uint32_t tof_max = 0;
+    bool is_otof = false;
+};
+
+int tof2mz_metadata_callback(void* out, int cols, char** row, char** colnames)
+{
+    (void)cols;
+    (void)colnames;
+    Tof2MzMetadata* meta = reinterpret_cast<Tof2MzMetadata*>(out);
+    if (row[0] == nullptr || row[1] == nullptr)
+        return 0;
+    const char* key = row[0];
+    const char* val = row[1];
+    if (std::strcmp(key, "MzAcqRangeLower") == 0)
+        meta->mz_min = std::atof(val);
+    else if (std::strcmp(key, "MzAcqRangeUpper") == 0)
+        meta->mz_max = std::atof(val);
+    else if (std::strcmp(key, "DigitizerNumSamples") == 0)
+        meta->tof_max = static_cast<uint32_t>(std::atol(val));
+    else if (std::strcmp(key, "AcquisitionSoftware") == 0)
+        meta->is_otof = (std::strcmp(val, "Bruker otofControl") == 0);
+    return 0;
+}
+} // anonymous namespace
+
+std::unique_ptr<Tof2MzConverter> OpenSourceTof2MzConverterFactory::produce(
+    TimsDataHandle& TDH, pressure_compensation_strategy pcs)
+{
+    if (pcs != NoPressureCompensation)
+        throw std::runtime_error(
+            "Pressure compensation is not supported by the open-source m/z converter. "
+            "Use Bruker's proprietary library for pressure compensation, or disable it.");
+
+    std::string tdf_path = TDH.get_tims_dir_path() + "/analysis.tdf";
+    RAIISqlite db(tdf_path);
+
+    Tof2MzMetadata meta;
+    db.query(
+        "SELECT Key, Value FROM GlobalMetadata "
+        "WHERE Key IN ('MzAcqRangeLower','MzAcqRangeUpper','DigitizerNumSamples','AcquisitionSoftware')",
+        tof2mz_metadata_callback, &meta);
+
+    if (meta.mz_min <= 0 || meta.mz_max <= meta.mz_min || meta.tof_max == 0)
+        throw std::runtime_error(
+            "OpenSourceTof2MzConverterFactory: invalid calibration metadata in " + tdf_path);
+
+    return std::make_unique<OpenSourceTof2MzConverter>(meta.mz_min, meta.mz_max, meta.tof_max, meta.is_otof);
+}
+
+#endif // OPENTIMS_BUILDING_R

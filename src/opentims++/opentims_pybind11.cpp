@@ -306,6 +306,10 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                                 {
                                     setup_bruker(path);
                                 });
+    m.def("setup_opensource", []()
+                                {
+                                    setup_opensource();
+                                });
     m.def("set_num_threads", [](size_t n)
                                 {
                                     ThreadingManager::get_instance().set_num_threads(n);

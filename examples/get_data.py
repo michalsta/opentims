@@ -9,7 +9,8 @@ from opentimspy import OpenTIMS
 # and print out all the peaks in a CSV format.
 
 # Check whether the Bruker binary converter is available. If yes, it will be used
-# by default, without any setup necessary. If no, the extra columns will be missing.
+# by default, without any setup necessary. If no, fall back to the open-source
+# converters which provide m/z and ion mobility from the acquisition metadata.
 if opentimspy.bruker_bridge_present:
     all_columns = (
         "frame",
@@ -21,14 +22,17 @@ if opentimspy.bruker_bridge_present:
         "retention_time",
     )
 else:
-    print(
-        "Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations."
+    print("Bruker proprietary library not found, using open-source converters.")
+    opentimspy.setup_opensource()
+    all_columns = (
+        "frame",
+        "scan",
+        "tof",
+        "intensity",
+        "mz",
+        "inv_ion_mobility",
+        "retention_time",
     )
-    print(
-        "Install the Python module 'opentims_bruker_bridge' if you are on Linux or Windows."
-    )
-    print("Otherwise, you will be able to use only these columns:")
-    all_columns = ("frame", "scan", "tof", "intensity", "retention_time")
 
 
 try:
@@ -63,7 +67,7 @@ print(D.frames)
 print(D[1])
 
 print(len(D)) # The number of peaks.
-# 404183877 
+# 404183877
 
 
 # Return combined intensity for each frame. This has to iterate over the whole dataset, and will take a while.
@@ -88,7 +92,7 @@ D.framesTIC()
 # If you like 'Pandas', consider 'TimsPy'.
 
 
-# Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
+# Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.
 pprint(D.query(frames=slice(2,1000,10), columns=all_columns))
 # {'frame': array([  2,   2,   2, ..., 992, 992, 992], dtype=uint32),
 #  'intensity': array([9, 9, 9, ..., 9, 9, 9], dtype=uint32),
@@ -103,7 +107,7 @@ pprint(D.query(frames=slice(2,1000,10), columns=all_columns))
 
 
 
-# Get all MS1 frames 
+# Get all MS1 frames
 # pprint(D.query(frames=D.ms1_frames, columns=all_columns))
 # ATTENTION: that's quite a lot of data!!! You might exceed your RAM.
 
@@ -112,7 +116,7 @@ pprint(D.query(frames=slice(2,1000,10), columns=all_columns))
 pprint(D.query(frames=slice(2,1000,10), columns=('tof','intensity',)))
 # {'intensity': array([9, 9, 9, ..., 9, 9, 9], dtype=uint32),
 #  'tof': array([ 97298, 310524, 127985, ..., 143270, 309328, 224410], dtype=uint32)}
-# 
+#
 # This will reduce your memory usage.
 
 
@@ -164,7 +168,7 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 
 
 # The frame lasts a convenient time unit that well suits chromatography peak elution.
-# What if you were interested instead in finding out which frames eluted in a given time 
+# What if you were interested instead in finding out which frames eluted in a given time
 # time of the experiment?
 # For this reasone, we have prepared a retention time based query:
 # suppose you are interested in all frames corresponding to all that eluted between 10 and 12

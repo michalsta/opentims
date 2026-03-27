@@ -287,7 +287,9 @@ void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 }
 
 
-void TimsDataHandle::init(pressure_compensation_strategy pcs)
+void TimsDataHandle::init(pressure_compensation_strategy pcs,
+                          Tof2MzConverterFactory* tof_factory,
+                          Scan2InvIonMobilityConverterFactory* im_factory)
 {
     _min_frame_id = (std::numeric_limits<uint32_t>::max)();
     _max_frame_id = (std::numeric_limits<uint32_t>::min)();
@@ -302,21 +304,25 @@ void TimsDataHandle::init(pressure_compensation_strategy pcs)
 
     zstd_dctx = ZSTD_createDCtx();
 
-    tof2mz_converter = DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this, pcs);
-    scan2inv_ion_mobility_converter = DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this, pcs);
+    tof2mz_converter = tof_factory
+        ? tof_factory->produce(*this, pcs)
+        : DefaultTof2MzConverterFactory::produceDefaultConverterInstance(*this, pcs);
+    scan2inv_ion_mobility_converter = im_factory
+        ? im_factory->produce(*this, pcs)
+        : DefaultScan2InvIonMobilityConverterFactory::produceDefaultConverterInstance(*this, pcs);
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir, pressure_compensation_strategy pcs)
+TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir, pressure_compensation_strategy pcs, Tof2MzConverterFactory* tof_factory, Scan2InvIonMobilityConverterFactory* im_factory)
 : tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
 #endif
-    init(pcs);
+    init(pcs, tof_factory, im_factory);
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs)
-: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf", tims_data_dir, pcs)
+TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs, Tof2MzConverterFactory* tof_factory, Scan2InvIonMobilityConverterFactory* im_factory)
+: TimsDataHandle(tims_data_dir + "/analysis.tdf_bin", tims_data_dir + "/analysis.tdf", tims_data_dir, pcs, tof_factory, im_factory)
 {}
 
 #ifdef OPENTIMS_BUILDING_R

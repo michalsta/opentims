@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <string>
 #include "bruker_api.h"
 #include "platform.h"
 
@@ -73,6 +75,12 @@ class Tof2MzConverterFactory
 class ErrorTof2MzConverterFactory final : public Tof2MzConverterFactory
 {
  public:
+    static ErrorTof2MzConverterFactory& instance()
+    {
+        static ErrorTof2MzConverterFactory inst;
+        return inst;
+    }
+
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -83,6 +91,7 @@ class BrukerTof2MzConverterFactory final : public Tof2MzConverterFactory
  public:
     BrukerTof2MzConverterFactory(const char* _dll_path);
     BrukerTof2MzConverterFactory(const std::string& _dll_path);
+    static BrukerTof2MzConverterFactory& instance(const std::string& path);
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH, pressure_compensation_strategy pcs = NoPressureCompensation) override final;
 };
 
@@ -95,6 +104,52 @@ class DefaultTof2MzConverterFactory final
     template<class FactoryType, class... Args> static void setAsDefault(Args&& ... args)
     {
         static_assert(std::is_base_of<Tof2MzConverterFactory, FactoryType>::value, "FactoryType must be a subclass of Tof2MzConverterFactory");
-        fac_instance = std::make_unique<FactoryType>(std::forward<Args...>(args...));
+        fac_instance = std::make_unique<FactoryType>(std::forward<Args>(args)...);
     }
 };
+
+#ifndef OPENTIMS_BUILDING_R
+
+/**
+ * Open-source TOF-to-m/z converter using linear-in-sqrt calibration.
+ *
+ * sqrt(mz) = intercept + slope * tof_index
+ * mz       = (intercept + slope * tof_index)^2
+ *
+ * Calibration parameters are derived from the GlobalMetadata table in
+ * analysis.tdf: MzAcqRangeLower, MzAcqRangeUpper, DigitizerNumSamples.
+ */
+class OpenSourceTof2MzConverter : public Tof2MzConverter
+{
+public:
+    OpenSourceTof2MzConverter(double mz_min, double mz_max, uint32_t tof_max_index,
+                              bool is_otof_control = false);
+
+    void convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size) override;
+    void convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size) override;
+    void inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size) override;
+    std::string description() override;
+
+    void updateCalibration(double new_intercept, double new_slope);
+    double intercept() const { return intercept_; }
+    double slope() const { return slope_; }
+
+private:
+    double intercept_;
+    double slope_;
+};
+
+class OpenSourceTof2MzConverterFactory : public Tof2MzConverterFactory
+{
+public:
+    static OpenSourceTof2MzConverterFactory& instance()
+    {
+        static OpenSourceTof2MzConverterFactory inst;
+        return inst;
+    }
+
+    std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH,
+        pressure_compensation_strategy pcs = NoPressureCompensation) override;
+};
+
+#endif // OPENTIMS_BUILDING_R

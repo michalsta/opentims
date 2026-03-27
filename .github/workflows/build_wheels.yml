@@ -8,11 +8,29 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+            cibw_skip: ""
+          - os: ubuntu-latest
+            arch: aarch64
+            cibw_skip: "pp*"
+          - os: windows-latest
+            arch: x86_64
+            cibw_skip: ""
+          - os: windows-latest
+            arch: arm64
+            cibw_skip: ""
+          - os: macos-13
+            arch: x86_64
+            cibw_skip: ""
+          - os: macos-latest
+            arch: arm64
+            cibw_skip: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -34,10 +52,14 @@ jobs:
         env:
             #CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
           GITHUB_BUILDING_WHEELS: 1
+          CIBW_SKIP: ${{ matrix.cibw_skip }}
+          CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+          CIBW_ARCHS_MACOS: ${{ matrix.arch }}
+          CIBW_ARCHS_WINDOWS: ${{ matrix.arch }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
 
   build_sdist:

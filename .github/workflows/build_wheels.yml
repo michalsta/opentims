@@ -65,6 +65,7 @@ jobs:
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_arch }}
           CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_arch }}
+          MACOSX_DEPLOYMENT_TARGET: "10.13"
 
       - uses: actions/upload-artifact@v4
         with:

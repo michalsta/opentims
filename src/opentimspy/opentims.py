@@ -363,13 +363,12 @@ class OpenTIMS:
     ):
         """Get data from a selection of frames based on retention times.
 
-        Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
-        Retention time is in seconds.
-
+        Get all frames corresponding to retention times in the half-open interval
+        [min_retention_time, max_retention_time). Retention time is in seconds.
 
         Args:
             min_retention_time (float): Minimal retention time (in seconds).
-            max_retention_time (float): Maximal retention time to choose (in seconds).
+            max_retention_time (float): Maximal retention time, exclusive (in seconds).
             columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Returns:
@@ -380,7 +379,7 @@ class OpenTIMS:
                 self.retention_times, (min_retention_time, max_retention_time)
             )
             + 1
-        )  # TODO: check border conditions!!!
+        )
         return self.query(slice(min_frame, max_frame), columns)
 
     def rt_query_iter(
@@ -388,12 +387,12 @@ class OpenTIMS:
     ):
         """Iterate data from a selection of frames based on retention times.
 
-        Get all frames corresponding to retention times in a set "[min_retention_time, max_retention_time)".
-
+        Get all frames corresponding to retention times in the half-open interval
+        [min_retention_time, max_retention_time). Retention time is in seconds.
 
         Args:
-            min_retention_time (float): Minimal retention time.
-            max_retention_time (float): Maximal retention time to choose.
+            min_retention_time (float): Minimal retention time (in seconds).
+            max_retention_time (float): Maximal retention time, exclusive (in seconds).
             columns (tuple): which columns to extract? Defaults to all possible columns.
 
         Yields:
@@ -404,8 +403,8 @@ class OpenTIMS:
                 self.retention_times, (min_retention_time, max_retention_time)
             )
             + 1
-        )  # TODO: check border conditions!!!
-        yield from self.query_iter(range(min_frame, max_frame + 1), columns)
+        )
+        yield from self.query_iter(range(min_frame, max_frame), columns)
 
     def frame_array(self, frame: int):
         """Get a 2D array of data for a given frame.

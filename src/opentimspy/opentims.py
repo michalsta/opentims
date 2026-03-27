@@ -572,7 +572,7 @@ class OpenTIMS:
 
     def MS1_retention_time_to_frame(
         self,
-        retention_time: np.float | npt.NDArray[float] | list[float],
+        retention_time: float | npt.NDArray[float] | list[float],
         _buffer: int = 1,
     ) -> np.array:
         """Transform MS1 retention times into their corresponding frame numbers.

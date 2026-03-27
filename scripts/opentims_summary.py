@@ -46,9 +46,3 @@ with OpenTIMS(args.path) as D:
     print(f"Length of second DIA cycle: {dia_cycle_len}")
     print(f"DIA cycles per minute: {60.0*no_frames/rt_total_time/dia_cycle_len}")
     print(f"No MS1 frames: {np.count_nonzero(D.frames['MsMsType'] == 0)}")
-
-"""    frames = D.frames['Id']
-    # Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
-    for frame_id in tqdm(sorted(frames)):
-        frame = D.query(frame_id, columns=all_columns)
-print("Success! File does not seem to be corrupted.")"""

@@ -190,7 +190,7 @@ class OpenTIMS:
     @cached_property
     def _ms1_mask(self) -> npt.NDArray[np.bool_]:
         _ms1_mask = np.zeros(self.frames_no, dtype=bool)
-        _ms1_mask[self.ms1_frames - 1] = True
+        _ms1_mask[self.ms1_frames - self.min_frame] = True
         return _ms1_mask
 
     @cached_property

@@ -892,7 +892,7 @@ class OpenTIMS:
         """Get the Total Ion Current for each frame.
 
         Returns:
-            np.array: Total Ion Current values per each frame (sums of intensities for each frame).
+            np.array: Total Ion Current values per each frame, 0-indexed. Frame N has its TIC at index N-1.
         """
         res = np.empty(shape=self.max_frame, dtype=np.uint32)
         self.handle.per_frame_TIC(res)

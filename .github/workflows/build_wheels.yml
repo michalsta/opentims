@@ -25,7 +25,7 @@ jobs:
           - os: windows-latest
             arch: arm64
             cibw_skip: ""
-          - os: macos-13
+          - os: macos-14
             arch: x86_64
             cibw_skip: ""
           - os: macos-latest

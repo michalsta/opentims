@@ -91,13 +91,42 @@ parser.add_argument(
     choices="log10 sqrt id none None".split(),
 )
 
+conversion_group = parser.add_mutually_exclusive_group()
+conversion_group.add_argument(
+    "--opensource",
+    help="Use open-source m/z and ion mobility converters instead of Bruker's (less precise).",
+    action="store_true",
+)
+conversion_group.add_argument(
+    "--no-convert",
+    help="Do not convert tof to m/z. Plot tof vs scan axes instead.",
+    action="store_true",
+)
 
 args = parser.parse_args()
 
-
+import opentimspy
 from matplotlib import pyplot as plt
 from opentimspy import OpenTIMS, set_num_threads, plotting
 from opentimspy.misc import parse_slice
+
+if args.opensource:
+    opentimspy.setup_opensource()
+    x_column = "mz"
+elif args.no_convert:
+    x_column = "tof"
+elif opentimspy.bruker_bridge_present:
+    x_column = "mz"
+else:
+    print(
+        "Error: m/z conversion requires the Bruker bridge.\n"
+        "Options:\n"
+        "  Install opentims_bruker_bridge for full-precision conversion, or\n"
+        "  use --opensource for open-source conversion (less precise), or\n"
+        "  use --no-convert to plot tof vs scan without conversion.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 set_num_threads(1)
 
@@ -135,13 +164,15 @@ with OpenTIMS(args.path) as OT:
             if args.frame_range.min <= frameid <= args.frame_range.max
         )
 
-    frame = OT.query(list(sorted(frames)), columns="scan mz intensity".split())
+    xax_max = min(OT.max_mz + 1, args.mz_range.max) if x_column == "mz" else args.mz_range.max
+
+    frame = OT.query(list(sorted(frames)), columns=["scan", x_column, "intensity"])
     plotting.do_plot(
         plt,
         frame,
-        axes="mz scan".split(),
+        axes=[x_column, "scan"],
         xax_min=args.mz_range.min,
-        xax_max=min(OT.max_mz + 1, args.mz_range.max),
+        xax_max=xax_max,
         xax_res=args.mz_resolution,
         yax_min=args.scan_range.min,
         yax_max=args.scan_range.max,

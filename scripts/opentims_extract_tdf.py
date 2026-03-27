@@ -5,19 +5,6 @@ from pathlib import Path
 import opentimspy
 from opentimspy import OpenTIMS
 
-if opentimspy.bruker_bridge_present:
-    all_columns = (
-        "frame",
-        "scan",
-        "tof",
-        "intensity",
-        "mz",
-        "inv_ion_mobility",
-        "retention_time",
-    )
-else:
-    all_columns = ("frame", "scan", "tof", "intensity", "retention_time")
-
 import argparse
 
 parser = argparse.ArgumentParser(description="Export a set of frames in TSV format.")
@@ -29,6 +16,19 @@ parser.add_argument(
     default="",
 )
 parser.add_argument("--no-hdr", help="Do not print the header.", action="store_true")
+
+conversion_group = parser.add_mutually_exclusive_group()
+conversion_group.add_argument(
+    "--opensource",
+    help="Use open-source m/z and ion mobility converters instead of Bruker's (less precise).",
+    action="store_true",
+)
+conversion_group.add_argument(
+    "--no-convert",
+    help="Do not convert tof/scan to m/z and ion mobility. Output raw columns only.",
+    action="store_true",
+)
+
 parser.add_argument(
     "-o",
     "--output",
@@ -45,6 +45,24 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+if args.opensource:
+    opentimspy.setup_opensource()
+    all_columns = ("frame", "scan", "tof", "intensity", "mz", "inv_ion_mobility", "retention_time")
+elif args.no_convert:
+    all_columns = ("frame", "scan", "tof", "intensity", "retention_time")
+elif opentimspy.bruker_bridge_present:
+    all_columns = ("frame", "scan", "tof", "intensity", "mz", "inv_ion_mobility", "retention_time")
+else:
+    print(
+        "Error: m/z and ion mobility conversion requires the Bruker bridge.\n"
+        "Options:\n"
+        "  Install opentims_bruker_bridge for full-precision conversion, or\n"
+        "  use --opensource for open-source conversion (less precise), or\n"
+        "  use --no-convert to export raw tof/scan values without conversion.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 import tqdm
 
@@ -110,5 +128,5 @@ with OpenTIMS(args.path) as D, opener() as f:
 
     # Iterate over frames. This will store only one frame at a time in RAM, preventing out of memory errors.
     for frame_id in progressbar(list(sorted(frames))):
-        frame = D.query(frame_id)
+        frame = D.query(frame_id, columns=all_columns)
         writer(f, frame)

@@ -35,7 +35,10 @@ def table2dict(path, name):
     """
     assert name in tables_names(path), f"Table '{name}' is not in the database."
     _, colnames, _, _, _, _ = zip(*_sql2list(path, f"PRAGMA table_info({name});"))
-    colvalues = zip(*_sql2list(path, f"SELECT * FROM {name}"))
+    rows = _sql2list(path, f"SELECT * FROM {name}")
+    if not rows:
+        return {col: np.array([]) for col in colnames}
+    colvalues = zip(*rows)
     return dict(zip(colnames, (np.array(values) for values in colvalues)))
 
 

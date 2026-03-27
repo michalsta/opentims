@@ -53,7 +53,7 @@ def translate_values_frame_sorted(
     assert result_dtype in (
         np.double,
         np.uint32,
-    ), f"Wrong result_dtype: Bruker code only uses np.double and np.uint32, not {x_dtype}."
+    ), f"Wrong result_dtype: Bruker code only uses np.double and np.uint32, not {result_dtype}."
     if x_frame_sorted.dtype != x_dtype:
         x_frame_sorted = x_frame_sorted.astype(x_dtype)
     if frame_sorted.dtype != np.uint32:

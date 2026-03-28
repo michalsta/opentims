@@ -611,7 +611,7 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                 {
                     TimsFrame& frame = get_frame(indexes[my_task]);
                     frame.decompress(decomp_buffer.get(), zstd.get());
-                    frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task]);
+                    frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task], zstd.get());
                     frame.close();
                 }
                 else

@@ -167,6 +167,9 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     }
 
     uint32_t peaks_processed = 0;
+    // The decompressed buffer layout: first num_scans uint32s are scan headers,
+    // each storing the byte offset to the start of that scan's peak data.
+    // Peak data follows: interleaved TOF deltas and intensities (2 words per peak).
     size_t read_offset = num_scans;
     uint32_t accum_tofs;
 
@@ -174,8 +177,12 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
     for(uint32_t scan_idx = 0; scan_idx < num_scans_m1; scan_idx++)
     {
+        // Initialize to UINT32_MAX so that the first delta addition wraps around
+        // correctly: the format stores 1-indexed deltas, so delta=1 means TOF index 0.
         accum_tofs = -1;
 
+        // Scan header stores byte offset; divide by 2 (words) to get peak count
+        // for this scan (difference from next scan header gives peaks in this scan).
         const uint32_t no_peaks = back_data(scan_idx+1) / 2;
 
         const uint32_t for_loop_end = no_peaks + peaks_processed;
@@ -195,7 +202,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         }
     }
 
-    accum_tofs = -1;
+    accum_tofs = -1; // same 1-indexed delta convention for the last scan
 
     const uint32_t nnum_peaks = num_peaks;
 

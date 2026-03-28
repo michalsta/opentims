@@ -119,6 +119,12 @@ extract_separate_frames(
 }
 
 PYBIND11_MODULE(opentimspy_cpp, m) {
+    py::enum_<ConversionMethod>(m, "conversion_method")
+        .value("Default", ConversionMethod::Default)
+        .value("Bruker", ConversionMethod::Bruker)
+        .value("OpenSource", ConversionMethod::OpenSource)
+        .value("NoConversion", ConversionMethod::NoConversion);
+
     py::class_<TimsFrame>(m, "TimsFrame")
         .def_readonly("id", &TimsFrame::id)
         .def_readonly("num_scans", &TimsFrame::num_scans)
@@ -328,12 +334,6 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 }
         )
         ;
-
-    py::enum_<ConversionMethod>(m, "conversion_method")
-        .value("Default", ConversionMethod::Default)
-        .value("Bruker", ConversionMethod::Bruker)
-        .value("OpenSource", ConversionMethod::OpenSource)
-        .value("NoConversion", ConversionMethod::NoConversion);
 
     py::enum_<pressure_compensation_strategy>(m, "pressure_compensation_strategy")
         .value("NoPressureCompensation", pressure_compensation_strategy::NoPressureCompensation)

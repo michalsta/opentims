@@ -637,6 +637,6 @@ void TimsDataHandle::per_frame_TIC(uint32_t* result)
         const size_t n_peaks = it->second.num_peaks;
         for(size_t ii = 0; ii < n_peaks; ii++)
             acc += intensities[ii];
-        result[it->first - 1] = acc;
+        result[it->first - _min_frame_id] = acc;
     }
 }

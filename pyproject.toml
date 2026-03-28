@@ -52,6 +52,9 @@ pytest = ["pytest", "pandas"]
 # opentims_verify = "scripts/opentims_verify.py"
 
 
+[tool.pytest.ini_options]
+testpaths = ["pytest"]
+
 [tool.scikit-build]
 minimum-version = "0.7"
 wheel.packages = ["opentimspy"]

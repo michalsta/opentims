@@ -14,7 +14,7 @@ from functools import cached_property
 import numpy as np
 import numpy.typing as npt
 import opentimspy
-from opentimspy.opentimspy_cpp import pressure_compensation_strategy
+from opentimspy.opentimspy_cpp import pressure_compensation_strategy, conversion_method
 
 from .dimension_translations import (
     cast_to_numpy_arrays,
@@ -78,11 +78,19 @@ class OpenTIMS:
         self,
         analysis_directory: str | pathlib.Path,
         pcs: pressure_compensation_strategy = pressure_compensation_strategy.NoPressureCompensation,
+        cm: conversion_method | None = None,
     ):
         """Initialize OpenTIMS.
 
         Args:
             analysis_directory (str, unicode string): path to the folder containing 'analysis.tdf' and 'analysis.tdf_bin'.
+            pcs: pressure compensation strategy (default: NoPressureCompensation).
+            cm: conversion method for tof->m/z and scan->inv_ion_mobility.
+                None (default): same as conversion_method.Default.
+                conversion_method.Default: use the global default set by setup_bruker_so/setup_opensource.
+                conversion_method.Bruker: force Bruker conversion (errors if bridge not initialized).
+                conversion_method.OpenSource: force the built-in open-source converter (less precise).
+                conversion_method.NoConversion: skip conversion entirely.
         """
         self.handle = None
         self.analysis_directory = pathlib.Path(analysis_directory)
@@ -98,8 +106,9 @@ class OpenTIMS:
             raise RuntimeError(
                 f"Missing: {str(self.analysis_directory / 'analysis.tdf_bin')}"
             )
+        cpp_cm = conversion_method.Default if cm is None else cm
         self.handle = opentimspy.opentimspy_cpp.TimsDataHandle(
-            str(analysis_directory), pcs
+            str(analysis_directory), pcs, cpp_cm
         )
         self.GlobalMetadata = self.table2dict("GlobalMetadata")
         self.GlobalMetadata = dict(

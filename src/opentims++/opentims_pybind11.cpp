@@ -16,6 +16,16 @@
 namespace py = pybind11;
 using namespace pybind11::literals;
 
+enum class ConversionMethod {
+    Default,
+    Bruker,
+    OpenSource,
+    NoConversion
+};
+
+static std::string bruker_so_path;
+static bool bruker_so_initialized = false;
+
 
 template<typename T> T* get_ptr(py::buffer& buf)
 {
@@ -127,6 +137,29 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
 
     py::class_<TimsDataHandle>(m, "TimsDataHandle")
         .def(py::init<const std::string &, pressure_compensation_strategy>())
+        .def(py::init([](const std::string& path, pressure_compensation_strategy pcs, ConversionMethod cm) {
+            Tof2MzConverterFactory* tof_fac = nullptr;
+            Scan2InvIonMobilityConverterFactory* im_fac = nullptr;
+            switch(cm) {
+                case ConversionMethod::Default:
+                    break; // nullptr = use global default
+                case ConversionMethod::Bruker:
+                    if (!bruker_so_initialized)
+                        throw std::runtime_error("conversion_method.Bruker requested but Bruker bridge has not been initialized (call setup_bruker_so first)");
+                    tof_fac = &BrukerTof2MzConverterFactory::instance(bruker_so_path);
+                    im_fac = &BrukerScan2InvIonMobilityConverterFactory::instance(bruker_so_path);
+                    break;
+                case ConversionMethod::OpenSource:
+                    tof_fac = &OpenSourceTof2MzConverterFactory::instance();
+                    im_fac = &OpenSourceScan2ImConverterFactory::instance();
+                    break;
+                case ConversionMethod::NoConversion:
+                    tof_fac = &ErrorTof2MzConverterFactory::instance();
+                    im_fac = &ErrorScan2InvIonMobilityConverterFactory::instance();
+                    break;
+            }
+            return new TimsDataHandle(path, pcs, tof_fac, im_fac);
+        }), py::arg("path"), py::arg("pcs") = pressure_compensation_strategy::NoPressureCompensation, py::arg("conversion_method") = ConversionMethod::Default)
         .def("no_peaks_total", &TimsDataHandle::no_peaks_total)
         .def("min_frame_id", &TimsDataHandle::min_frame_id)
         .def("max_frame_id", &TimsDataHandle::max_frame_id)
@@ -296,6 +329,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         )
         ;
 
+    py::enum_<ConversionMethod>(m, "conversion_method")
+        .value("Default", ConversionMethod::Default)
+        .value("Bruker", ConversionMethod::Bruker)
+        .value("OpenSource", ConversionMethod::OpenSource)
+        .value("NoConversion", ConversionMethod::NoConversion);
+
     py::enum_<pressure_compensation_strategy>(m, "pressure_compensation_strategy")
         .value("NoPressureCompensation", pressure_compensation_strategy::NoPressureCompensation)
         .value("AnalyisGlobalPressureCompensation", pressure_compensation_strategy::AnalyisGlobalPressureCompensation)
@@ -305,6 +344,8 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
     m.def("setup_bruker_so", [](const std::string& path)
                                 {
                                     setup_bruker(path);
+                                    bruker_so_path = path;
+                                    bruker_so_initialized = true;
                                 });
     m.def("setup_opensource", []()
                                 {

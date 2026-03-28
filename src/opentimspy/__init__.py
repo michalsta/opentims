@@ -78,6 +78,7 @@ from opentimspy.opentims import (
     all_columns_dtype,
     available_columns,
     pressure_compensation_strategy,
+    conversion_method,
     setup_opensource,
 )
 

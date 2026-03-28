@@ -331,15 +331,13 @@ class OpenTIMS:
 
             self.handle.extract_frames(frames, **arrays)  # packs arrays with data
         except RuntimeError as e:
-            if (
-                e.args[0]
-                == "Default conversion method must be selected BEFORE opening any TimsDataHandles - or it must be passed explicitly to the constructor"
-            ):
+            # C++ throws std::logic_error (mapped to RuntimeError by pybind11) when
+            # no conversion method was set up before opening the handle.
+            if "Default conversion method" in str(e):
                 raise RuntimeError(
                     "Please install 'opentims_bruker_bridge' if you want to use Bruker's conversion methods."
-                )
-            else:
-                raise
+                ) from e
+            raise
         return {c: arrays[c] for c in columns}
 
     def query_iter(

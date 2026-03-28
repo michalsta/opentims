@@ -16,6 +16,7 @@
 #include <locale>
 #include <memory>
 #include <limits>
+#include <stdexcept>
 #include <thread>
 #include <unordered_map>
 
@@ -59,14 +60,11 @@ TimsFrame::TimsFrame(uint32_t _id,
 
 TimsFrame TimsFrame::TimsFrameFromSql(char** sql_row, TimsDataHandle& parent_handle)
 {
-    assert(sql_row != nullptr);
-    assert(sql_row[0] != nullptr);
-    assert(sql_row[1] != nullptr);
-    assert(sql_row[2] != nullptr);
-    assert(sql_row[3] != nullptr);
-    assert(sql_row[4] != nullptr);
-    assert(sql_row[5] != nullptr);
-    assert(sql_row[6] != nullptr);
+    if(sql_row == nullptr)
+        throw std::runtime_error("TimsFrameFromSql: null SQL row");
+    for(int i = 0; i < 7; i++)
+        if(sql_row[i] == nullptr)
+            throw std::runtime_error("TimsFrameFromSql: null value in SQL column " + std::to_string(i));
 
     return TimsFrame(
             atol(sql_row[0]),

@@ -466,6 +466,8 @@ class OpenTIMS:
         start = self.min_frame if frames_slice.start is None else frames_slice.start
         stop = self.max_frame if frames_slice.stop is None else frames_slice.stop
         step = 1 if frames_slice.step is None else frames_slice.step
+        if step == 0:
+            raise RuntimeError("frame_arrays_slice: step must be > 0")
         peaks_cnt = self.handle.no_peaks_in_slice(start, stop, step)
         X = np.empty(shape=(peaks_cnt, 4), order="F", dtype=np.uint32)
         self.handle.extract_frames_slice(start, stop, step, X)

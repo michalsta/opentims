@@ -125,6 +125,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         .value("OpenSource", ConversionMethod::OpenSource)
         .value("NoConversion", ConversionMethod::NoConversion);
 
+    py::enum_<pressure_compensation_strategy>(m, "pressure_compensation_strategy")
+        .value("NoPressureCompensation", pressure_compensation_strategy::NoPressureCompensation)
+        .value("AnalyisGlobalPressureCompensation", pressure_compensation_strategy::AnalyisGlobalPressureCompensation)
+        .value("PerFramePressureCompensation", pressure_compensation_strategy::PerFramePressureCompensation)
+        .value("PerFramePressureCompensationWithMissingReference", pressure_compensation_strategy::PerFramePressureCompensationWithMissingReference);
+
     py::class_<TimsFrame>(m, "TimsFrame")
         .def_readonly("id", &TimsFrame::id)
         .def_readonly("num_scans", &TimsFrame::num_scans)
@@ -334,12 +340,6 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 }
         )
         ;
-
-    py::enum_<pressure_compensation_strategy>(m, "pressure_compensation_strategy")
-        .value("NoPressureCompensation", pressure_compensation_strategy::NoPressureCompensation)
-        .value("AnalyisGlobalPressureCompensation", pressure_compensation_strategy::AnalyisGlobalPressureCompensation)
-        .value("PerFramePressureCompensation", pressure_compensation_strategy::PerFramePressureCompensation)
-        .value("PerFramePressureCompensationWithMissingReference", pressure_compensation_strategy::PerFramePressureCompensationWithMissingReference);
 
     m.def("setup_bruker_so", [](const std::string& path)
                                 {

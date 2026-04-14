@@ -44,6 +44,44 @@ if (OPENTIMS_BUILD_CPP_LIB)
     if (UNIX AND NOT APPLE)
         target_link_libraries(opentims_cpp PRIVATE pthread dl)
     endif()
+
+    # Install rules — produces libopentims-dev style package contents.
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    install(TARGETS opentims_cpp
+        EXPORT  opentimsTargets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        COMPONENT Development
+    )
+
+    # Install all headers preserving the opentims++ subdirectory structure.
+    file(GLOB_RECURSE _opentims_headers
+        "${OPENTIMS_SRC_DIR}/*.h"
+        "${OPENTIMS_SRC_DIR}/*.hpp"
+    )
+    install(FILES ${_opentims_headers}
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/opentims++"
+        COMPONENT Development
+    )
+
+    # Export the target so find_package(opentims CONFIG) works after install.
+    install(EXPORT opentimsTargets
+        FILE      opentimsTargets.cmake
+        NAMESPACE opentims::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+        COMPONENT Development
+    )
+
+    configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/opentimsConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+    )
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+        COMPONENT Development
+    )
 endif()
 
 #------------------------------------------------------------------------------

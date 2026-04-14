@@ -110,12 +110,28 @@ if(OPENTIMS_BUILD_CPP_LIB)
         COMPONENT Development
     )
 
+    # find_dependency() calls for consumers: only SQLite3 when we publish the
+    # OPENTIMS_LINK_SQLITE_STATICALLY compile definition (the consumer must
+    # supply sqlite3 themselves; find_dependency locates it via CMake).
+    if(OPENTIMS_LINK_SQLITE_STATICALLY)
+        set(OPENTIMS_FIND_DEPS "find_dependency(SQLite3 REQUIRED)")
+    else()
+        set(OPENTIMS_FIND_DEPS "")
+    endif()
+
     configure_package_config_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/opentimsConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
         INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
     )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfigVersion.cmake"
+        VERSION     "${OPENTIMS_VERSION}"
+        COMPATIBILITY AnyNewerVersion
+    )
+    install(FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfigVersion.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
         COMPONENT Development
     )
@@ -148,10 +164,19 @@ if(OPENTIMS_BUILD_SHARED_LIB)
     include(GNUInstallDirs)
     include(CMakePackageConfigHelpers)
 
+    # Split the three shared-lib filesystem entries across components:
+    #   Runtime    — versioned .so and SONAME symlink  (libopentims)
+    #   Development — unversioned linker symlink .so   (libopentims-dev)
     install(TARGETS opentims_cpp_shared
         EXPORT  opentimsSharedTargets
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            NAMELINK_SKIP
         COMPONENT Runtime
+    )
+    install(TARGETS opentims_cpp_shared
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            NAMELINK_ONLY
+        COMPONENT Development
     )
 
     install(EXPORT opentimsSharedTargets
@@ -173,16 +198,48 @@ if(OPENTIMS_BUILD_SHARED_LIB)
             COMPONENT Development
         )
 
+        # Shared lib absorbs sqlite3 and zstd into the .so — no transitive
+        # find_dependency calls needed for consumers.
+        set(OPENTIMS_FIND_DEPS "")
+
         configure_package_config_file(
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/opentimsConfig.cmake.in"
             "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
             INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
         )
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+        write_basic_package_version_file(
+            "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfigVersion.cmake"
+            VERSION     "${OPENTIMS_VERSION}"
+            COMPATIBILITY AnyNewerVersion
+        )
+        install(FILES
+                "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfigVersion.cmake"
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
             COMPONENT Development
         )
     endif()
+
+    # pkg-config file — for Meson/autotools/plain-make consumers and distro
+    # build-dependency resolution.  Goes in libopentims-dev.
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/opentims.pc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/opentims.pc"
+        @ONLY
+    )
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/opentims.pc"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+        COMPONENT Development
+    )
+
+    # License — distro policy (e.g. Debian) requires every binary package to
+    # carry the copyright text.  Install once into Runtime; the distro packager
+    # can symlink or copy it into the -dev and Python packages as needed.
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENCE"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+        COMPONENT Runtime
+        RENAME copyright
+    )
 endif()
 
 #------------------------------------------------------------------------------

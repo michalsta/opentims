@@ -4,15 +4,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from opentimspy import OpenTIMS, setup_opensource
+from opentimspy import OpenTIMS, conversion_method
 
 data_path = Path(__file__).parent / "test.d"
 
 
 @pytest.fixture(scope="module")
 def ot():
-    setup_opensource()
-    with OpenTIMS(data_path) as handle:
+    with OpenTIMS(data_path, cm=conversion_method.OpenSource) as handle:
         yield handle
 
 
@@ -150,7 +149,6 @@ def test_query_iter_concatenates_to_query(ot):
 # --- context manager ---
 
 def test_context_manager_closes():
-    setup_opensource()
-    with OpenTIMS(data_path) as handle:
+    with OpenTIMS(data_path, cm=conversion_method.OpenSource) as handle:
         assert handle.handle is not None
     assert handle.handle is None

@@ -10,8 +10,7 @@
 #include <pybind11/stl.h>
 #include <cstdint>
 #include "platform.h"
-#include "opentims_all.cpp"
-#include "zstd/zstddeclib.c"
+#include "opentims_all.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;

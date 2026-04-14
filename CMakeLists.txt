@@ -1,9 +1,21 @@
 cmake_minimum_required(VERSION 3.15)
-project(opentims LANGUAGES CXX)
 
-option(OPENTIMS_BUILD_PYTHON "Build Python pybind11 bindings" ON)
-option(OPENTIMS_BUILD_CPP_LIB "Build opentims as a static C++ library" OFF)
-option(OPENTIMS_LINK_SQLITE_STATICALLY "Link sqlite3 statically instead of dlopening it at runtime" OFF)
+# Parse version from pyproject.toml — single source of truth.
+# CMake project(VERSION ...) only accepts numeric dotted versions, so the
+# pre-release suffix (e.g. "b2" in "1.2.0b2") is stripped and stored
+# separately for informational use.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" _pyproject_toml)
+string(REGEX MATCH "version = \"([0-9]+\\.[0-9]+\\.[0-9]+)([^\"]*)\"" _ "${_pyproject_toml}")
+set(OPENTIMS_VERSION      "${CMAKE_MATCH_1}")              # 1.2.0  — used for project() / soname
+set(OPENTIMS_VERSION_FULL "${CMAKE_MATCH_1}${CMAKE_MATCH_2}") # 1.2.0b2 — informational
+
+project(opentims VERSION "${OPENTIMS_VERSION}" LANGUAGES CXX C)
+
+option(OPENTIMS_BUILD_PYTHON      "Build Python pybind11 bindings"                      ON)
+option(OPENTIMS_BUILD_CPP_LIB     "Build opentims as a static C++ library"              OFF)
+option(OPENTIMS_BUILD_SHARED_LIB  "Build opentims as a shared C++ library (.so/.dylib)" OFF)
+option(OPENTIMS_LINK_SQLITE_STATICALLY
+       "Link sqlite3 at compile time instead of dlopening at runtime"                    OFF)
 
 find_package(Threads REQUIRED)
 
@@ -19,29 +31,56 @@ set(OPENTIMS_CPP_SOURCES
     "${OPENTIMS_SRC_DIR}/sqlite_helper.cpp"
 )
 
+# Apply standard compile options to a target.
+macro(opentims_compile_options _target)
+    target_compile_features(${_target} PRIVATE cxx_std_20)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(${_target} PRIVATE -O3 -g -Wall -Wextra)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_compile_options(${_target} PRIVATE /O2)
+        target_compile_definitions(${_target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    endif()
+endmacro()
+
+# Link zstd to a target: prefer system, fall back to the bundled decoder.
+macro(opentims_link_zstd _target)
+    find_package(zstd QUIET)
+    if(TARGET zstd::libzstd_shared)
+        target_link_libraries(${_target} PRIVATE zstd::libzstd_shared)
+        message(STATUS "opentims(${_target}): using system zstd (shared)")
+    elseif(TARGET zstd::libzstd_static)
+        target_link_libraries(${_target} PRIVATE zstd::libzstd_static)
+        message(STATUS "opentims(${_target}): using system zstd (static)")
+    else()
+        target_sources(${_target} PRIVATE "${OPENTIMS_SRC_DIR}/zstd/zstddeclib.c")
+        target_include_directories(${_target} PRIVATE "${OPENTIMS_SRC_DIR}/zstd")
+        message(STATUS "opentims(${_target}): using bundled zstd decoder")
+    endif()
+endmacro()
+
+# Link system sqlite3 to a target at compile time (not dlopen).
+macro(opentims_link_sqlite _target)
+    find_package(SQLite3 REQUIRED)
+    target_link_libraries(${_target} PRIVATE SQLite::SQLite3)
+    target_compile_definitions(${_target} PUBLIC OPENTIMS_LINK_SQLITE_STATICALLY)
+endmacro()
+
 #------------------------------------------------------------------------------
-# C++ static library target (for embedding in other projects like OpenMS)
+# Static C++ library (for embedding in other projects — e.g. OpenMS)
 #------------------------------------------------------------------------------
-if (OPENTIMS_BUILD_CPP_LIB)
+if(OPENTIMS_BUILD_CPP_LIB)
     add_library(opentims_cpp STATIC ${OPENTIMS_CPP_SOURCES})
     target_include_directories(opentims_cpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_compile_features(opentims_cpp PRIVATE cxx_std_20)
+    opentims_compile_options(opentims_cpp)
     set_target_properties(opentims_cpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    if (OPENTIMS_LINK_SQLITE_STATICALLY)
+    if(OPENTIMS_LINK_SQLITE_STATICALLY)
         target_compile_definitions(opentims_cpp PUBLIC OPENTIMS_LINK_SQLITE_STATICALLY)
-        # Consumer must provide sqlite3 headers via target_include_directories
-        # and link sqlite3 via target_link_libraries.
+        # Consumer must supply sqlite3 headers and the library
+        # (e.g. OpenMS injects its own bundled sqlite3).
     endif()
 
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        target_compile_options(opentims_cpp PRIVATE -O3 -g -Wall -Wextra)
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_compile_options(opentims_cpp PRIVATE /O2)
-        target_compile_definitions(opentims_cpp PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-    endif()
-
-    if (UNIX AND NOT APPLE)
+    if(UNIX AND NOT APPLE)
         target_link_libraries(opentims_cpp PRIVATE pthread dl)
     endif()
 
@@ -55,7 +94,6 @@ if (OPENTIMS_BUILD_CPP_LIB)
         COMPONENT Development
     )
 
-    # Install all headers preserving the opentims++ subdirectory structure.
     file(GLOB_RECURSE _opentims_headers
         "${OPENTIMS_SRC_DIR}/*.h"
         "${OPENTIMS_SRC_DIR}/*.hpp"
@@ -65,7 +103,6 @@ if (OPENTIMS_BUILD_CPP_LIB)
         COMPONENT Development
     )
 
-    # Export the target so find_package(opentims CONFIG) works after install.
     install(EXPORT opentimsTargets
         FILE      opentimsTargets.cmake
         NAMESPACE opentims::
@@ -85,37 +122,126 @@ if (OPENTIMS_BUILD_CPP_LIB)
 endif()
 
 #------------------------------------------------------------------------------
-# Python pybind11 module target
+# Shared C++ library (libopentims — for distro packaging and the Python module)
 #------------------------------------------------------------------------------
-if (OPENTIMS_BUILD_PYTHON)
+if(OPENTIMS_BUILD_SHARED_LIB)
+    add_library(opentims_cpp_shared SHARED ${OPENTIMS_CPP_SOURCES})
+    set_target_properties(opentims_cpp_shared PROPERTIES
+        OUTPUT_NAME opentims_cpp
+        VERSION     "${OPENTIMS_VERSION}"
+        SOVERSION   "${PROJECT_VERSION_MAJOR}"
+    )
+    target_include_directories(opentims_cpp_shared
+        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    )
+    opentims_compile_options(opentims_cpp_shared)
+
+    # Shared lib always resolves sqlite3 at link time (not dlopen).
+    opentims_link_sqlite(opentims_cpp_shared)
+    opentims_link_zstd(opentims_cpp_shared)
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(opentims_cpp_shared PRIVATE pthread dl)
+    endif()
+
+    # Install rules — produces libopentims (runtime) package contents.
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    install(TARGETS opentims_cpp_shared
+        EXPORT  opentimsSharedTargets
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        COMPONENT Runtime
+    )
+
+    install(EXPORT opentimsSharedTargets
+        FILE      opentimsSharedTargets.cmake
+        NAMESPACE opentims::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+        COMPONENT Development
+    )
+
+    # Install headers and config file only when the static lib is not also
+    # being built (to avoid duplicate install rules for the same files).
+    if(NOT OPENTIMS_BUILD_CPP_LIB)
+        file(GLOB_RECURSE _opentims_headers
+            "${OPENTIMS_SRC_DIR}/*.h"
+            "${OPENTIMS_SRC_DIR}/*.hpp"
+        )
+        install(FILES ${_opentims_headers}
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/opentims++"
+            COMPONENT Development
+        )
+
+        configure_package_config_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/opentimsConfig.cmake.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+            INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+        )
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/opentimsConfig.cmake"
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/opentims"
+            COMPONENT Development
+        )
+    endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Python pybind11 module
+#------------------------------------------------------------------------------
+if(OPENTIMS_BUILD_PYTHON)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
     find_package(pybind11 REQUIRED)
 
-    # Build the pybind11 extension as a Python module
-    pybind11_add_module(opentimspy_cpp MODULE src/opentims++/opentims_pybind11.cpp)
+    if(OPENTIMS_BUILD_SHARED_LIB)
+        # Link against the shared lib — no source recompilation needed.
+        pybind11_add_module(opentimspy_cpp MODULE
+            src/opentims++/opentims_pybind11.cpp
+        )
+        target_link_libraries(opentimspy_cpp PRIVATE opentims_cpp_shared)
+    else()
+        # No shared lib — compile C++ sources directly into the module.
+        pybind11_add_module(opentimspy_cpp MODULE
+            src/opentims++/opentims_pybind11.cpp
+            ${OPENTIMS_CPP_SOURCES}
+        )
+        opentims_link_zstd(opentimspy_cpp)
+        if(OPENTIMS_LINK_SQLITE_STATICALLY)
+            opentims_link_sqlite(opentimspy_cpp)
+        endif()
+    endif()
 
-    # Link pthread and dl if not on Windows
-    if (UNIX AND NOT APPLE)
+    if(UNIX AND NOT APPLE)
         target_link_libraries(opentimspy_cpp PRIVATE pthread dl)
     endif()
 
     target_compile_features(opentimspy_cpp PRIVATE cxx_std_20)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         target_compile_options(opentimspy_cpp PRIVATE -O3 -g -Wall -Wextra)
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         target_compile_options(opentimspy_cpp PRIVATE /O2)
     endif()
 
-    target_include_directories(opentimspy_cpp PRIVATE ${CMAKE_SOURCE_DIR}/src/opentims++)
+    target_include_directories(opentimspy_cpp
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++"
+    )
 
-    # Install Python package files
-    install(TARGETS opentimspy_cpp LIBRARY DESTINATION opentimspy)
-    install(DIRECTORY src/opentimspy/ DESTINATION opentimspy FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE)
-    file(GLOB OPENTIMS_HEADERS
-        "${CMAKE_SOURCE_DIR}/src/opentims++/*.h"
-        "${CMAKE_SOURCE_DIR}/src/opentims++/*.hpp"
-        "${CMAKE_SOURCE_DIR}/src/opentims++/*/*.h"
-        "${CMAKE_SOURCE_DIR}/src/opentims++/*/*.hpp"
-)
-    install(FILES ${OPENTIMS_HEADERS} DESTINATION opentimspy/opentims++)
-endif() # OPENTIMS_BUILD_PYTHON
+    install(TARGETS opentimspy_cpp
+        LIBRARY DESTINATION opentimspy
+        COMPONENT Python
+    )
+    install(DIRECTORY src/opentimspy/
+        DESTINATION opentimspy
+        FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE
+        COMPONENT Python
+    )
+    file(GLOB _opentims_py_headers
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++/*.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++/*/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++/*/*.hpp"
+    )
+    install(FILES ${_opentims_py_headers}
+        DESTINATION opentimspy/opentims++
+        COMPONENT Python
+    )
+endif()

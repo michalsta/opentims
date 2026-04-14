@@ -1,5 +1,12 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/opentimsTargets.cmake")
+# Include whichever target exports are present (static, shared, or both).
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/opentimsTargets.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/opentimsTargets.cmake")
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/opentimsSharedTargets.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/opentimsSharedTargets.cmake")
+endif()
 
 check_required_components(opentims)

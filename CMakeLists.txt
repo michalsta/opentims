@@ -204,7 +204,14 @@ if(OPENTIMS_BUILD_PYTHON)
             src/opentims++/opentims_pybind11.cpp
             ${OPENTIMS_CPP_SOURCES}
         )
-        opentims_link_zstd(opentimspy_cpp)
+        # Python wheels: always use the bundled zstd decoder rather than system
+        # libzstd.  System shared libzstd on macOS CI runners is typically a fat
+        # universal binary (arm64 + x86_64); delocate-wheel --require-archs arm64
+        # rejects such libraries, causing the wheel build to fail with code 1.
+        # The bundled single-file decoder produces no external dylib dependency
+        # and restores the behaviour that existed before the CMakeLists rewrite.
+        target_sources(opentimspy_cpp PRIVATE "${OPENTIMS_SRC_DIR}/zstd/zstddeclib.c")
+        target_include_directories(opentimspy_cpp PRIVATE "${OPENTIMS_SRC_DIR}/zstd")
         if(OPENTIMS_LINK_SQLITE_STATICALLY)
             opentims_link_sqlite(opentimspy_cpp)
         endif()

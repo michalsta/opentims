@@ -231,8 +231,8 @@ if(OPENTIMS_BUILD_PYTHON)
     )
     install(DIRECTORY src/opentimspy/
         DESTINATION opentimspy
-        FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE
         COMPONENT Python
+        FILES_MATCHING PATTERN "*.py" PATTERN "opentims++" EXCLUDE
     )
     file(GLOB _opentims_py_headers
         "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++/*.h"

@@ -6,7 +6,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "opentimspy"
-version = "1.2.0b2"
+version = "1.2.0b3"
 description = "opentimspy: An open-source parser of Bruker Tims Data File (.tdf)."
 readme = "README.md"
 authors = [

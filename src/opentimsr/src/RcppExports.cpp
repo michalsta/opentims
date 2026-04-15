@@ -21,6 +21,15 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// setup_opensource_r
+void setup_opensource_r();
+RcppExport SEXP _opentimsr_setup_opensource_r() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    setup_opensource_r();
+    return R_NilValue;
+END_RCPP
+}
 // tdf_open
 Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res);
 RcppExport SEXP _opentimsr_tdf_open(SEXP path_dSEXP, SEXP sql_resSEXP) {
@@ -168,6 +177,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_setup_bruker_so", (DL_FUNC) &_opentimsr_setup_bruker_so, 1},
+    {"_opentimsr_setup_opensource_r", (DL_FUNC) &_opentimsr_setup_opensource_r, 0},
     {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 2},
     {"_opentimsr_tdf_close", (DL_FUNC) &_opentimsr_tdf_close, 1},
     {"_opentimsr_tdf_min_frame_id", (DL_FUNC) &_opentimsr_tdf_min_frame_id, 1},

@@ -61,6 +61,7 @@ wheel.packages = ["opentimspy"]
 sdist.include = ["src/opentims++/*.h", "src/opentims++/*/*.h", "src/opentims++/*.hpp"]
 cmake.verbose = true
 cmake.args = [
-	"-DCMAKE_CXX_STANDARD=20",
-	"-DCMAKE_BUILD_TYPE=Release"
+	"-DCMAKE_BUILD_TYPE=Release",
+	"-DOPENTIMS_BUILD_PYTHON=ON",
+	"-DOPENTIMS_BUILD_LIB=OFF"
 ]

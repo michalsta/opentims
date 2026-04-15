@@ -76,11 +76,11 @@ exclude = [
     "speed.png",
     "Makefile",
 ]
+include = ["src/opentims++/*.h", "src/opentims++/*/*.h", "src/opentims++/*.hpp"]
 
 [tool.scikit-build]
 minimum-version = "0.7"
 wheel.packages = ["opentimspy"]
-sdist.include = ["src/opentims++/*.h", "src/opentims++/*/*.h", "src/opentims++/*.hpp"]
 cmake.verbose = true
 cmake.args = [
 	"-DCMAKE_BUILD_TYPE=Release",

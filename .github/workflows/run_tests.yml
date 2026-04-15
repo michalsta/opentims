@@ -103,7 +103,9 @@ jobs:
           install.packages(c("Rcpp", "DBI", "RSQLite", "testthat"), repos = "https://cloud.r-project.org")
 
       - name: Build and install opentimsr
+        shell: bash
         run: R CMD INSTALL src/opentimsr
 
       - name: Run R tests
+        shell: bash
         run: Rscript -e "testthat::test_dir('src/opentimsr/tests/testthat', package='opentimsr', load_package='installed', stop_on_failure=TRUE)"

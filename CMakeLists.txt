@@ -70,8 +70,13 @@ endmacro()
 # C++ library (static or shared, controlled by BUILD_SHARED_LIBS)
 #------------------------------------------------------------------------------
 if(OPENTIMS_BUILD_LIB)
+    include(GNUInstallDirs)
+
     add_library(opentims_cpp ${OPENTIMS_CPP_SOURCES})
-    target_include_directories(opentims_cpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_include_directories(opentims_cpp PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
     opentims_compile_options(opentims_cpp)
 
     if(BUILD_SHARED_LIBS)
@@ -96,7 +101,6 @@ if(OPENTIMS_BUILD_LIB)
     endif()
 
     # Install rules — produces libopentims-dev / libopentims style package contents.
-    include(GNUInstallDirs)
     include(CMakePackageConfigHelpers)
 
     if(BUILD_SHARED_LIBS)

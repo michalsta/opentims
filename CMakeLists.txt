@@ -126,13 +126,12 @@ if(OPENTIMS_BUILD_LIB)
         )
     endif()
 
-    file(GLOB_RECURSE _opentims_headers
-        "${OPENTIMS_SRC_DIR}/*.h"
-        "${OPENTIMS_SRC_DIR}/*.hpp"
-    )
-    install(FILES ${_opentims_headers}
+    install(DIRECTORY "${OPENTIMS_SRC_DIR}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/opentims++"
         COMPONENT Development
+        FILES_MATCHING
+            PATTERN "*.h"
+            PATTERN "*.hpp"
     )
 
     install(EXPORT opentimsTargets

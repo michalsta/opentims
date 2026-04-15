@@ -12,27 +12,32 @@ import sys
 
 import opentimspy.opentimspy_cpp as opentimspy_cpp
 
-libpath = ctypes.util.find_library("sqlite3")
+libpath = None
+
+if sys.platform == "win32":
+    # Prefer Python's own bundled sqlite3.dll over anything in PATH.
+    # ctypes.util.find_library searches PATH and may find a wrong-architecture
+    # DLL (e.g. AWS CLI ships an x64 sqlite3.dll that fails on ARM64 runners).
+    _python_dir = pathlib.Path(sys.executable).parent
+    for _candidate in [
+        _python_dir / "DLLs" / "sqlite3.dll",
+        _python_dir / "sqlite3.dll",
+    ]:
+        if _candidate.exists():
+            libpath = str(_candidate)
+            _sqlite3_backend = "Python bundled sqlite3: " + libpath
+            break
+
+if libpath is None:
+    libpath = ctypes.util.find_library("sqlite3")
+    if libpath is not None:
+        _sqlite3_backend = "System sqlite3 library: " + libpath
+
 if libpath is None:
     if "_sqlite3" in sys.builtin_module_names:
         # sqlite3 is statically compiled into the Python interpreter
         _sqlite3_backend = "Python builtin (static)"
         libpath = ""
-    elif sys.platform == "win32":
-        # ctypes.util.find_library may fail to locate Python's bundled sqlite3.dll
-        # on Windows ARM64; try common locations explicitly.
-        _python_dir = pathlib.Path(sys.executable).parent
-        for _candidate in [
-            _python_dir / "DLLs" / "sqlite3.dll",
-            _python_dir / "sqlite3.dll",
-        ]:
-            if _candidate.exists():
-                libpath = str(_candidate)
-                _sqlite3_backend = "Python bundled sqlite3: " + libpath
-                break
-        if libpath is None:
-            _sqlite3_backend = "Unknown (will use process handle)"
-            libpath = ""
     else:
         try:
             import _sqlite3
@@ -41,8 +46,6 @@ if libpath is None:
         except ImportError:
             _sqlite3_backend = "Unknown (fallback)"
             libpath = ""
-else:
-    _sqlite3_backend = "System sqlite3 library: " + libpath
 
 opentimspy_cpp.setup_sqlite_so(libpath)
 

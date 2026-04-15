@@ -55,6 +55,28 @@ pytest = ["pytest", "pandas"]
 [tool.pytest.ini_options]
 testpaths = ["pytest"]
 
+[tool.cibuildwheel]
+enable = ["pypy"]
+skip = ["cp36-*", "cp37-*", "cp38-*", "pp37-*"]
+test-command = "python -m pytest {project}/pytest"
+test-extras = ["pytest"]
+
+[tool.scikit-build.sdist]
+exclude = [
+    "pytest/",
+    "dist/",
+    ".github/",
+    ".vscode/",
+    ".pytest_cache/",
+    "reinstall.sh",
+    "scripts/",
+    "docs/",
+    "examples/",
+    "rdocs.R",
+    "speed.png",
+    "Makefile",
+]
+
 [tool.scikit-build]
 minimum-version = "0.7"
 wheel.packages = ["opentimspy"]

@@ -4,48 +4,31 @@ on:
   push:
     branches:
       - ci-test
+    tags:
+      - v*
   workflow_call:
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            arch: x86_64
-            cibw_skip: ""
-            cibw_arch: x86_64
-          - os: ubuntu-24.04-arm
-            arch: aarch64
-            cibw_skip: "pp*"
-            cibw_arch: aarch64
-          - os: windows-latest
-            arch: x86_64
-            cibw_skip: ""
-            cibw_arch: AMD64
-          - os: windows-11-arm
-            arch: arm64
-            cibw_skip: ""
-            cibw_arch: ARM64
-          - os: macos-15
-            arch: x86_64
-            cibw_skip: ""
-            cibw_arch: x86_64
-          - os: macos-latest
-            arch: arm64
-            cibw_skip: ""
-            cibw_arch: arm64
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           fetch-tags: true
 
       # Used to host cibuildwheel
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
 
       - name: Check version
         run: python .github/scripts/check_version.py
@@ -55,21 +38,17 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        # to supply options, put them in 'env', like:
-        # env:
-        #   CIBW_SOME_OPTION: value
         env:
-            #CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
           GITHUB_BUILDING_WHEELS: 1
-          CIBW_SKIP: ${{ matrix.cibw_skip }}
-          CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
-          CIBW_ARCHS_MACOS: ${{ matrix.cibw_arch }}
-          CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_arch }}
+          VERBOSE: 1
           MACOSX_DEPLOYMENT_TARGET: "10.13"
+          CIBW_ENABLE: "pypy"
+          CIBW_BUILD: "cp* pp*"
+          CIBW_SKIP: "cp39-win_arm64 cp310-win_arm64"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
   build_sdist:

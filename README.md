@@ -424,6 +424,82 @@ In C++ we offer several functions for the raw access to the data.
 To check out how to use the `C++` API, check a basic usage example [/examples/get_data.cpp](https://raw.githubusercontent.com/michalsta/opentims/master/examples/get_data.cpp),
 or the full documentation at [/docs/opentims++](https://michalsta.github.io/opentims/opentims++/html/)
 
+## Installing the C++ library
+
+The library is built with CMake and installs a shared or static library, headers, a CMake package config, and a pkg-config file.
+
+**Prerequisites:** CMake ≥ 3.15, a C++20-capable compiler (GCC ≥ 10, Clang ≥ 12, MSVC 2019+), and SQLite3 development headers (`libsqlite3-dev` on Debian/Ubuntu, `sqlite-devel` on Fedora/RHEL, `sqlite` on Homebrew).
+
+### System-wide install (shared library)
+
+Builds and installs to `/usr/local` (or the platform default). Requires `sudo` on Linux/macOS.
+
+```bash
+git clone https://github.com/michalsta/opentims
+cd opentims
+cmake -B build -DBUILD_SHARED_LIBS=ON
+cmake --build build -j$(nproc)
+sudo cmake --install build
+```
+
+The shared library links sqlite3 and zstd at build time, so consumers have no extra runtime dependencies.
+
+### Install into `~/.local` (no root required)
+
+```bash
+git clone https://github.com/michalsta/opentims
+cd opentims
+cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=~/.local
+cmake --build build -j$(nproc)
+cmake --install build
+```
+
+You may need to tell the linker where to find the library:
+
+```bash
+export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"   # Linux
+export DYLD_LIBRARY_PATH="$HOME/.local/lib:$DYLD_LIBRARY_PATH" # macOS
+```
+
+And tell pkg-config:
+
+```bash
+export PKG_CONFIG_PATH="$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH"
+```
+
+### Static library variant
+
+Omit `-DBUILD_SHARED_LIBS=ON` to build a static library. If you want sqlite3 linked into the archive (so consumers need no sqlite3 at link time), add `-DOPENTIMS_LINK_SQLITE_STATICALLY=ON`:
+
+```bash
+cmake -B build -DOPENTIMS_LINK_SQLITE_STATICALLY=ON -DCMAKE_INSTALL_PREFIX=~/.local
+cmake --build build -j$(nproc)
+cmake --install build
+```
+
+Without `-DOPENTIMS_LINK_SQLITE_STATICALLY=ON`, consumers must supply their own sqlite3 at link time (useful when embedding into a project that already bundles sqlite3, such as OpenMS).
+
+### Using the installed library in your CMake project
+
+After installation, link against `opentims::opentims_cpp` via `find_package`:
+
+```cmake
+find_package(opentims REQUIRED)
+target_link_libraries(my_target PRIVATE opentims::opentims_cpp)
+```
+
+If you installed to a non-standard prefix (e.g. `~/.local`), pass it to CMake:
+
+```bash
+cmake -B build -DCMAKE_PREFIX_PATH=~/.local
+```
+
+### Using pkg-config
+
+```bash
+pkg-config --cflags --libs opentims
+```
+
 
 
 # More options?

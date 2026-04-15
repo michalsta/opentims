@@ -14,14 +14,33 @@ import opentimspy.opentimspy_cpp as opentimspy_cpp
 
 libpath = ctypes.util.find_library("sqlite3")
 if libpath is None:
-    if not ("_sqlite3" in sys.builtin_module_names):
-        _sqlite3_backend = "Python builtin"
+    if "_sqlite3" in sys.builtin_module_names:
+        # sqlite3 is statically compiled into the Python interpreter
+        _sqlite3_backend = "Python builtin (static)"
         libpath = ""
+    elif sys.platform == "win32":
+        # ctypes.util.find_library may fail to locate Python's bundled sqlite3.dll
+        # on Windows ARM64; try common locations explicitly.
+        _python_dir = pathlib.Path(sys.executable).parent
+        for _candidate in [
+            _python_dir / "DLLs" / "sqlite3.dll",
+            _python_dir / "sqlite3.dll",
+        ]:
+            if _candidate.exists():
+                libpath = str(_candidate)
+                _sqlite3_backend = "Python bundled sqlite3: " + libpath
+                break
+        if libpath is None:
+            _sqlite3_backend = "Unknown (will use process handle)"
+            libpath = ""
     else:
-        import _sqlite3
-
-        libpath = _sqlite3.__file__
-        _sqlite3_backend = "Python's _sqlite3 module: " + libpath
+        try:
+            import _sqlite3
+            libpath = _sqlite3.__file__
+            _sqlite3_backend = "Python's _sqlite3 module: " + libpath
+        except ImportError:
+            _sqlite3_backend = "Unknown (fallback)"
+            libpath = ""
 else:
     _sqlite3_backend = "System sqlite3 library: " + libpath
 

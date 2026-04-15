@@ -520,6 +520,12 @@ CloseTIMS <- function(opentims){
 setup_bruker_so <- function(path) .setup_bruker_so(path)
 
 
+#' Use the built-in open-source tof-to-mz and scan-to-inv_ion_mobility converters.
+#'
+#' @export
+setup_opensource <- function() invisible(.setup_opensource())
+
+
 #' Set the number of threads to be used for data processing by OpenTIMS
 #'
 #' A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.

@@ -23,6 +23,10 @@ void setup_bruker_so(const Rcpp::String& path)
 }
 
 
+// [[Rcpp::export(.setup_opensource)]]
+void setup_opensource_r() { setup_opensource(); }
+
+
 // [[Rcpp::export]]
 Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res)
 {

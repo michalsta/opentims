@@ -34,4 +34,6 @@ LazyData: no
 LinkingTo: Rcpp
 NeedsCompilation: yes
 SystemRequirements: C++20
+Suggests:
+    testthat (>= 3.0.0)
 RoxygenNote: 7.1.2

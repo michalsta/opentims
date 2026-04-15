@@ -23,15 +23,7 @@
 
 #include "platform.h"
 #include "zstd/zstd.h"
-
-#ifdef OPENTIMS_BUILDING_R
-#include "mio.h"
-#include "opentimsr_types.h"
-#else
-#include "mio.hpp"
 #include "opentims.h"
-#endif
-
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
@@ -370,8 +362,8 @@ template<typename T> std::vector<T> braindead_r_extract_as_int(const SEXP& vec)
     }
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf) :
-TimsDataHandle(tims_data_dir)
+TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf, pressure_compensation_strategy pcs) :
+TimsDataHandle(tims_data_dir, pcs)
 {
 
     std::vector<uint32_t> ids = braindead_r_extract_as_int<uint32_t>(analysis_tdf("Id"));
@@ -395,7 +387,7 @@ TimsDataHandle(tims_data_dir)
                 *this));
     }
 
-    init();
+    init(pcs);
 }
 #endif
 

@@ -9,7 +9,7 @@
 #define STRICT_R_HEADERS
 #include <Rcpp.h>
 
-#include "opentimsr_types.h"
+#include "opentims.h"
 
 // adding default converters.
 #include "converters.h"

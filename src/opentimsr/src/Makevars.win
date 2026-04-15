@@ -1,0 +1,2 @@
+PKG_CPPFLAGS = -I. -I./opentims_core -DOPENTIMS_BUILDING_R
+CXX_STD = CXX20

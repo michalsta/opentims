@@ -7,12 +7,10 @@
 
 #include "scan2inv_ion_mobility_converter.h"
 
-#ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
-#endif
 
 std::unique_ptr<Scan2InvIonMobilityConverterFactory> DefaultScan2InvIonMobilityConverterFactory::fac_instance;
 
@@ -161,8 +159,6 @@ std::unique_ptr<Scan2InvIonMobilityConverter> DefaultScan2InvIonMobilityConverte
     return fac_instance->produce(TDH, pcs);
 }
 
-#ifndef OPENTIMS_BUILDING_R
-
 /*
  * OpenSourceScan2ImConverter implementation
  */
@@ -272,5 +268,3 @@ std::unique_ptr<Scan2InvIonMobilityConverter> OpenSourceScan2ImConverterFactory:
 
     return std::make_unique<OpenSourceScan2ImConverter>(meta.im_min, meta.im_max, scan_res.scan_max);
 }
-
-#endif // OPENTIMS_BUILDING_R

@@ -1,1 +1,1 @@
-#include "zstd/zstddeclib.c"
+#include "opentims_core/zstd/zstddeclib.c"

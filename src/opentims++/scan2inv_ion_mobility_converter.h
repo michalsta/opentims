@@ -123,8 +123,6 @@ class DefaultScan2InvIonMobilityConverterFactory final
     }
 };
 
-#ifndef OPENTIMS_BUILDING_R
-
 /**
  * Open-source scan-to-inverse-ion-mobility converter (linear model).
  *
@@ -160,5 +158,3 @@ public:
     std::unique_ptr<Scan2InvIonMobilityConverter> produce(TimsDataHandle& TDH,
         pressure_compensation_strategy pcs = NoPressureCompensation) override;
 };
-
-#endif // OPENTIMS_BUILDING_R

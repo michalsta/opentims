@@ -108,8 +108,6 @@ class DefaultTof2MzConverterFactory final
     }
 };
 
-#ifndef OPENTIMS_BUILDING_R
-
 /**
  * Open-source TOF-to-m/z converter using linear-in-sqrt calibration.
  *
@@ -151,5 +149,3 @@ public:
     std::unique_ptr<Tof2MzConverter> produce(TimsDataHandle& TDH,
         pressure_compensation_strategy pcs = NoPressureCompensation) override;
 };
-
-#endif // OPENTIMS_BUILDING_R

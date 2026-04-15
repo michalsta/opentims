@@ -7,12 +7,10 @@
 
 #include "tof2mz_converter.h"
 
-#ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
-#endif
 
 std::unique_ptr<Tof2MzConverterFactory> DefaultTof2MzConverterFactory::fac_instance;
 
@@ -153,8 +151,6 @@ std::unique_ptr<Tof2MzConverter> DefaultTof2MzConverterFactory::produceDefaultCo
     return fac_instance->produce(TDH, pcs);
 }
 
-#ifndef OPENTIMS_BUILDING_R
-
 /*
  * OpenSourceTof2MzConverter implementation
  */
@@ -266,5 +262,3 @@ std::unique_ptr<Tof2MzConverter> OpenSourceTof2MzConverterFactory::produce(
 
     return std::make_unique<OpenSourceTof2MzConverter>(meta.mz_min, meta.mz_max, meta.tof_max, meta.is_otof);
 }
-
-#endif // OPENTIMS_BUILDING_R

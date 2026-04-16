@@ -2,17 +2,11 @@ library(opentimsr)
 
 path = 'path/to/your/data.d'
 
-# Do you want to have access only to 'frame', 'scan', 'time of flight', and 'intensity'?
-accept_Bruker_EULA_and_on_Windows_or_Linux = TRUE
-
-if(accept_Bruker_EULA_and_on_Windows_or_Linux){
-    folder_to_stode_priopriatary_code = "/home/matteo"
-    path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
-    setup_bruker_so(path_to_bruker_dll)
-    all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-} else {
-    all_columns = c('frame','scan','tof','intensity','retention_time')
-}
+# Activate the built-in open-source converters to get mz and inv_ion_mobility.
+# Alternatively, call setup_bruker_so() with a path to Bruker's timsdata library
+# (Linux/Windows only) if you have it and accept Bruker's license terms.
+setup_opensource()
+all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
 D = OpenTIMS(path) # get data handle
 
@@ -136,7 +130,7 @@ pprint(X)
 # For this reasone, we have prepared a retention time based query:
 # suppose you are interested in all frames corresponding to all that eluted between 10 and 12
 # second of the experiment.
-pprint(rt_query(opentims, 10, 12))
+pprint(rt_query(D, 10, 12))  # seconds
 #   frame scan    tof intensity        mz inv_ion_mobility retention_time
 # 1    92   33 361758         9 1456.2835         1.601142        10.0869
 # 2    92   36  65738         9  222.2822         1.597716        10.0869
@@ -156,18 +150,18 @@ pprint(rt_query(opentims, 10, 12))
 
 # Simple access to 'analysis.tdf'? Sure:
 tables_names(D)
-#  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
-#  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     
-#  [5] "ErrorLog"                 "FrameMsMsInfo"           
-#  [7] "FrameProperties"          "Frames"                  
-#  [9] "GlobalMetadata"           "GroupProperties"         
-# [11] "MzCalibration"            "Properties"              
-# [13] "PropertyDefinitions"      "PropertyGroups"          
-# [15] "Segments"                 "TimsCalibration"         
- 
+#  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"
+#  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"
+#  [5] "ErrorLog"                 "FrameMsMsInfo"
+#  [7] "FrameProperties"          "Frames"
+#  [9] "GlobalMetadata"           "GroupProperties"
+# [11] "MzCalibration"            "Properties"
+# [13] "PropertyDefinitions"      "PropertyGroups"
+# [15] "Segments"                 "TimsCalibration"
 
-# Just choose a table now:
-table2df(D, 'TimsCalibration')
+
+# table2df returns a named list of data.frames:
+table2df(D, 'TimsCalibration')$TimsCalibration
 #   Id ModelType C0  C1       C2       C3 C4 C5           C6       C7       C8
 # 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
 #         C9

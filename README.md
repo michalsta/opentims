@@ -6,7 +6,7 @@ It comes with bindings to `Python` (through `opentimspy`) and `R` languages (thr
 In `Python`, we extract data into `NumPy` arrays that are optimized for speed and come with a universe of useful methods for their quick manipulation.
 In `R`, we extract data into the native `data.frame` object.
 
-With `OpenTIMS` you can access data contained in the `analysis.tdf_bin` file hapilly produced by your mass spectrometer of choice (as long as it is timsTOF Pro).
+With `OpenTIMS` you can access data contained in the `analysis.tdf_bin` file produced by your mass spectrometer of choice (as long as it is a timsTOF instrument).
 It also parses some of the information out of the `SQLite` data base contained in the `analysis.tdf` file.
 You should have both of these files in one folder to start using our software.
 
@@ -21,13 +21,12 @@ We have you covered! Check out the children projects [`TimsR`](https://github.co
 The software was tested on Linux, Windows, and MacOS.
 On Windows, install Microsoft Visual Studio from [here](https://visualstudio.microsoft.com/visual-cpp-build-tools/) to make use of C++ or Python code.
 On Linux, have `clang++` or `g++` installed (`clang` produces slightly faster code).
-Also, do make sure that a developper version of Python is installed.
-For instance, on Ubuntu, install Python with 
+Also, make sure a developer version of Python is installed.
+For instance, on Ubuntu:
 ```
-sudo apt install python3.8-dev
+sudo apt install python3-dev
 ```
-i.e. with the `-dev` version.
-This contains headers needed for pybind to work properly.
+The `-dev` package contains headers needed for pybind11 to work properly.
 On macOS, [install Xcode Command Line Tools](https://www.junian.net/dev/xcode-command-line-tools-installation-faq/).
 
 ## Python
@@ -36,17 +35,12 @@ From terminal (assuming you have python and pip included in the system PATH) wri
 ```bash
 pip install opentimspy
 ```
-We recommend also installing the opentims_bruker_bridge module, containing Bruker's proprietary conversion functions (Linux and Windows only). To do that, do:
+This gives you full access to all columns including `mz` and `inv_ion_mobility` via built-in open-source converters.
+If you prefer Bruker's proprietary conversion functions (Linux and Windows only), also install:
 ```bash
 pip install opentims_bruker_bridge
 ```
-
-**On Windows**: we have noticed issues with the numpy==1.19.4 due to changes in Intel's fmod function, unrelated to our work. 
-If you keep on experiencing these issues, install numpy==1.19.3.
-```bash
-pip uninstall numpy
-pip install numpy==1.19.3
-```
+When `opentims_bruker_bridge` is installed it is used automatically; otherwise the built-in open-source converters are used after calling `opentimspy.setup_opensource()`.
 
 ## R
 
@@ -59,7 +53,7 @@ or using devtools
 install.packages('devtools')
 library(devtools)
 
-install_github("michalsta/opentims", subdir="opentimsr")
+install_github("michalsta/opentims", subdir="src/opentimsr")
 ```
 On Windows the last command might give you a warning about tar stopping with non-zero exit code. It's safe to ignore.
 
@@ -68,7 +62,7 @@ If that does not work, first clone the repository and then install manually with
 ```bash
 git clone https://github.com/michalsta/opentims
 cd opentims
-R CMD build opentimsr
+R CMD build src/opentimsr
 R CMD INSTALL opentimsr_*.tar.gz
 ```
 On windows, replace `R` with `R.exe`.
@@ -85,28 +79,29 @@ The resulting automatic API documentation is available [here](https://michalsta.
 import pathlib
 from pprint import pprint
 
-from opentimspy.opentims import OpenTIMS
+import opentimspy
+from opentimspy import OpenTIMS
+
+# If opentims_bruker_bridge is installed, Bruker's conversion functions are used
+# automatically. Otherwise, activate the built-in open-source converters:
+if not opentimspy.bruker_bridge_present:
+    opentimspy.setup_opensource()
+
+all_columns = ('frame', 'scan', 'tof', 'intensity', 'mz', 'inv_ion_mobility', 'retention_time')
 
 path = pathlib.Path('path_to_your_data.d')
-D = OpenTIMS(path) # get data handle
+with OpenTIMS(path) as D:  # use as a context manager to ensure the handle is closed
+    pass
+
+D = OpenTIMS(path) # or open without context manager
 print(D)
-# OpenTIMS(404183877 peaks)
+# OpenTIMS(404_183_877 peaks)
 
 print(len(D)) # The number of peaks.
-# 404183877 
+# 404183877
 
 D.framesTIC() # Return combined intensity for each frame.
 # array([ 95910, 579150, 906718, ..., 406317,   8093,   8629])
-
-
-try:
-    import opentims_bruker_bridge
-    all_columns = ('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-except ModuleNotFoundError:
-    print("Without Bruker proprietary code we cannot yet perform tof-mz and scan-dt transformations.")
-    print("Download 'opentims_bruker_bridge' if you are on Linux or Windows.")
-    print("Otherwise, you will be able to use only these columns:")
-    all_columns = ('frame','scan','tof','intensity','retention_time')
 
 
 # We consider the following columns:
@@ -243,20 +238,13 @@ For a detailed documentation of the `R` package, consult the [CRAN webpage of th
 ```R
 library(opentimsr)
 
-# path = pathlib.Path('path_to_your_data.d')
-path = "/home/matteo/Projects/bruker/BrukerMIDIA/MIDIA_CE10_precursor/20190912_HeLa_Bruker_TEN_MIDIA_200ng_CE10_100ms_Slot1-9_1_488.d"
+path = "/path/to/your/data.d"
 
-# Do you want to have access only to 'frame', 'scan', 'time of flight', and 'intensity'?
-accept_Bruker_EULA_and_on_Windows_or_Linux = TRUE
-
-if(accept_Bruker_EULA_and_on_Windows_or_Linux){
-    folder_to_stode_priopriatary_code = "/home/matteo"
-    path_to_bruker_dll = download_bruker_proprietary_code(folder_to_stode_priopriatary_code)
-    setup_bruker_so(path_to_bruker_dll)
-    all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-} else {
-    all_columns = c('frame','scan','tof','intensity','retention_time')
-}
+# Activate the built-in open-source converters to get mz and inv_ion_mobility.
+# Alternatively, call setup_bruker_so() with a path to Bruker's timsdata library
+# (Linux/Windows only) if you have it and accept Bruker's license terms.
+setup_opensource()
+all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
 D = OpenTIMS(path) # get data handle
 D@all_columns
@@ -288,7 +276,7 @@ pprint(query(D, frames=c(1,5,67), columns=all_columns))
 
 
 
-# Get a dict with each 10th frame, starting from frame 2, finishing on frame 1000.   
+# Get a data.frame with each 10th frame, starting from frame 2, finishing on frame 1000.
 pprint(query(D, frames=seq(2,1000,10), columns=all_columns))
 #   frame scan    tof intensity        mz inv_ion_mobility retention_time
 # 1     2   33  97298         9  302.3477         1.601142      0.4347063
@@ -307,11 +295,11 @@ pprint(query(D, frames=seq(2,1000,10), columns=all_columns))
 
 
 
-# Get all MS1 frames 
+# Get all MS1 frames
 # print(query(D, frames=MS1(D)))
-# ATTENTION: that's quite a lot of data!!! And R will first make a stupid copy, because it's bad. You might exceed your RAM.
+# ATTENTION: that's quite a lot of data - you might exceed your RAM.
 
-# Getting subset of columns: simply specify 'columns':
+# Getting a subset of columns is easy - just specify 'columns':
 pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 #   scan intensity
 # 1   33         9
@@ -327,17 +315,10 @@ pprint(query(D, frames=c(1,5,67), columns=c('scan','intensity')))
 # 224735  917        19
 # 224736  917        57
 # 224737  917        95
-# 
-# this is also the only way to get data without accepting Bruker terms of service and on MacOS (for time being).
 
 
-# The frame lasts a convenient time unit that well suits chromatography peak elution.
-# What if you were interested instead in finding out which frames eluted in a given time 
-# time of the experiment?
-# For this reasone, we have prepared a retention time based query:
-# suppose you are interested in all frames corresponding to all that eluted between 10 and 12
-# second of the experiment.
-pprint(rt_query(D, 10, 12))
+# Retention time based query (time in seconds):
+pprint(rt_query(D, 10, 12))  # seconds
 #   frame scan    tof intensity        mz inv_ion_mobility retention_time
 # 1    92   33 361758         9 1456.2835         1.601142        10.0869
 # 2    92   36  65738         9  222.2822         1.597716        10.0869
@@ -354,16 +335,14 @@ pprint(rt_query(D, 10, 12))
 # 128134   109  917 373182         9 1525.5765        0.6007742       11.91001
 
 
-# R has no proper in-built iterators :(
-
 # All MS1 frames, but one at a time:
 for(fr in MS1(D)){
     print(query(D, fr, columns=all_columns))
 }
 
 
-# Syntactic sugar: only the real bruker data can also be extracted this way:
-pprint(head(D[100])) 
+# Bracket indexing extracts raw data (frame, scan, tof, intensity):
+pprint(head(D[100]))
 #   frame scan    tof intensity
 # 1   100   35 389679         9
 # 2   100   35 394578         9
@@ -398,7 +377,7 @@ pprint(X)
 # 3331319   200  911 146843         9
 
 
-# Simple access to 'analysis.bin'? Sure:
+# Simple access to 'analysis.tdf'? Sure:
 tables_names(D)
 #  [1] "CalibrationInfo"          "DiaFrameMsMsInfo"        
 #  [3] "DiaFrameMsMsWindowGroups" "DiaFrameMsMsWindows"     
@@ -410,8 +389,8 @@ tables_names(D)
 # [15] "Segments"                 "TimsCalibration"         
  
 
-# Just choose a table now:
-table2df(D, 'TimsCalibration')
+# Just choose a table now (returns a named list of data.frames):
+table2df(D, 'TimsCalibration')$TimsCalibration
 #   Id ModelType C0  C1       C2       C3 C4 C5           C6       C7       C8
 # 1  1         2  1 917 213.5998 75.81729 33  1 -0.009065829 135.4364 13.32608
 #         C9
@@ -509,17 +488,11 @@ Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://git
 # Development
 We will be happy to accept any contributions.
 
-# Current limitations
-Due to patent restrictions, open source calibration functions used by Bruker cannot be revealed.
-For this reason, we have to use the original Bruker TDF-SDK for time of flight to mass over charge and scan to inverse ion mobility transformations.
-To make it as easy at can be, we have prepared a `Python` module called [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) that ships the necessary `dll` and `so` files.
-Please visit the project and follow language-specific instructions for its installation.
+# Notes on conversion accuracy
 
-# Plans for future
-
-* Together with Bruker we are working on opening up the tof-mz and scan-dt conversions which is scheduled for the next release of the acquisition software.
-* This way fully open source access will be available on all of the commonly used platforms.
-* Adding bindings to other languages.
+OpenTIMS ships built-in open-source converters for tof→m/z and scan→inverse ion mobility, enabled via `setup_opensource()` in both Python and R.
+These are derived from the acquisition metadata and are suitable for most use cases.
+Bruker's proprietary conversion functions (available via [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) on Linux and Windows) may give slightly more accurate results in some edge cases; they are used automatically when available.
 
 ## Licence
 
@@ -532,65 +505,11 @@ OpenTIMS contains built-in versions of the following software:
 - mio, MIT licence
 
 See the respective files for details.
-Consider [TimsPy](https://github.com/MatteoLacki/opentims_bruker_bridge) for Bruker proprietary time of flight to mass to charge ratio and scan to drift time transformations, which are shipped under separate license. 
+The [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) module ships Bruker's proprietary tof→m/z and scan→drift time conversion binaries under a separate license.
 
 If the above license terms do not suit you, please contact us.
 We are open to discussion about your particular licensing needs.
 
 ## Special thanks
 We would like to thank Michael Krause, Sascha Winter, and Sven Brehmer, all from Bruker Daltonik GmbH, for their magnificent work in developing tfd-sdk.
-
-
-## Knowns Issues:
-
-### *pybind11* causes an error upon installation:
-
-```bash
-  Building wheel for opentimspy (setup.py) ... error
-  ERROR: Command errored out with exit status 1:
-   command: /home/matteo/Projects/opentims/timspy/timspyVE/bin/python -u -c 'import sys, setuptools, tokenize; sys.argv[0] = '"'"'/tmp/pip-req-build-06parpqo/setup.py'"'"'; __file__='"'"'/tmp/pip-req-build-06parpqo/setup.py'"'"';f=getattr(tokenize, '"'"'open'"'"', open)(__file__);code=f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, __file__, '"'"'exec'"'"'))' bdist_wheel -d /tmp/pip-wheel-rq1ll2m4
-       cwd: /tmp/pip-req-build-06parpqo/
-  Complete output (11 lines):
-  running bdist_wheel
-  running build
-  running build_py
-  creating build
-  creating build/lib.linux-x86_64-3.8
-  creating build/lib.linux-x86_64-3.8/opentimspy
-  copying opentimspy/opentims.py -> build/lib.linux-x86_64-3.8/opentimspy
-  copying opentimspy/__init__.py -> build/lib.linux-x86_64-3.8/opentimspy
-  running build_ext
-  building 'opentimspy_support' extension
-  pybind11 not found. Please either install it manually, or install via pip rather than through setuptools directly.
-  ----------------------------------------
-  ERROR: Failed building wheel for opentimspy
-```
-
-Ignore it: it is pip-related and does not influence the intallation.
-
-### R function rt_query
-
-If you see error:
-`Error in col[1] : object of type 'closure' is not subsettable`
-then interpret the following set of functions:
-```R
-get_left_frame = function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
-get_right_frame = function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
-
-rt_query = function(opentims,
-                    min_retention_time,
-                    max_retention_time,
-                    columns=c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
-){
-  RTS = retention_times(opentims)
-  
-  min_frame = get_left_frame(min_retention_time, RTS)
-  max_frame = get_right_frame(max_retention_time, RTS)
-  
-  if(is.na(min_frame) | is.na(max_frame))
-    stop("The [min_retention_time,max_retention_time] interval does not hold any data.")
-  
-  query(opentims, min_frame:max_frame, columns=columns)
-}
-```
 

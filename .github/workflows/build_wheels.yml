@@ -45,7 +45,7 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: "10.13"
           CIBW_ENABLE: "pypy"
           CIBW_BUILD: "cp* pp*"
-          CIBW_SKIP: "cp39-win_arm64 cp310-win_arm64"
+          CIBW_SKIP: "cp36* cp37* cp38* cp39* pp36* pp37* pp38* pp39* cp310-win_arm64"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -97,6 +97,10 @@ jobs:
         with:
           r-version: release
 
+      - name: Install libuv-dev (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y libuv1-dev
+
       - name: Install R dependencies
         shell: Rscript {0}
         run: |

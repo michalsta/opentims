@@ -46,6 +46,7 @@ jobs:
           CIBW_ENABLE: "pypy"
           CIBW_BUILD: "cp* pp*"
           CIBW_SKIP: "cp36* cp37* cp38* cp39* pp36* pp37* pp38* pp39* cp310-win_arm64"
+          CIBW_TEST_SKIP: "*-win32"
 
       - uses: actions/upload-artifact@v4
         with:

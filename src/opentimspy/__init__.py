@@ -17,11 +17,17 @@ libpath = None
 if sys.platform == "win32":
     # Prefer Python's own bundled sqlite3.dll over anything in PATH.
     # ctypes.util.find_library searches PATH and may find a wrong-architecture
-    # DLL (e.g. AWS CLI ships an x64 sqlite3.dll that fails on ARM64 runners).
+    # DLL (e.g. AWS CLI ships an x64 sqlite3.dll that fails on 32-bit runners,
+    # error 193). When running inside a virtualenv sys.executable points to the
+    # venv Scripts dir which has no DLLs subdir, so also check sys.base_prefix
+    # (the base interpreter that created the venv).
     _python_dir = pathlib.Path(sys.executable).parent
+    _base_dir = pathlib.Path(sys.base_prefix)
     for _candidate in [
         _python_dir / "DLLs" / "sqlite3.dll",
         _python_dir / "sqlite3.dll",
+        _base_dir / "DLLs" / "sqlite3.dll",
+        _base_dir / "sqlite3.dll",
     ]:
         if _candidate.exists():
             libpath = str(_candidate)

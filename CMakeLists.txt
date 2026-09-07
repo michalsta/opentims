@@ -33,12 +33,25 @@ set(OPENTIMS_CPP_SOURCES
 )
 
 # Apply standard compile options to a target.
+#
+# Optimization flags are gated on config with generator expressions rather than
+# applied unconditionally: MSVC's Debug flags include /RTC1, which the compiler
+# rejects alongside any /O flag, and an unconditional -O3 defeats the point of a
+# Debug build on GCC/Clang (it overrides the -O0 from CMAKE_CXX_FLAGS_DEBUG).
+# Release/RelWithDebInfo already carry /O2 (MSVC) or -O2 (GCC/Clang) by default;
+# here we bump GCC/Clang to -O3 for every non-Debug config, including the
+# no-build-type case. A generator expression is also required (not an
+# if(CMAKE_BUILD_TYPE ...) test) because the Visual Studio generator is
+# multi-config and picks the config per build, not at configure time.
 macro(opentims_compile_options _target)
     target_compile_features(${_target} PRIVATE cxx_std_20)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        target_compile_options(${_target} PRIVATE -O3 -g -Wall -Wextra)
+        target_compile_options(${_target} PRIVATE
+            -g -Wall -Wextra
+            $<$<NOT:$<CONFIG:Debug>>:-O3>)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_compile_options(${_target} PRIVATE /O2)
+        target_compile_options(${_target} PRIVATE
+            $<$<NOT:$<CONFIG:Debug>>:/O2>)
         target_compile_definitions(${_target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     endif()
 endmacro()
@@ -222,12 +235,7 @@ if(OPENTIMS_BUILD_PYTHON)
         target_link_libraries(opentimspy_cpp PRIVATE pthread dl)
     endif()
 
-    target_compile_features(opentimspy_cpp PRIVATE cxx_std_20)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        target_compile_options(opentimspy_cpp PRIVATE -O3 -g -Wall -Wextra)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_compile_options(opentimspy_cpp PRIVATE /O2)
-    endif()
+    opentims_compile_options(opentimspy_cpp)
 
     target_include_directories(opentimspy_cpp
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/opentims++"

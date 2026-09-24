@@ -301,6 +301,7 @@ class OpenTIMS:
         self,
         frames: FRAMES_TYPE = None,
         columns: COLUMNS_TYPE | dict[str, npt.NDArray] = all_columns,
+        _sanitize: bool = True,
     ):
         """Get data from a selection of frames.
 
@@ -325,7 +326,7 @@ class OpenTIMS:
             size = self.peaks_per_frame_cnts(frames, convert=False)
             arrays = (
                 self._sanitize_user_provided_arrays(size, columns)
-                if isinstance(columns, dict)
+                if isinstance(columns, dict) and _sanitize
                 else self._get_empty_arrays(size, columns)
             )
 

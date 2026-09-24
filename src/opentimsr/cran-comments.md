@@ -17,6 +17,9 @@ This version addresses both points:
   holder, and its copyright notice and license text are reproduced in
   inst/COPYRIGHTS (referenced from the Copyright field in DESCRIPTION).
 
+The maintainer has changed from Michał Piotr Startek to Mateusz Krzysztof
+Łącki, as agreed between the two authors.
+
 Other changes: all examples now run on a small dataset shipped in
 inst/extdata, except the two that download Bruker's proprietary library.
 

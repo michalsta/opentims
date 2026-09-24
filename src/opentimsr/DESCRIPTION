@@ -7,18 +7,19 @@ Date: 2026-09-24
 Authors@R:
     c(person(given="Michał Piotr",
              family="Startek",
-             role=c("aut","cre","cph"),
+             role=c("aut","cph"),
              email="michal.startek@mimuw.edu.pl",
              comment=c(ORCID="0000-0001-5227-3447")),
       person(given="Mateusz Krzysztof",
              family="Łącki",
-             role=c("aut","cph"),
+             role=c("aut","cre","cph"),
+             email="matteo.lacki@gmail.com",
              comment=c(ORCID="0000-0001-7415-4748")),
       person(given="mandreyel",
              role=c("ctb","cph"),
              comment="Author and copyright holder of the bundled 'mio' library (https://github.com/mandreyel/mio)")
     )
-Maintainer: Michał Piotr Startek <michal.startek@mimuw.edu.pl>
+Maintainer: Mateusz Krzysztof Łącki <matteo.lacki@gmail.com>
 Description: Reads raw data from Bruker's 'timsTOF' mass spectrometers,
     stored in 'analysis.tdf' and 'analysis.tdf_bin' files inside '.d' folders.
     Frames can be selected by number or by retention time, and each peak is

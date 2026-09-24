@@ -7,7 +7,9 @@
 
 #include "tof2mz_converter.h"
 
+#ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
+#endif
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
@@ -248,13 +250,21 @@ std::unique_ptr<Tof2MzConverter> OpenSourceTof2MzConverterFactory::produce(
             "Use Bruker's proprietary library for pressure compensation, or disable it.");
 
     std::string tdf_path = TDH.get_tims_dir_path() + "/analysis.tdf";
-    RAIISqlite db(tdf_path);
 
     Tof2MzMetadata meta;
+#ifdef OPENTIMS_BUILDING_R
+    for (const auto& [key, value] : TDH.get_global_metadata())
+    {
+        char* row[2] = {const_cast<char*>(key.c_str()), const_cast<char*>(value.c_str())};
+        tof2mz_metadata_callback(&meta, 2, row, nullptr);
+    }
+#else
+    RAIISqlite db(tdf_path);
     db.query(
         "SELECT Key, Value FROM GlobalMetadata "
         "WHERE Key IN ('MzAcqRangeLower','MzAcqRangeUpper','DigitizerNumSamples','AcquisitionSoftware')",
         tof2mz_metadata_callback, &meta);
+#endif
 
     if (meta.mz_min <= 0 || meta.mz_max <= meta.mz_min || meta.tof_max == 0)
         throw std::runtime_error(

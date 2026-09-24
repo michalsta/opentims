@@ -28,10 +28,13 @@ void setup_opensource_r() { setup_opensource(); }
 
 
 // [[Rcpp::export]]
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res)
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d,
+                                     const Rcpp::List& sql_res,
+                                     const Rcpp::CharacterVector& metadata_keys,
+                                     const Rcpp::CharacterVector& metadata_values)
 {
     TimsDataHandle* p; 
-    p = new TimsDataHandle(path_d, sql_res);
+    p = new TimsDataHandle(path_d, sql_res, metadata_keys, metadata_values);
     return Rcpp::XPtr<TimsDataHandle>(p, true);
 }
 

@@ -27,7 +27,9 @@
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
+#ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
+#endif
 
 TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _num_scans,
@@ -245,18 +247,23 @@ int tims_sql_callback(void* out, [[maybe_unused]] int cols, char** row, char**)
     return 0;
 }
 
+void check_compression_type(const char* compression_type)
+{
+    if(atoi(compression_type) != 2)
+    {
+        std::string error_msg = "Compression algorithm used in your TDF dataset: ";
+        error_msg += compression_type;
+        error_msg += " is not (yet) supported by OpenTIMS. Right now only algorithm 2 (zstd) is supported.";
+        throw std::runtime_error(error_msg);
+    }
+}
+
 int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
 {
     assert(cols == 1);
     assert(row != NULL);
     assert(row[0] != NULL);
-    if(atoi(row[0]) != 2)
-    {
-        std::string error_msg = "Compression algorithm used in your TDF dataset: ";
-        error_msg += row[0];
-        error_msg += " is not (yet) supported by OpenTIMS. Right now only algorithm 2 (zstd) is supported.";
-        throw std::runtime_error(error_msg);
-    }
+    check_compression_type(row[0]);
     return 0;
 }
 
@@ -314,8 +321,11 @@ TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
-#endif
     init(pcs, tof_factory, im_factory);
+#else
+    // R builds: the R-side constructor fills frames and metadata first, then calls init() itself.
+    (void)tims_tdf_path; (void)pcs; (void)tof_factory; (void)im_factory;
+#endif
 }
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, pressure_compensation_strategy pcs, Tof2MzConverterFactory* tof_factory, Scan2InvIonMobilityConverterFactory* im_factory)
@@ -362,9 +372,23 @@ template<typename T> std::vector<T> braindead_r_extract_as_int(const SEXP& vec)
     }
 }
 
-TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf, pressure_compensation_strategy pcs) :
+TimsDataHandle::TimsDataHandle(const std::string& tims_data_dir,
+                               const Rcpp::List& analysis_tdf,
+                               const Rcpp::CharacterVector& metadata_keys,
+                               const Rcpp::CharacterVector& metadata_values,
+                               pressure_compensation_strategy pcs) :
 TimsDataHandle(tims_data_dir, pcs)
 {
+    for(R_xlen_t ii = 0; ii < metadata_keys.size(); ii++)
+    {
+        if(Rcpp::CharacterVector::is_na(metadata_keys[ii]) || Rcpp::CharacterVector::is_na(metadata_values[ii]))
+            continue;
+        global_metadata.emplace_back(Rcpp::as<std::string>(metadata_keys[ii]), Rcpp::as<std::string>(metadata_values[ii]));
+    }
+
+    for(const auto& [key, value] : global_metadata)
+        if(key == "TimsCompressionType")
+            check_compression_type(value.c_str());
 
     std::vector<uint32_t> ids = braindead_r_extract_as_int<uint32_t>(analysis_tdf("Id"));
     std::vector<uint32_t> num_scans = braindead_r_extract_as_int<uint32_t>(analysis_tdf("NumScans"));

@@ -7,7 +7,10 @@
 
 #include "scan2inv_ion_mobility_converter.h"
 
+#ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
+#endif
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
@@ -231,6 +234,7 @@ struct ScanMaxResult
     uint32_t scan_max = 0;
 };
 
+#ifndef OPENTIMS_BUILDING_R
 int scan_max_callback(void* out, int cols, char** row, char** colnames)
 {
     (void)cols;
@@ -240,6 +244,7 @@ int scan_max_callback(void* out, int cols, char** row, char** colnames)
         res->scan_max = static_cast<uint32_t>(std::atol(row[0]));
     return 0;
 }
+#endif
 } // anonymous namespace
 
 std::unique_ptr<Scan2InvIonMobilityConverter> OpenSourceScan2ImConverterFactory::produce(
@@ -251,16 +256,25 @@ std::unique_ptr<Scan2InvIonMobilityConverter> OpenSourceScan2ImConverterFactory:
             "Use Bruker's proprietary library for pressure compensation, or disable it.");
 
     std::string tdf_path = TDH.get_tims_dir_path() + "/analysis.tdf";
-    RAIISqlite db(tdf_path);
-
     Scan2ImMetadata meta;
+    ScanMaxResult scan_res;
+#ifdef OPENTIMS_BUILDING_R
+    for (const auto& [key, value] : TDH.get_global_metadata())
+    {
+        char* row[2] = {const_cast<char*>(key.c_str()), const_cast<char*>(value.c_str())};
+        scan2im_metadata_callback(&meta, 2, row, nullptr);
+    }
+    for (const auto& [frame_id, frame] : TDH.get_frame_descs())
+        scan_res.scan_max = (std::max)(scan_res.scan_max, frame.num_scans);
+#else
+    RAIISqlite db(tdf_path);
     db.query(
         "SELECT Key, Value FROM GlobalMetadata "
         "WHERE Key IN ('OneOverK0AcqRangeLower','OneOverK0AcqRangeUpper')",
         scan2im_metadata_callback, &meta);
 
-    ScanMaxResult scan_res;
     db.query("SELECT MAX(NumScans) FROM Frames", scan_max_callback, &scan_res);
+#endif
 
     if (meta.im_min <= 0 || meta.im_max <= meta.im_min || scan_res.scan_max == 0)
         throw std::runtime_error(

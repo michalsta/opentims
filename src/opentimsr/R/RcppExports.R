@@ -9,8 +9,8 @@
     invisible(.Call('_opentimsr_setup_opensource_r', PACKAGE = 'opentimsr'))
 }
 
-tdf_open <- function(path_d, sql_res) {
-    .Call('_opentimsr_tdf_open', PACKAGE = 'opentimsr', path_d, sql_res)
+tdf_open <- function(path_d, sql_res, metadata_keys, metadata_values) {
+    .Call('_opentimsr_tdf_open', PACKAGE = 'opentimsr', path_d, sql_res, metadata_keys, metadata_values)
 }
 
 tdf_close <- function(tdf) {

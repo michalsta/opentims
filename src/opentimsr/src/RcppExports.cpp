@@ -31,14 +31,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_open
-Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res);
-RcppExport SEXP _opentimsr_tdf_open(SEXP path_dSEXP, SEXP sql_resSEXP) {
+Rcpp::XPtr<TimsDataHandle> tdf_open(const Rcpp::String& path_d, const Rcpp::List& sql_res, const Rcpp::CharacterVector& metadata_keys, const Rcpp::CharacterVector& metadata_values);
+RcppExport SEXP _opentimsr_tdf_open(SEXP path_dSEXP, SEXP sql_resSEXP, SEXP metadata_keysSEXP, SEXP metadata_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::String& >::type path_d(path_dSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sql_res(sql_resSEXP);
-    rcpp_result_gen = Rcpp::wrap(tdf_open(path_d, sql_res));
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type metadata_keys(metadata_keysSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type metadata_values(metadata_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_open(path_d, sql_res, metadata_keys, metadata_values));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -178,7 +180,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_setup_bruker_so", (DL_FUNC) &_opentimsr_setup_bruker_so, 1},
     {"_opentimsr_setup_opensource_r", (DL_FUNC) &_opentimsr_setup_opensource_r, 0},
-    {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 2},
+    {"_opentimsr_tdf_open", (DL_FUNC) &_opentimsr_tdf_open, 4},
     {"_opentimsr_tdf_close", (DL_FUNC) &_opentimsr_tdf_close, 1},
     {"_opentimsr_tdf_min_frame_id", (DL_FUNC) &_opentimsr_tdf_min_frame_id, 1},
     {"_opentimsr_tdf_max_frame_id", (DL_FUNC) &_opentimsr_tdf_max_frame_id, 1},

@@ -218,6 +218,8 @@ private:
 
 #ifdef OPENTIMS_BUILDING_R
     void* setupFromAnalysisList(const Rcpp::List& analysis_tdf);
+    // GlobalMetadata (Key, Value) rows, read on the R side; replaces SQL queries in R builds.
+    std::vector<std::pair<std::string, std::string>> global_metadata;
 #endif /* OPENTIMS_BUILDING_R */
 
     TimsDataHandle(const std::string& tims_tdf_bin_path,
@@ -248,7 +250,13 @@ public:
 
 #ifdef OPENTIMS_BUILDING_R
     //! Internal use only.
-    TimsDataHandle(const std::string& tims_data_dir, const Rcpp::List& analysis_tdf, pressure_compensation_strategy pcs = NoPressureCompensation);
+    TimsDataHandle(const std::string& tims_data_dir,
+                   const Rcpp::List& analysis_tdf,
+                   const Rcpp::CharacterVector& metadata_keys,
+                   const Rcpp::CharacterVector& metadata_values,
+                   pressure_compensation_strategy pcs = NoPressureCompensation);
+
+    const std::vector<std::pair<std::string, std::string>>& get_global_metadata() const { return global_metadata; };
 #endif /* OPENTIMS_BUILDING_R */
 
     //! Close and deallocate the TimsTOF data handle (destructor).

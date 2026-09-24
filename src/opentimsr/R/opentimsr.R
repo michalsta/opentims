@@ -182,8 +182,8 @@ OpenTIMS <- function(path.d){
     on.exit(DBI::dbDisconnect(sql_conn))
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     GlobalMetadata = DBI::dbReadTable(sql_conn, 'GlobalMetadata')
+    handle = tdf_open(path.d, frames, GlobalMetadata$Key, GlobalMetadata$Value)
     GlobalMetadata = array(GlobalMetadata$Value, dimnames=list(GlobalMetadata$Key))
-    handle = tdf_open(path.d, frames)
 
     ## Extracting basic info on the limits of reported measurements.
     ## Does not include TOF index

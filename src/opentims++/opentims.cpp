@@ -22,7 +22,11 @@
 
 
 #include "platform.h"
+#ifdef OPENTIMS_BUILDING_R
+#include <zstd.h>
+#else
 #include "zstd/zstd.h"
+#endif
 #include "opentims.h"
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"

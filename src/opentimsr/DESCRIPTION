@@ -33,7 +33,7 @@ Imports:
 LazyData: no
 LinkingTo: Rcpp
 NeedsCompilation: yes
-SystemRequirements: C++20
+SystemRequirements: C++20, libzstd
 Suggests:
     testthat (>= 3.0.0)
 RoxygenNote: 7.1.2

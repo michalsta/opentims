@@ -1,0 +1,54 @@
+#!/bin/sh
+# Locate the system zstd library and write src/Makevars.
+# Override detection by setting ZSTD_CFLAGS and/or ZSTD_LIBS.
+
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+CC=`"${R_HOME}/bin/R" CMD config CC`
+CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
+CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
+LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
+
+if test -z "${ZSTD_CFLAGS}${ZSTD_LIBS}"; then
+  if pkg-config --exists libzstd 2>/dev/null; then
+    ZSTD_CFLAGS=`pkg-config --cflags libzstd`
+    ZSTD_LIBS=`pkg-config --libs libzstd`
+  else
+    ZSTD_LIBS="-lzstd"
+  fi
+fi
+
+echo "Using ZSTD_CFLAGS=${ZSTD_CFLAGS}"
+echo "Using ZSTD_LIBS=${ZSTD_LIBS}"
+
+cat > conftest.c <<EOF
+#include <zstd.h>
+int main(void)
+{
+    ZSTD_DCtx* ctx = ZSTD_createDCtx();
+    ZSTD_freeDCtx(ctx);
+    return 0;
+}
+EOF
+
+if ${CC} ${CPPFLAGS} ${ZSTD_CFLAGS} ${CFLAGS} conftest.c -o conftest ${LDFLAGS} ${ZSTD_LIBS} >/dev/null 2>&1; then
+  rm -f conftest.c conftest
+else
+  rm -f conftest.c conftest
+  echo "------------------------------------------------------------------"
+  echo "ERROR: the zstd library was not found."
+  echo "Install it, e.g.:"
+  echo "  Debian/Ubuntu: sudo apt install libzstd-dev"
+  echo "  Fedora/RHEL:   sudo dnf install libzstd-devel"
+  echo "  macOS:         brew install zstd"
+  echo "or set ZSTD_CFLAGS and ZSTD_LIBS to point at an existing installation."
+  echo "------------------------------------------------------------------"
+  exit 1
+fi
+
+sed -e "s|@ZSTD_CFLAGS@|${ZSTD_CFLAGS}|" \
+    -e "s|@ZSTD_LIBS@|${ZSTD_LIBS}|" \
+    src/Makevars.in > src/Makevars

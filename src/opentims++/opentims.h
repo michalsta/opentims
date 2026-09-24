@@ -25,7 +25,11 @@
 #endif
 #endif
 
+#ifdef OPENTIMS_BUILDING_R
+#include <zstd.h>
+#else
 #include "zstd/zstd.h"
+#endif
 
 
 #ifdef OPENTIMS_BUILDING_R

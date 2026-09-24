@@ -176,7 +176,9 @@ tables_names <- function(opentims){
 #' @importFrom methods new
 #' @export
 OpenTIMS <- function(path.d){
-    # getting tables from SQlite 
+    # C++ side does not expand '~' nor resolve relative paths.
+    path.d = normalizePath(path.d, mustWork=TRUE)
+    # getting tables from SQlite
     analysis.tdf = file.path(path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
     on.exit(DBI::dbDisconnect(sql_conn))

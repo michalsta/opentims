@@ -124,3 +124,7 @@ test_that("table2df returns the Frames table", {
 })
 
 CloseTIMS(D)
+
+test_that("OpenTIMS rejects a missing folder", {
+  expect_error(OpenTIMS(file.path(tempdir(), "no_such_folder.d")), "no_such_folder.d", fixed = TRUE)
+})

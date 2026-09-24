@@ -44,6 +44,25 @@ When `opentims_bruker_bridge` is installed it is used automatically; otherwise t
 
 ## R
 
+### System requirements
+
+`opentimsr` links against the system [zstd](https://github.com/facebook/zstd) library.
+Installing from source (e.g. from GitHub, or from CRAN on Linux) needs zstd with its development headers:
+```bash
+sudo apt install libzstd-dev         # Debian/Ubuntu
+sudo dnf install libzstd-devel       # Fedora/RHEL
+brew install zstd pkg-config         # macOS (Homebrew)
+```
+On Windows, zstd comes with [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which is needed to build any R package from source.
+Binary packages from CRAN (Windows and macOS) need nothing extra.
+
+If zstd is installed in a non-standard location, point the build at it:
+```bash
+ZSTD_CFLAGS="-I/path/to/include" ZSTD_LIBS="-L/path/to/lib -lzstd" R CMD INSTALL opentimsr_*.tar.gz
+```
+
+### Installation
+
 From R terminal (opened either in powershell or in RStudio and similar):
 ```bash
 install.packages('opentimsr')

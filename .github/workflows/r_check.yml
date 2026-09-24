@@ -1,0 +1,104 @@
+name: R CMD check
+
+on:
+  push:
+    paths:
+      - 'src/opentimsr/**'
+      - 'src/opentims++/**'
+      - 'pytest/test.d/**'
+      - '.github/workflows/r_check.yml'
+  pull_request:
+    paths:
+      - 'src/opentimsr/**'
+      - 'src/opentims++/**'
+      - 'pytest/test.d/**'
+      - '.github/workflows/r_check.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Build on Linux: R CMD build resolves the symlinks (opentims_core,
+    # inst/extdata/test.d), which Windows checkouts would break.
+    name: Build source tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - name: Build tarball
+        run: R CMD build src/opentimsr
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentimsr-tarball
+          path: opentimsr_*.tar.gz
+
+  check:
+    name: ${{ matrix.config.os }} / R ${{ matrix.config.r }}
+    needs: build
+    runs-on: ${{ matrix.config.os }}
+    continue-on-error: ${{ matrix.config.experimental == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: windows-latest, r: release}
+          - {os: windows-11-arm, r: release, experimental: true}
+          - {os: macos-latest, r: release}
+          - {os: ubuntu-latest, r: release}
+          - {os: ubuntu-latest, r: devel}
+          - {os: ubuntu-latest, r: '4.3'}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Skip CRAN incoming checks that query remote servers.
+      _R_CHECK_CRAN_INCOMING_REMOTE_: false
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: opentimsr-tarball
+
+      - name: Install zstd (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libzstd-dev
+
+      - name: Install zstd (macOS)
+        if: runner.os == 'macOS'
+        run: brew install zstd pkg-config
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          use-public-rspm: true
+
+      - name: Extract DESCRIPTION for dependency resolution
+        run: tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: opentimsr
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: Check tarball
+        shell: Rscript {0}
+        run: |
+          rcmdcheck::rcmdcheck(
+            Sys.glob("opentimsr_*.tar.gz"),
+            args = c("--as-cran", "--no-manual"),
+            error_on = "warning",
+            check_dir = "check"
+          )
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.config.os }}-r${{ matrix.config.r }}
+          path: check

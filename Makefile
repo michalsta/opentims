@@ -8,7 +8,7 @@ reinstall_ve: pyclean pipclean
 rdoc:
 	Rscript rdocs.R
 rbuild:
-	R CMD build opentimsr
+	R CMD build src/opentimsr
 rprep: rclean rdoc rclean rbuild
 
 rcheck: rprep
@@ -25,7 +25,7 @@ ipy:
 	python -m IPython
 clean: pyclean rclean hereclean
 rclean:
-	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck opentimsr/src/*.o opentimsr/src/*.so opentimsr/src/*.tmp
+	rm -rf opentimsr_*.tar.gz  opentimsr.Rcheck src/opentimsr/src/*.o src/opentimsr/src/*.so src/opentimsr/src/*.tmp src/opentimsr/src/Makevars
 pyclean:
 	rm -rf build dist opentimspy.egg-info *.whl
 hereclean:

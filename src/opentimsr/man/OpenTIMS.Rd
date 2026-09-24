@@ -9,12 +9,16 @@ OpenTIMS(path.d)
 \arguments{
 \item{path.d}{Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').}
 }
+\value{
+An object of class \code{OpenTIMS}, used as the data handle by the other functions.
+}
 \description{
 Get OpenTIMS data representation.
 }
 \examples{
-\dontrun{
-D = OpenTIMS(path_to_.d_folder)
-D[1] # First frame.
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+D[1] # first frame
+CloseTIMS(D)
 }

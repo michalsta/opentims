@@ -27,8 +27,9 @@ data.frame with selected columns.
 Extract all frames corresponding to retention times inside [min_retention_time, max_retention_time] closed borders interval.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(rt_query(D, 10, 100)) # frames between tenth and a hundreth second of the experiment
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+rt_query(D, 0.6, 0.7) # frames recorded between 0.6 and 0.7 seconds
+CloseTIMS(D)
 }

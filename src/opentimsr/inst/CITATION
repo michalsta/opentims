@@ -1,0 +1,15 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "{OpenTIMS}, {TimsPy}, and {TimsR}: Open and Easy Access to {timsTOF} Raw Data",
+  author   = c(person(c("Mateusz", "K."), "Łącki"),
+               person(c("Michał", "P."), "Startek"),
+               person("Sven", "Brehmer"),
+               person("Ute", "Distler"),
+               person("Stefan", "Tenzer")),
+  journal  = "Journal of Proteome Research",
+  year     = "2021",
+  volume   = "20",
+  number   = "4",
+  pages    = "2122--2129",
+  doi      = "10.1021/acs.jproteome.0c00962"
+)

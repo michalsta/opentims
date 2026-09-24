@@ -9,12 +9,16 @@
 \arguments{
 \item{x}{OpenTIMS data instance.}
 }
+\value{
+The total number of peaks in the dataset.
+}
 \description{
 Get the overall number of peaks.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(length(D))
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+length(D) # number of peaks in the dataset
+CloseTIMS(D)
 }

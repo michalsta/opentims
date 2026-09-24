@@ -13,17 +13,22 @@
 
 \item{to}{The last+1 frame to extract. Frame with that number will not get extracted, but some below that number might.}
 
-\item{by}{Extract each by-th frame}
+\item{by}{Extract each by-th frame.}
 
 \item{na.rm}{Needed to comply with the generic. There should not be any NA frames, 
 since the from and to are checked against the limits of the data.}
+}
+\value{
+For the selected frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
 }
 \description{
 This is similar to using the from:to:by operator in Python.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(head(range(D, 10,100,3))) # each third frame from 10 to 100.
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+head(range(D, 1, 3))    # frames 1 and 2
+head(range(D, 1, 3, 2)) # every second frame, i.e. only frame 1
+CloseTIMS(D)
 }

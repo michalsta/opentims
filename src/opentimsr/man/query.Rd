@@ -21,9 +21,10 @@ Get the raw data from Bruker's 'tdf_bin' format.
 Defaults to both raw data ('frame','scan','tof','intensity') and its tranformations into physical units ('mz','inv_ion_mobility','retention_time').
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(query(D, c(1,20, 53)) # extract all columns
-print(query(D, c(1,20, 53), columns=c('scan','intensity')) # only 'scan' and 'intensity'
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+query(D, c(1, 2)) # extract all columns
+query(D, c(1, 2), columns=c('scan','intensity')) # only 'scan' and 'intensity'
+CloseTIMS(D)
 }

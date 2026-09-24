@@ -16,8 +16,9 @@ Retention times corresponding to each frame.
 Get the retention time for each frame.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(retention_times(D)) 
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+retention_times(D)
+CloseTIMS(D)
 }

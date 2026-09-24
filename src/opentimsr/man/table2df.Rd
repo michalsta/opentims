@@ -18,8 +18,9 @@ A list of tables.
 Export a table from sqlite.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(head(table2df(D, "Frames"))) # Extract table "Frames".
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+head(table2df(D, "Frames")$Frames) # extract table "Frames"
+CloseTIMS(D)
 }

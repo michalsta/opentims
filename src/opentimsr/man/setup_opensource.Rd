@@ -6,6 +6,9 @@
 \usage{
 setup_opensource()
 }
+\value{
+No return value, called for its side effect of switching the conversion backend.
+}
 \description{
 Activates the built-in open-source converters for tof-to-mz and
 scan-to-inv_ion_mobility transformations. No proprietary Bruker libraries

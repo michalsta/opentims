@@ -1,4 +1,2 @@
-setwd('opentimsr')
-library('devtools')
-devtools::document()
-devtools::document()
+setwd('src/opentimsr')
+roxygen2::roxygenise()

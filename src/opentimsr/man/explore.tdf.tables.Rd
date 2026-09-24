@@ -11,12 +11,16 @@ explore.tdf.tables(opentims, ...)
 
 \item{...}{Parameters passed to head and tail functions.}
 }
+\value{
+No return value, called for its side effect of printing the tables.
+}
 \description{
 Explore the contentents of the sqlite .tdf database.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-explore.tdf.tables(D) 
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+if (interactive()) explore.tdf.tables(D)
+CloseTIMS(D)
 }

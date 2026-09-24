@@ -10,13 +10,11 @@ opentims_set_threads(n)
 \item{n}{The number of worker threads to be used.}
 }
 \value{
-void
+No return value, called for its side effect of setting the number of threads.
 }
 \description{
 A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
 }
 \examples{
-\dontrun{
 opentims_set_threads(1)
-}
 }

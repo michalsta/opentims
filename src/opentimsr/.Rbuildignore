@@ -7,3 +7,4 @@
 ^src/opentims_core/test\.cpp$
 ^src/opentims_core/Makefile$
 ^src/opentims_core/mio\.hpp$
+^cran-comments\.md$

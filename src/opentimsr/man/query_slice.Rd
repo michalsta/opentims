@@ -28,9 +28,11 @@ Defaults to both raw data ('frame','scan','tof','intensity') and its tranformati
 We assume 'from' <= 'to'.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
-print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+query_slice(D, 1, 2)    # frames 1 to 2
+query_slice(D, 1, 2, 2) # every second frame between 1 and 2
+query_slice(D, 1, 2, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+CloseTIMS(D)
 }

@@ -16,8 +16,9 @@ Names of tables.
 Extract tables from sqlite database analysis.tdf.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(tables_names(D)) 
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+tables_names(D)
+CloseTIMS(D)
 }

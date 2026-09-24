@@ -68,11 +68,13 @@ setMethod('show',
 #' Get the overall number of peaks.
 #'
 #' @param x OpenTIMS data instance.
+#' @return The total number of peaks in the dataset.
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(length(D))
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' length(D) # number of peaks in the dataset
+#' CloseTIMS(D)
 setMethod('length', 
           'OpenTIMS', 
           function(x) tdf_no_peaks_total(x@handle))
@@ -81,12 +83,14 @@ setMethod('length',
 #'
 #' @param x OpenTIMS data instance.
 #' @param i An array of nonzero indices to extract.
+#' @return For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(head(D[10]))
-#' print(head(D[10:100]))
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' head(D[1])   # first frame
+#' head(D[1:2]) # frames 1 and 2
+#' CloseTIMS(D)
 setMethod("[", 
           signature(x = "OpenTIMS", i = "ANY"),
           function(x, i){
@@ -105,11 +109,14 @@ setMethod("[",
 #' @param by Extract each by-th frame.
 #' @param na.rm Needed to comply with the generic. There should not be any NA frames, 
 #' since the from and to are checked against the limits of the data.
+#' @return For the selected frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(head(range(D, 10,100,3))) # each third frame from 10 to 100.
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' head(range(D, 1, 3))    # frames 1 and 2
+#' head(range(D, 1, 3, 2)) # every second frame, i.e. only frame 1
+#' CloseTIMS(D)
 setMethod("range", 
           "OpenTIMS",
           function(x, from, to, by=1L, na.rm=FALSE){ 
@@ -131,10 +138,11 @@ setMethod("range",
 #' @return A list of tables.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(head(table2df(D, "Frames"))) # Extract table "Frames".
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' head(table2df(D, "Frames")$Frames) # extract table "Frames"
+#' CloseTIMS(D)
 table2df <- function(opentims, names){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
@@ -151,10 +159,11 @@ table2df <- function(opentims, names){
 #' @return Names of tables.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(tables_names(D)) 
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' tables_names(D)
+#' CloseTIMS(D)
 tables_names <- function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
@@ -168,11 +177,13 @@ tables_names <- function(opentims){
 #' Get OpenTIMS data representation.
 #' 
 #' @param path.d Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').
+#' @return An object of class \code{OpenTIMS}, used as the data handle by the other functions.
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS(path_to_.d_folder)
-#' D[1] # First frame.
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' D[1] # first frame
+#' CloseTIMS(D)
 #' @importFrom methods new
 #' @export
 OpenTIMS <- function(path.d){
@@ -234,10 +245,11 @@ OpenTIMS <- function(path.d){
 #' @return data.frame Limits of individual extracted quantities.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' min_max_measurements(D) # this gives a small data-frame with min and max values.
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' min_max_measurements(D) # small data frame with min and max values
+#' CloseTIMS(D)
 min_max_measurements <- function(opentims){
     data.frame(stat=c('min','max'),
                frame=c(opentims@min_frame,opentims@max_frame),
@@ -257,10 +269,11 @@ min_max_measurements <- function(opentims){
 #' @return Numbers of frames corresponding to MS1, i.e. precursor ions.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(MS1(D)) 
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' MS1(D)
+#' CloseTIMS(D)
 MS1 <- function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 
 
@@ -268,13 +281,15 @@ MS1 <- function(opentims) opentims@frames$Id[opentims@frames$MsMsType == 0]
 #'
 #' @param opentims Instance of OpenTIMS
 #' @param ... Parameters passed to head and tail functions.
+#' @return No return value, called for its side effect of printing the tables.
 #' @importFrom utils head tail
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' explore.tdf.tables(D) 
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' if (interactive()) explore.tdf.tables(D)
+#' CloseTIMS(D)
 explore.tdf.tables <- function(opentims, ...){
     for(table_name in tables_names(opentims)){
         print(table_name)
@@ -293,10 +308,11 @@ explore.tdf.tables <- function(opentims, ...){
 #' @return Number of peaks in each frame.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(peaks_per_frame_cnts(D)) 
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' peaks_per_frame_cnts(D)
+#' CloseTIMS(D)
 peaks_per_frame_cnts <- function(opentims){
   opentims@frames$NumPeaks
 }
@@ -308,10 +324,11 @@ peaks_per_frame_cnts <- function(opentims){
 #' @return Retention times corresponding to each frame.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(retention_times(D)) 
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' retention_times(D)
+#' CloseTIMS(D)
 retention_times <- function(opentims){
   opentims@frames$Time
 }
@@ -328,11 +345,12 @@ retention_times <- function(opentims){
 #' @return data.frame with selected columns.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(query(D, c(1,20, 53)) # extract all columns
-#' print(query(D, c(1,20, 53), columns=c('scan','intensity')) # only 'scan' and 'intensity'
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' query(D, c(1, 2)) # extract all columns
+#' query(D, c(1, 2), columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' CloseTIMS(D)
 query <- function(opentims,
                  frames,
                  columns=all_columns){
@@ -369,11 +387,13 @@ query <- function(opentims,
 #' @return data.frame with selected columns.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(query_slice(D, 10, 200, 4)) # extract every fourth frame between 10 and 200. 
-#' print(query_slice(D, 10, 200, 4, columns=c('scan','intensity')) # only 'scan' and 'intensity'
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' query_slice(D, 1, 2)    # frames 1 to 2
+#' query_slice(D, 1, 2, 2) # every second frame between 1 and 2
+#' query_slice(D, 1, 2, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' CloseTIMS(D)
 query_slice <- function(opentims,
                        from=NULL,
                        to=NULL,
@@ -415,10 +435,11 @@ get_right_frame <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.op
 #' @return data.frame with selected columns.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
-#' print(rt_query(D, 10, 100)) # frames between tenth and a hundreth second of the experiment
-#' }
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' rt_query(D, 0.6, 0.7) # frames recorded between 0.6 and 0.7 seconds
+#' CloseTIMS(D)
 rt_query <- function(opentims,
                     min_retention_time,
                     max_retention_time,
@@ -463,22 +484,22 @@ download_bruker_proprietary_code <- function(
   ...){
   sys_info = Sys.info()
   if(sys_info['sysname'] == "Linux"){
-    print("Downloading 64-bit Linux binary.")
+    message("Downloading 64-bit Linux binary.")
     url_ending = file="libtimsdata.so"
   }
   if(sys_info['sysname'] == "Windows"){
     file = "timsdata.dll"
     if(sys_info['machine'] == "x86-64"){
-      print("Downloading Windows 64-bit binary.")
+      message("Downloading Windows 64-bit binary.")
       url_ending="win64/timsdata.dll"   
     } else {
-      print("Downloading Windows 32-bit binary.")
+      message("Downloading Windows 32-bit binary.")
       url_ending="win32/timsdata.dll"
     }
   }
   url = paste0(net_url, url_ending)
   target.file = file.path(target.folder, file)
-  print(paste0("Downloading from: ", url))
+  message("Downloading from: ", url)
   download.file(url, target.file, mode="wb", ...)
 
   target.file
@@ -494,13 +515,13 @@ download_bruker_proprietary_code <- function(
 #' method is to enable them to be explicitly released earlier than that.
 #'
 #' @param opentims Instance of OpenTIMS.
-#' @return void
+#' @return No return value, called for its side effect of closing the data handle.
 #' @export
 #' @examples
-#' \dontrun{
-#' D = OpenTIMS('path/to/your/folder.d')
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
 #' CloseTIMS(D)
-#' }
 CloseTIMS <- function(opentims){
     tdf_close(opentims@handle)
 }
@@ -513,6 +534,7 @@ CloseTIMS <- function(opentims){
 #' Works on full open-source solution are on the way. 
 #'
 #' @param path Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.
+#' @return No return value, called for its side effect of switching the conversion backend.
 #' @export
 #' @examples
 #' \dontrun{
@@ -524,6 +546,14 @@ setup_bruker_so <- function(path) .setup_bruker_so(path)
 
 #' Use the built-in open-source tof-to-mz and scan-to-inv_ion_mobility converters.
 #'
+#' Activates the built-in open-source converters for tof-to-mz and
+#' scan-to-inv_ion_mobility transformations. No proprietary Bruker libraries
+#' are required. This is the default mode; call this function before querying
+#' data if you have not called \code{\link{setup_bruker_so}}.
+#'
+#' @return No return value, called for its side effect of switching the conversion backend.
+#' @examples
+#' setup_opensource()
 #' @export
 setup_opensource <- function() invisible(.setup_opensource())
 
@@ -533,12 +563,10 @@ setup_opensource <- function() invisible(.setup_opensource())
 #' A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
 #'
 #' @param n The number of worker threads to be used.
-#' @return void
+#' @return No return value, called for its side effect of setting the number of threads.
 #' @export
 #' @examples
-#' \dontrun{
 #' opentims_set_threads(1)
-#' }
 opentims_set_threads <- function(n){
     tdf_set_num_threads(n)
 }

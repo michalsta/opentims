@@ -11,13 +11,17 @@
 
 \item{i}{An array of nonzero indices to extract.}
 }
+\value{
+For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
+}
 \description{
 Get some frames of data.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(head(D[10]))
-print(head(D[10:100]))
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+head(D[1])   # first frame
+head(D[1:2]) # frames 1 and 2
+CloseTIMS(D)
 }

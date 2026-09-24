@@ -19,7 +19,9 @@ export(tables_names)
 exportClasses(OpenTIMS)
 importFrom(Rcpp,sourceCpp)
 importFrom(methods,new)
-importFrom(utils,download.file)
-importFrom(utils,head)
-importFrom(utils,tail)
+importFrom(utils,
+  download.file,
+  head,
+  tail
+)
 useDynLib(opentimsr)

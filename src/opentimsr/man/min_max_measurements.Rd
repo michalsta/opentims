@@ -16,8 +16,9 @@ data.frame Limits of individual extracted quantities.
 Get the min-max values of the measured variables (except for TOFs, that would require iteration through data rather than parsing metadata).
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-min_max_measurements(D) # this gives a small data-frame with min and max values.
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+min_max_measurements(D) # small data frame with min and max values
+CloseTIMS(D)
 }

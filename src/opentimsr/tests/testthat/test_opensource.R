@@ -18,7 +18,7 @@ expected <- data.frame(
 
 test_that("opensource converters produce correct values", {
   setup_opensource()
-  D <- OpenTIMS(test_path("test.d"))
+  D <- OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
   on.exit(CloseTIMS(D))
 
   result <- query(D, frames = c(1L, 2L))

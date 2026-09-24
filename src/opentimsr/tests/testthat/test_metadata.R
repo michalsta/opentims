@@ -4,7 +4,7 @@ library(opentimsr)
 modified_test_d <- function(sql) {
   path.d <- file.path(tempfile(), "test.d")
   dir.create(path.d, recursive = TRUE)
-  file.copy(file.path(test_path("test.d"), c("analysis.tdf", "analysis.tdf_bin")), path.d)
+  file.copy(file.path(system.file("extdata", "test.d", package = "opentimsr"), c("analysis.tdf", "analysis.tdf_bin")), path.d)
   sql_conn <- DBI::dbConnect(RSQLite::SQLite(), file.path(path.d, "analysis.tdf"))
   on.exit(DBI::dbDisconnect(sql_conn))
   DBI::dbExecute(sql_conn, sql)

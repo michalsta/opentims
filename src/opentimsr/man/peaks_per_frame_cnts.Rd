@@ -16,8 +16,9 @@ Number of peaks in each frame.
 Get the number of peaks per frame.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
-print(peaks_per_frame_cnts(D)) 
-}
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
+peaks_per_frame_cnts(D)
+CloseTIMS(D)
 }

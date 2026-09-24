@@ -1,7 +1,7 @@
 library(opentimsr)
 
 setup_opensource()
-D <- OpenTIMS(test_path("test.d"))
+D <- OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
 
 raw_columns <- c("frame", "scan", "tof", "intensity")
 

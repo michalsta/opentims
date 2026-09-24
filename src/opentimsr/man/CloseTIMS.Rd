@@ -10,7 +10,7 @@ CloseTIMS(opentims)
 \item{opentims}{Instance of OpenTIMS.}
 }
 \value{
-void
+No return value, called for its side effect of closing the data handle.
 }
 \description{
 Calling this method is not mandatory - the resources will anyway
@@ -19,8 +19,8 @@ destroy the OpenTIMS data handle. The only purpose of this
 method is to enable them to be explicitly released earlier than that.
 }
 \examples{
-\dontrun{
-D = OpenTIMS('path/to/your/folder.d')
+path.d = system.file("extdata", "test.d", package = "opentimsr")
+setup_opensource()
+D = OpenTIMS(path.d)
 CloseTIMS(D)
-}
 }

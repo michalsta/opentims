@@ -9,6 +9,9 @@ setup_bruker_so(path)
 \arguments{
 \item{path}{Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.}
 }
+\value{
+No return value, called for its side effect of switching the conversion backend.
+}
 \description{
 By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
 The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.

@@ -4,13 +4,13 @@ on:
   push:
     paths:
       - 'src/opentimsr/**'
-      - 'src/opentims++/**'
+      - 'src/opentims\+\+/**'
       - 'pytest/test.d/**'
       - '.github/workflows/r_check.yml'
   pull_request:
     paths:
       - 'src/opentimsr/**'
-      - 'src/opentims++/**'
+      - 'src/opentims\+\+/**'
       - 'pytest/test.d/**'
       - '.github/workflows/r_check.yml'
   workflow_dispatch:

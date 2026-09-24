@@ -13,7 +13,10 @@ Authors@R:
       person(given="Mateusz Krzysztof",
              family="Łącki",
              role=c("aut","cph"),
-             comment=c(ORCID="0000-0001-7415-4748"))
+             comment=c(ORCID="0000-0001-7415-4748")),
+      person(given="mandreyel",
+             role=c("ctb","cph"),
+             comment="Author and copyright holder of the bundled 'mio' library (https://github.com/mandreyel/mio)")
     )
 Maintainer: Michał Piotr Startek <michal.startek@mimuw.edu.pl>
 Description: A free, open-source package designed for
@@ -22,6 +25,7 @@ Description: A free, open-source package designed for
     Fast, free, crossplatform, with no reading through
     EULAs or messing with binary .dll files involved.
 License: MIT + file LICENSE
+Copyright: See file inst/COPYRIGHTS
 URL: https://github.com/michalsta/opentims
 Depends:
     R (>= 3.0.0)

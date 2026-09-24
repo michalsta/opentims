@@ -6,3 +6,4 @@
 ^src/opentims_core/opentims_all\.(cpp|h)$
 ^src/opentims_core/test\.cpp$
 ^src/opentims_core/Makefile$
+^src/opentims_core/mio\.hpp$

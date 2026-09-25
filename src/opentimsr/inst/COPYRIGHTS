@@ -13,7 +13,11 @@ Copyright: Copyright 2017 https://github.com/mandreyel
 License:   MIT
 
 The file is the single-header amalgamation of the 'mio' memory-mapping
-library and is included unmodified. Its license terms:
+library, added to this project in 2020. It differs slightly from the current
+upstream file (in its Windows file-opening code, its exception guards, and
+by defining NOMINMAX and NOGDI before including <windows.h>). All copyright
+notices are retained.
+Its license terms:
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of this
   software and associated documentation files (the "Software"), to deal in the Software

@@ -18,7 +18,14 @@ This version addresses both points:
   inst/COPYRIGHTS (referenced from the Copyright field in DESCRIPTION).
 
 The maintainer has changed from Michał Piotr Startek to Mateusz Krzysztof
-Łącki, as agreed between the two authors.
+Łącki, as agreed between the two authors. Michał Startek will confirm this
+by email to CRAN-submissions@R-project.org from his address.
+
+The package can optionally use Bruker's proprietary 'timsdata' library.
+It is not included in the package; download_bruker_proprietary_code()
+fetches it only when the user calls it explicitly (never in examples or
+tests), and the package works fully without it using built-in open-source
+converters. This is documented in the help pages and inst/COPYRIGHTS.
 
 Other changes: all examples now run on a small dataset shipped in
 inst/extdata, except the two that download Bruker's proprietary library.

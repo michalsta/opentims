@@ -1,7 +1,7 @@
 opentimsr is copyright (C) 2020-2024 Michał Piotr Startek and
 Mateusz Krzysztof Łącki, and is licensed under the MIT License
 (see file LICENSE), with the exception of the bundled component
-listed below.
+listed below (mio). See also the note on Bruker's library at the end.
 
 
 mio
@@ -35,3 +35,16 @@ Its license terms:
   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
   CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+Bruker's 'timsdata' library (not included)
+===========================================
+
+opentimsr can optionally use Bruker's proprietary 'timsdata' library
+(libtimsdata.so on Linux, timsdata.dll on Windows) for its conversions.
+This library is owned by Bruker, is not part of opentimsr, and is not
+distributed with it. download_bruker_proprietary_code() downloads it only
+when a user calls it explicitly, from
+https://github.com/MatteoLacki/opentims_bruker_bridge, subject to the license
+terms stated there. opentimsr is fully functional without it, using its
+built-in open-source converters.

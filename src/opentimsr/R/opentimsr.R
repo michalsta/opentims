@@ -461,9 +461,12 @@ rt_query <- function(opentims,
 
 #' Get Bruker's code needed for running proprietary time of flight to mass over charge and scan to drift time conversion. 
 #'
-#' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
-#' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
-#' Works on full open-source solution are on the way. 
+#' Bruker's 'timsdata' library is proprietary software owned by Bruker. It is not
+#' part of opentimsr and is not distributed with it: this function downloads it
+#' only when called, from "https://github.com/MatteoLacki/opentims_bruker_bridge",
+#' and by using it you agree to the license terms stated there.
+#' The library is available only for Linux and Windows. opentimsr works without it,
+#' using its built-in open-source converters (see \code{\link{setup_opensource}}).
 #'
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
 #' @param net_url The url with location of all files.
@@ -529,9 +532,11 @@ CloseTIMS <- function(opentims){
 
 #' Dynamically link Bruker's DLL to enable tof-mz and scan-inv_ion_mobility conversion.
 #'
-#' By using this function you aggree to terms of license precised in "https://github.com/MatteoLacki/opentims_bruker_bridge".
-#' The conversion, due to independent code-base restrictions, are possible only on Linux and Windows operating systems.
-#' Works on full open-source solution are on the way. 
+#' Bruker's 'timsdata' library is proprietary software owned by Bruker. It is not
+#' part of opentimsr and is not distributed with it; obtain it with
+#' \code{\link{download_bruker_proprietary_code}}, whose license terms apply.
+#' The library is available only for Linux and Windows. opentimsr works without it,
+#' using its built-in open-source converters (see \code{\link{setup_opensource}}).
 #'
 #' @param path Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.
 #' @return No return value, called for its side effect of switching the conversion backend.

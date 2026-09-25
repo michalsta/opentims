@@ -175,7 +175,7 @@ pprint(D.query(frames=slice(2,1000,10), columns=('tof','intensity',)))
 
 # Still too much memory used up? You can also iterate over frames:
 it = D.query_iter(slice(10,100,10), columns=all_columns)
-pprint(next(it))
+pprint(next(iterator_over_MS1))
 # {'frame': array([10, 10, 10, ..., 10, 10, 10], dtype=uint32),
 #  'intensity': array([ 9,  9,  9, ...,  9, 13, 86], dtype=uint32),
 #  'inv_ion_mobility': array([1.6       , 1.5977164 , 1.5954329 , ..., 0.60526049, 0.60189576,
@@ -187,7 +187,7 @@ pprint(next(it))
 #  'scan': array([ 34,  36,  38, ..., 913, 916, 916], dtype=uint32),
 #  'tof': array([171284,  31282, 135057, ..., 207422,  92814,  95769], dtype=uint32)}
 
-pprint(next(it))
+pprint(next(iterator_over_MS1))
 # {'frame': array([20, 20, 20, ..., 20, 20, 20], dtype=uint32),
 #  'intensity': array([31, 10,  9, ..., 26,  9,  9], dtype=uint32),
 #  'inv_ion_mobility': array([1.60114183, 1.60114183, 1.6       , ..., 0.60301731, 0.60301731,
@@ -202,8 +202,8 @@ pprint(next(it))
 
 # All MS1 frames, but one at a time
 iterator_over_MS1 = D.query_iter(D.ms1_frames, columns=all_columns)
-pprint(next(it))
-pprint(next(it))
+pprint(next(iterator_over_MS1))
+pprint(next(iterator_over_MS1))
 # or in a loop, only getting intensities
 for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
     print(fr['intensity'])
@@ -218,6 +218,14 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # [  9   9   9 ... 117   9  64]
 # [ 20 147  69 ...  58   9   9]
 # [ 9  9  9 ...  9 91  9]
+
+
+# Several frames at once, each as its own arrays: a dict keyed by frame number,
+# decoded in parallel. A frame requested more than once is returned once.
+frames = D.get_separate_frames([1, 5, 67], columns=('mz', 'intensity'))
+frames[5]['mz']         # numpy array with the m/z of every peak in frame 5
+frames[5]['intensity']  # and their intensities
+# Unlike query_iter, all requested frames are held in memory at once.
 
 
 # The frame lasts a convenient time unit that well suits chromatography peak elution.
@@ -358,6 +366,14 @@ pprint(rt_query(D, 10, 12))  # seconds
 for(fr in MS1(D)){
     print(query(D, fr, columns=all_columns))
 }
+
+
+# Several frames at once, each as its own data.frame: a named list (names are
+# frame numbers), decoded in parallel. A frame requested more than once is
+# returned once. Unlike the loop above, all requested frames are held in memory.
+frames = get_separate_frames(D, c(1, 5, 67), columns=c('mz', 'intensity'))
+names(frames)        # "1" "5" "67"
+head(frames[["5"]])  # the same as query(D, 5, columns=c('mz', 'intensity'))
 
 
 # Bracket indexing extracts raw data (frame, scan, tof, intensity):

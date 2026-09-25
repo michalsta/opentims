@@ -30,6 +30,10 @@ converters. This is documented in the help pages and inst/COPYRIGHTS.
 Other changes: all examples now run on a small dataset shipped in
 inst/extdata, except the two that download Bruker's proprietary library.
 
+Frames are now decoded in parallel (C++ std::thread). When
+_R_CHECK_LIMIT_CORES_ is set, the package uses at most two threads, and the
+tests set two threads explicitly.
+
 ## Test environments
 
 * local Ubuntu 24.04, R 4.6.1 and R 4.3.3

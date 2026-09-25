@@ -18,6 +18,9 @@
 #include <limits>
 #include <stdexcept>
 #include <thread>
+#include <algorithm>
+#include <exception>
+#include <mutex>
 #include <unordered_map>
 
 
@@ -484,21 +487,9 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
                                     uint32_t* result)
 {
     size_t no_peaks = no_peaks_in_frames(indexes, no_indexes);
-
-    uint32_t* offset0 = result;
-    uint32_t* offset1 = offset0 + no_peaks;
-    uint32_t* offset2 = offset1 + no_peaks;
-    uint32_t* offset3 = offset2 + no_peaks;
-
-    for(size_t ii = 0; ii < no_indexes; ii++)
-    {
-        TimsFrame& frame = frame_descs.at(indexes[ii]);
-        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx);
-        offset0 += frame.num_peaks;
-        offset1 += frame.num_peaks;
-        offset2 += frame.num_peaks;
-        offset3 += frame.num_peaks;
-    }
+    extract_frames_contiguous(indexes, no_indexes,
+                              result, result + no_peaks, result + 2*no_peaks, result + 3*no_peaks,
+                              nullptr, nullptr, nullptr);
 }
 
 
@@ -509,25 +500,12 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
 {
     if(step == 0)
         throw std::runtime_error("extract_frames_slice: step must be > 0");
-    size_t no_peaks = no_peaks_in_slice(start, end, step);
-
-    uint32_t* offset0 = result;
-    uint32_t* offset1 = offset0 + no_peaks;
-    uint32_t* offset2 = offset1 + no_peaks;
-    uint32_t* offset3 = offset2 + no_peaks;
-
+    std::vector<uint32_t> indexes;
     for(uint32_t ii = start; ii < end; ii += step)
-    {
-        TimsFrame& frame = frame_descs.at(ii);
-        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx);
-        offset0 += frame.num_peaks;
-        offset1 += frame.num_peaks;
-        offset2 += frame.num_peaks;
-        offset3 += frame.num_peaks;
-    }
+        indexes.push_back(ii);
+    extract_frames(indexes.data(), indexes.size(), result);
 }
 
-#define move_ptr(ptr) if(ptr) ptr += n;
 
 void TimsDataHandle::extract_frames(const uint32_t* indexes,
                                     size_t no_indexes,
@@ -539,20 +517,10 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
                                     double* inv_ion_mobilities,
                                     double* retention_times)
 {
-    for(size_t ii = 0; ii < no_indexes; ii++)
-    {
-        TimsFrame& frame = frame_descs.at(indexes[ii]);
-        const size_t n = frame.num_peaks;
-        frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
-        move_ptr(frame_ids);
-        move_ptr(scan_ids);
-        move_ptr(tofs);
-        move_ptr(intensities);
-        move_ptr(mzs);
-        move_ptr(inv_ion_mobilities);
-        move_ptr(retention_times);
-    }
+    extract_frames_contiguous(indexes, no_indexes, frame_ids, scan_ids, tofs, intensities,
+                              mzs, inv_ion_mobilities, retention_times);
 }
+
 
 void TimsDataHandle::extract_frames_slice(uint32_t start,
                                           uint32_t end,
@@ -567,19 +535,140 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
 {
     if(step == 0)
         throw std::runtime_error("extract_frames_slice: step must be > 0");
+    std::vector<uint32_t> indexes;
     for(uint32_t ii = start; ii < end; ii += step)
+        indexes.push_back(ii);
+    extract_frames_contiguous(indexes.data(), indexes.size(), frame_ids, scan_ids, tofs, intensities,
+                              mzs, inv_ion_mobilities, retention_times);
+}
+
+
+namespace {
+
+bool has_duplicates(const uint32_t* indexes, size_t no_indexes)
+{
+    std::vector<uint32_t> sorted(indexes, indexes + no_indexes);
+    std::sort(sorted.begin(), sorted.end());
+    return std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end();
+}
+
+template<typename T> T* offset_or_null(T* ptr, size_t offset) { return ptr ? ptr + offset : nullptr; }
+
+// Closes a frame when leaving scope, so that no frame keeps pointing into a
+// worker's decompression buffer, even if decoding it failed.
+struct FrameCloser
+{
+    TimsFrame& frame;
+    ~FrameCloser() { frame.close(); }
+};
+
+} // anonymous namespace
+
+
+void TimsDataHandle::extract_frames_contiguous(const uint32_t* indexes,
+                                               size_t no_indexes,
+                                               uint32_t* frame_ids,
+                                               uint32_t* scan_ids,
+                                               uint32_t* tofs,
+                                               uint32_t* intensities,
+                                               double* mzs,
+                                               double* inv_ion_mobilities,
+                                               double* retention_times)
+{
+    // Where each frame's peaks start in the output columns.
+    std::vector<size_t> offsets(no_indexes);
+    size_t total_peaks = 0;
+    for(size_t ii = 0; ii < no_indexes; ii++)
     {
-        TimsFrame& frame = frame_descs.at(ii);
-        const size_t n = frame.num_peaks;
-        frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
-        move_ptr(frame_ids);
-        move_ptr(scan_ids);
-        move_ptr(tofs);
-        move_ptr(intensities);
-        move_ptr(mzs);
-        move_ptr(inv_ion_mobilities);
-        move_ptr(retention_times);
+        offsets[ii] = total_peaks;
+        total_peaks += frame_descs.at(indexes[ii]).num_peaks;
     }
+
+    ThreadingManager::get_instance().set_shared_threading();
+    const size_t n_threads = (std::min)(ThreadingManager::get_instance().get_no_opentims_threads(), no_indexes);
+
+    // A frame keeps its decoding state while it is being read, so the same frame
+    // must not be decoded by two threads at once: decode sequentially then.
+    if(n_threads <= 1 || has_duplicates(indexes, no_indexes))
+    {
+        ThreadingManager::get_instance().set_converter_threading();
+        for(size_t ii = 0; ii < no_indexes; ii++)
+            frame_descs.at(indexes[ii]).save_to_buffs(
+                offset_or_null(frame_ids, offsets[ii]),
+                offset_or_null(scan_ids, offsets[ii]),
+                offset_or_null(tofs, offsets[ii]),
+                offset_or_null(intensities, offsets[ii]),
+                offset_or_null(mzs, offsets[ii]),
+                offset_or_null(inv_ion_mobilities, offsets[ii]),
+                offset_or_null(retention_times, offsets[ii]),
+                zstd_dctx);
+        return;
+    }
+
+    std::atomic<size_t> next_task(0);
+    std::atomic<bool> failed(false);
+    std::exception_ptr first_error;
+    std::mutex error_mutex;
+
+    auto record_error = [&]()
+    {
+        std::lock_guard<std::mutex> lock(error_mutex);
+        if(!first_error)
+            first_error = std::current_exception();
+        failed = true;
+    };
+
+    auto worker = [&]()
+    {
+        try
+        {
+            std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
+            std::unique_ptr<char[]> decomp_buffer(new char[decomp_buffer_size]);
+            while(!failed)
+            {
+                const size_t task = next_task.fetch_add(1);
+                if(task >= no_indexes)
+                    break;
+                TimsFrame& frame = frame_descs.at(indexes[task]);
+                if(frame.num_peaks == 0)
+                    continue;
+                FrameCloser closer{frame};
+                frame.decompress(decomp_buffer.get(), zstd.get());
+                frame.save_to_buffs(
+                    offset_or_null(frame_ids, offsets[task]),
+                    offset_or_null(scan_ids, offsets[task]),
+                    offset_or_null(tofs, offsets[task]),
+                    offset_or_null(intensities, offsets[task]),
+                    offset_or_null(mzs, offsets[task]),
+                    offset_or_null(inv_ion_mobilities, offsets[task]),
+                    offset_or_null(retention_times, offsets[task]),
+                    zstd.get());
+            }
+        }
+        catch(...)
+        {
+            record_error();
+        }
+    };
+
+    std::vector<std::thread> threads;
+    try
+    {
+        for(size_t ii = 0; ii < n_threads; ii++)
+            threads.emplace_back(worker);
+    }
+    catch(...)
+    {
+        // Could not start a thread: stop the running ones before reporting.
+        record_error();
+    }
+    for(auto& th : threads)
+        th.join();
+
+    ThreadingManager::get_instance().set_converter_threading();
+
+    if(first_error)
+        std::rethrow_exception(first_error);
 }
 
 

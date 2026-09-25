@@ -13,7 +13,11 @@ opentims_set_threads(n)
 No return value, called for its side effect of setting the number of threads.
 }
 \description{
-A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
+Frames are decoded in parallel by \code{\link{query}}, \code{\link{query_slice}},
+\code{\link{rt_query}}, \code{[} and \code{range}. By default all detected cores
+are used; a value of 0 restores that default. When the environment variable
+\code{_R_CHECK_LIMIT_CORES_} is set (as during \code{R CMD check --as-cran}),
+the default is two threads.
 }
 \examples{
 opentims_set_threads(1)

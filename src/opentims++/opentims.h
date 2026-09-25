@@ -434,6 +434,17 @@ public:
 
     void allocate_buffers();
 
+    // Decode frames into contiguous output columns, in parallel when possible.
+    void extract_frames_contiguous(const uint32_t* indexes,
+                                   size_t no_indexes,
+                                   uint32_t* frame_ids,
+                                   uint32_t* scan_ids,
+                                   uint32_t* tofs,
+                                   uint32_t* intensities,
+                                   double* mzs,
+                                   double* inv_ion_mobilities,
+                                   double* retention_times);
+
     inline void ensure_buffers_allocated() { if(_scan_ids_buffer) return; allocate_buffers(); };
 
     void free_buffers();

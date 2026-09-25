@@ -565,7 +565,11 @@ setup_opensource <- function() invisible(.setup_opensource())
 
 #' Set the number of threads to be used for data processing by OpenTIMS
 #'
-#' A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
+#' Frames are decoded in parallel by \code{\link{query}}, \code{\link{query_slice}},
+#' \code{\link{rt_query}}, \code{[} and \code{range}. By default all detected cores
+#' are used; a value of 0 restores that default. When the environment variable
+#' \code{_R_CHECK_LIMIT_CORES_} is set (as during \code{R CMD check --as-cran}),
+#' the default is two threads.
 #'
 #' @param n The number of worker threads to be used.
 #' @return No return value, called for its side effect of setting the number of threads.
@@ -574,4 +578,11 @@ setup_opensource <- function() invisible(.setup_opensource())
 #' opentims_set_threads(1)
 opentims_set_threads <- function(n){
     tdf_set_num_threads(n)
+}
+
+
+.onLoad <- function(libname, pkgname){
+    # CRAN checks may use at most two cores.
+    limit_cores = tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+    if(nzchar(limit_cores) && limit_cores != "false") tdf_set_num_threads(2)
 }

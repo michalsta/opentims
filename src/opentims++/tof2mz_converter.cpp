@@ -47,6 +47,7 @@ std::string ErrorTof2MzConverter::description() { return "ErrorTof2MzConverter d
  * BrukerTof2MzConverter implementation
  */
 
+// Call with bruker_api_mutex() held: the error belongs to the preceding call into the library.
 std::string BrukerTof2MzConverter::get_tims_error()
 {
     const size_t buf_size = 10000;
@@ -64,6 +65,7 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
     tims_index_to_mz = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_index_to_mz");
     tims_mz_to_index = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_mz_to_index");
 
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, pcs);
 
     if(bruker_file_handle == 0)
@@ -72,6 +74,7 @@ BrukerTof2MzConverter::BrukerTof2MzConverter(TimsDataHandle& TDH, const std::str
 
 BrukerTof2MzConverter::~BrukerTof2MzConverter()
 {
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     if(bruker_file_handle != 0) tims_close(bruker_file_handle);
 }
 
@@ -295,13 +298,11 @@ void BrukerTof2MzConverter::set_lookup_frame(TimsDataHandle& TDH, std::optional<
     std::iota(tofs.begin(), tofs.end(), 0.0);
     lookup_table.resize(tof_count);  // allocates on first use only
     use_lookup_table = false;        // until the table is complete
-    uint32_t success;
     {
         std::lock_guard<std::mutex> lock(bruker_api_mutex());
-        success = tims_index_to_mz(bruker_file_handle, *frame, tofs.data(), lookup_table.data(), tof_count);
+        if(!tims_index_to_mz(bruker_file_handle, *frame, tofs.data(), lookup_table.data(), tof_count))
+            throw std::runtime_error("m/z lookup table: " + get_tims_error());
     }
-    if(!success)
-        throw std::runtime_error("m/z lookup table: " + get_tims_error());
     use_lookup_table = true;
 }
 

@@ -696,9 +696,18 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
                     TimsFrame& frame = frame_descs.at(indexes[request]);
                     if(frame.num_peaks == 0)
                         continue;
+                    const FrameOutput& out = outputs[request];
+                    if(frame.bytes0 != nullptr)
+                    {
+                        // Already decompressed by the caller: read it and leave it open,
+                        // as the sequential path does.
+                        frame.save_to_buffs(
+                            out.frame_ids, out.scan_ids, out.tofs, out.intensities,
+                            out.mzs, out.inv_ion_mobilities, out.retention_times, zstd.get());
+                        continue;
+                    }
                     FrameCloser closer{frame};
                     frame.decompress(decomp_buffer.get(), zstd.get());
-                    const FrameOutput& out = outputs[request];
                     frame.save_to_buffs(
                         out.frame_ids, out.scan_ids, out.tofs, out.intensities,
                         out.mzs, out.inv_ion_mobilities, out.retention_times, zstd.get());

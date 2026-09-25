@@ -82,6 +82,7 @@ void BrukerThreadingManager::SetupBrukerThreading(const std::string& bruker_so_p
 
 void BrukerThreadingManager::set_bruker_threads()
 {
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     switch(threading_type)
     {
         case OPENTIMS_THREADING:

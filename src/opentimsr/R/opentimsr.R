@@ -125,7 +125,7 @@ setMethod("range",
             by  = as.integer(by)
             stopifnot(from >= x@min_frame,
                       to <= x@max_frame + 1,
-                      by >= 0)
+                      by > 0)
             tdf_get_range(x@handle, from, to, by)
           })
 

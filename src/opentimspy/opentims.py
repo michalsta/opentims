@@ -285,13 +285,15 @@ class OpenTIMS:
         self,
         size: int,
         arrays: dict[str, npt.NDArray],
+        check: bool = True,
     ) -> dict[str, npt.NDArray]:
         final_arrays = {}
         for col, col_dtype in zip(self.all_columns, self.all_columns_dtypes):
             if col in arrays:
                 arr = arrays[col]
-                assert arr.dtype == col_dtype
-                assert len(arr) == size
+                if check:
+                    assert arr.dtype == col_dtype
+                    assert len(arr) == size
             else:
                 arr = np.empty(shape=0, dtype=col_dtype)
             final_arrays[col] = arr
@@ -325,8 +327,8 @@ class OpenTIMS:
             frames = np.r_[frames].astype(np.uint32)
             size = self.peaks_per_frame_cnts(frames, convert=False)
             arrays = (
-                self._sanitize_user_provided_arrays(size, columns)
-                if isinstance(columns, dict) and _sanitize
+                self._sanitize_user_provided_arrays(size, columns, check=_sanitize)
+                if isinstance(columns, dict)
                 else self._get_empty_arrays(size, columns)
             )
 

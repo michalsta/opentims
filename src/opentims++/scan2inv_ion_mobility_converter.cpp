@@ -55,6 +55,7 @@ std::string ErrorScan2InvIonMobilityConverter::description() const
  * BrukerScan2InvIonMobilityConverter implementation
  */
 
+// Call with bruker_api_mutex() held: the error belongs to the preceding call into the library.
 std::string BrukerScan2InvIonMobilityConverter::get_tims_error()
 {
     const size_t buf_size = 10000;
@@ -72,6 +73,7 @@ BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataH
     tims_scannum_to_inv_ion_mobility = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_scannum_to_oneoverk0");
     tims_inv_ion_mobility_to_scannum = lib_handle.symbol_lookup<tims_convert_fun_t>("tims_oneoverk0_to_scannum");
 
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     bruker_file_handle = (*tims_open)(TDH.tims_dir_path.c_str(), 1, pcs);
 
     if(bruker_file_handle == 0)
@@ -80,6 +82,7 @@ BrukerScan2InvIonMobilityConverter::BrukerScan2InvIonMobilityConverter(TimsDataH
 
 BrukerScan2InvIonMobilityConverter::~BrukerScan2InvIonMobilityConverter()
 {
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     if(bruker_file_handle != 0) tims_close(bruker_file_handle);
 }
 
@@ -137,13 +140,11 @@ void BrukerScan2InvIonMobilityConverter::set_lookup_frame(TimsDataHandle& TDH, s
     std::iota(scans.begin(), scans.end(), 0.0);
     lookup_table.resize(scan_count);  // allocates on first use only
     use_lookup_table = false;         // until the table is complete
-    uint32_t success;
     {
         std::lock_guard<std::mutex> lock(bruker_api_mutex());
-        success = tims_scannum_to_inv_ion_mobility(bruker_file_handle, *frame, scans.data(), lookup_table.data(), scan_count);
+        if(!tims_scannum_to_inv_ion_mobility(bruker_file_handle, *frame, scans.data(), lookup_table.data(), scan_count))
+            throw std::runtime_error("inverse ion mobility lookup table: " + get_tims_error());
     }
-    if(!success)
-        throw std::runtime_error("inverse ion mobility lookup table: " + get_tims_error());
     use_lookup_table = true;
 }
 

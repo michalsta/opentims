@@ -152,3 +152,15 @@ def test_context_manager_closes():
     with OpenTIMS(data_path, cm=conversion_method.OpenSource) as handle:
         assert handle.handle is not None
     assert handle.handle is None
+
+
+# --- user-provided output arrays ---
+
+@pytest.mark.parametrize("sanitize", [True, False])
+def test_query_fills_user_provided_arrays(ot, sanitize):
+    expected = ot.query(ot.min_frame, columns=("scan", "intensity"))
+    arrays = {c: np.empty(len(expected[c]), dtype=expected[c].dtype) for c in expected}
+    result = ot.query(ot.min_frame, columns=arrays, _sanitize=sanitize)
+    for c in expected:
+        assert result[c] is arrays[c]
+        assert np.array_equal(arrays[c], expected[c])

@@ -107,6 +107,10 @@ test_that("[ rejects frames out of range", {
   expect_error(D[D@max_frame + 1L])
 })
 
+test_that("range rejects a step that is not positive", {
+  expect_error(range(D, D@min_frame, D@max_frame + 1L, 0L), "by > 0")
+})
+
 test_that("range covers all peaks", {
   result <- range(D, D@min_frame, D@max_frame + 1L)
   expect_equal(nrow(as.data.frame(result)), length(D))

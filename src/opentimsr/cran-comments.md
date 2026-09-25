@@ -26,9 +26,16 @@ inst/extdata, except the two that download Bruker's proprietary library.
 ## Test environments
 
 * local Ubuntu 24.04, R 4.6.1 and R 4.3.3
+* win-builder, R-release (4.6.1) and R-devel (Windows Server 2022)
+* macOS builder, R-release (4.6.1, macOS arm64)
+* GitHub Actions: Windows x64 and arm64, macOS arm64 (R release);
+  Ubuntu (R release, devel and 4.3)
 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
 * New submission / archived package (see above).
+* Possibly misspelled words in DESCRIPTION: 'Bruker's' is a company name,
+  'Łącki et al.' is the author citation, and 'mobilities' is the plural of
+  ion mobility; all are spelled correctly.

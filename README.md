@@ -175,7 +175,7 @@ pprint(D.query(frames=slice(2,1000,10), columns=('tof','intensity',)))
 
 # Still too much memory used up? You can also iterate over frames:
 it = D.query_iter(slice(10,100,10), columns=all_columns)
-pprint(next(iterator_over_MS1))
+pprint(next(it))
 # {'frame': array([10, 10, 10, ..., 10, 10, 10], dtype=uint32),
 #  'intensity': array([ 9,  9,  9, ...,  9, 13, 86], dtype=uint32),
 #  'inv_ion_mobility': array([1.6       , 1.5977164 , 1.5954329 , ..., 0.60526049, 0.60189576,
@@ -187,7 +187,7 @@ pprint(next(iterator_over_MS1))
 #  'scan': array([ 34,  36,  38, ..., 913, 916, 916], dtype=uint32),
 #  'tof': array([171284,  31282, 135057, ..., 207422,  92814,  95769], dtype=uint32)}
 
-pprint(next(iterator_over_MS1))
+pprint(next(it))
 # {'frame': array([20, 20, 20, ..., 20, 20, 20], dtype=uint32),
 #  'intensity': array([31, 10,  9, ..., 26,  9,  9], dtype=uint32),
 #  'inv_ion_mobility': array([1.60114183, 1.60114183, 1.6       , ..., 0.60301731, 0.60301731,

@@ -434,6 +434,23 @@ public:
 
     void allocate_buffers();
 
+    //! Output buffers for one requested frame; nullptr for columns not wanted.
+    struct FrameOutput
+    {
+        uint32_t* frame_ids;
+        uint32_t* scan_ids;
+        uint32_t* tofs;
+        uint32_t* intensities;
+        double* mzs;
+        double* inv_ion_mobilities;
+        double* retention_times;
+    };
+
+    // Decode the requested frames into their outputs, in parallel when possible.
+    void decode_frames(const uint32_t* indexes,
+                       size_t no_indexes,
+                       const std::vector<FrameOutput>& outputs);
+
     // Decode frames into contiguous output columns, in parallel when possible.
     void extract_frames_contiguous(const uint32_t* indexes,
                                    size_t no_indexes,

@@ -545,14 +545,15 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
 
 namespace {
 
-bool has_duplicates(const uint32_t* indexes, size_t no_indexes)
-{
-    std::vector<uint32_t> sorted(indexes, indexes + no_indexes);
-    std::sort(sorted.begin(), sorted.end());
-    return std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end();
-}
-
 template<typename T> T* offset_or_null(T* ptr, size_t offset) { return ptr ? ptr + offset : nullptr; }
+
+template<typename T> T* element_or_null(T* const * ptrs, size_t index) { return ptrs ? ptrs[index] : nullptr; }
+
+template<typename T> void copy_column(const T* from, T* to, size_t size)
+{
+    if(from != nullptr && to != nullptr)
+        std::copy(from, from + size, to);
+}
 
 // Closes a frame when leaving scope, so that no frame keeps pointing into a
 // worker's decompression buffer, even if decoding it failed.
@@ -575,100 +576,136 @@ void TimsDataHandle::extract_frames_contiguous(const uint32_t* indexes,
                                                double* inv_ion_mobilities,
                                                double* retention_times)
 {
-    // Where each frame's peaks start in the output columns.
-    std::vector<size_t> offsets(no_indexes);
-    size_t total_peaks = 0;
+    // Each frame's peaks start where the previous frame's end.
+    std::vector<FrameOutput> outputs(no_indexes);
+    size_t offset = 0;
     for(size_t ii = 0; ii < no_indexes; ii++)
     {
-        offsets[ii] = total_peaks;
-        total_peaks += frame_descs.at(indexes[ii]).num_peaks;
+        outputs[ii] = FrameOutput{
+            offset_or_null(frame_ids, offset),
+            offset_or_null(scan_ids, offset),
+            offset_or_null(tofs, offset),
+            offset_or_null(intensities, offset),
+            offset_or_null(mzs, offset),
+            offset_or_null(inv_ion_mobilities, offset),
+            offset_or_null(retention_times, offset)};
+        offset += frame_descs.at(indexes[ii]).num_peaks;
+    }
+    decode_frames(indexes, no_indexes, outputs);
+}
+
+
+void TimsDataHandle::decode_frames(const uint32_t* indexes,
+                                   size_t no_indexes,
+                                   const std::vector<FrameOutput>& outputs)
+{
+    // A frame keeps decoding state while it is being read, so two threads must
+    // never decode the same frame. Each distinct frame is therefore decoded once,
+    // into the outputs of its first request; repeated requests get a copy.
+    std::vector<size_t> to_decode;
+    std::vector<std::pair<size_t, size_t>> repeats;  // (request, request holding its data)
+    std::unordered_map<uint32_t, size_t> first_request;
+    first_request.reserve(no_indexes);
+    for(size_t ii = 0; ii < no_indexes; ii++)
+    {
+        auto [it, is_first] = first_request.emplace(indexes[ii], ii);
+        if(is_first)
+            to_decode.push_back(ii);
+        else
+            repeats.emplace_back(ii, it->second);
     }
 
     ThreadingManager::get_instance().set_shared_threading();
-    const size_t n_threads = (std::min)(ThreadingManager::get_instance().get_no_opentims_threads(), no_indexes);
+    const size_t n_threads = (std::min)(ThreadingManager::get_instance().get_no_opentims_threads(), to_decode.size());
 
-    // A frame keeps its decoding state while it is being read, so the same frame
-    // must not be decoded by two threads at once: decode sequentially then.
-    if(n_threads <= 1 || has_duplicates(indexes, no_indexes))
+    if(n_threads <= 1)
     {
         ThreadingManager::get_instance().set_converter_threading();
-        for(size_t ii = 0; ii < no_indexes; ii++)
-            frame_descs.at(indexes[ii]).save_to_buffs(
-                offset_or_null(frame_ids, offsets[ii]),
-                offset_or_null(scan_ids, offsets[ii]),
-                offset_or_null(tofs, offsets[ii]),
-                offset_or_null(intensities, offsets[ii]),
-                offset_or_null(mzs, offsets[ii]),
-                offset_or_null(inv_ion_mobilities, offsets[ii]),
-                offset_or_null(retention_times, offsets[ii]),
-                zstd_dctx);
-        return;
+        for(size_t request : to_decode)
+        {
+            const FrameOutput& out = outputs[request];
+            frame_descs.at(indexes[request]).save_to_buffs(
+                out.frame_ids, out.scan_ids, out.tofs, out.intensities,
+                out.mzs, out.inv_ion_mobilities, out.retention_times, zstd_dctx);
+        }
     }
-
-    std::atomic<size_t> next_task(0);
-    std::atomic<bool> failed(false);
-    std::exception_ptr first_error;
-    std::mutex error_mutex;
-
-    auto record_error = [&]()
+    else
     {
-        std::lock_guard<std::mutex> lock(error_mutex);
-        if(!first_error)
-            first_error = std::current_exception();
-        failed = true;
-    };
+        std::atomic<size_t> next_task(0);
+        std::atomic<bool> failed(false);
+        std::exception_ptr first_error;
+        std::mutex error_mutex;
 
-    auto worker = [&]()
-    {
+        auto record_error = [&]()
+        {
+            std::lock_guard<std::mutex> lock(error_mutex);
+            if(!first_error)
+                first_error = std::current_exception();
+            failed = true;
+        };
+
+        auto worker = [&]()
+        {
+            try
+            {
+                std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
+                std::unique_ptr<char[]> decomp_buffer(new char[decomp_buffer_size]);
+                while(!failed)
+                {
+                    const size_t task = next_task.fetch_add(1);
+                    if(task >= to_decode.size())
+                        break;
+                    const size_t request = to_decode[task];
+                    TimsFrame& frame = frame_descs.at(indexes[request]);
+                    if(frame.num_peaks == 0)
+                        continue;
+                    FrameCloser closer{frame};
+                    frame.decompress(decomp_buffer.get(), zstd.get());
+                    const FrameOutput& out = outputs[request];
+                    frame.save_to_buffs(
+                        out.frame_ids, out.scan_ids, out.tofs, out.intensities,
+                        out.mzs, out.inv_ion_mobilities, out.retention_times, zstd.get());
+                }
+            }
+            catch(...)
+            {
+                record_error();
+            }
+        };
+
+        std::vector<std::thread> threads;
         try
         {
-            std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
-            std::unique_ptr<char[]> decomp_buffer(new char[decomp_buffer_size]);
-            while(!failed)
-            {
-                const size_t task = next_task.fetch_add(1);
-                if(task >= no_indexes)
-                    break;
-                TimsFrame& frame = frame_descs.at(indexes[task]);
-                if(frame.num_peaks == 0)
-                    continue;
-                FrameCloser closer{frame};
-                frame.decompress(decomp_buffer.get(), zstd.get());
-                frame.save_to_buffs(
-                    offset_or_null(frame_ids, offsets[task]),
-                    offset_or_null(scan_ids, offsets[task]),
-                    offset_or_null(tofs, offsets[task]),
-                    offset_or_null(intensities, offsets[task]),
-                    offset_or_null(mzs, offsets[task]),
-                    offset_or_null(inv_ion_mobilities, offsets[task]),
-                    offset_or_null(retention_times, offsets[task]),
-                    zstd.get());
-            }
+            for(size_t ii = 0; ii < n_threads; ii++)
+                threads.emplace_back(worker);
         }
         catch(...)
         {
+            // Could not start a thread: stop the running ones before reporting.
             record_error();
         }
-    };
+        for(auto& th : threads)
+            th.join();
 
-    std::vector<std::thread> threads;
-    try
-    {
-        for(size_t ii = 0; ii < n_threads; ii++)
-            threads.emplace_back(worker);
+        ThreadingManager::get_instance().set_converter_threading();
+
+        if(first_error)
+            std::rethrow_exception(first_error);
     }
-    catch(...)
+
+    for(const auto& [request, source] : repeats)
     {
-        // Could not start a thread: stop the running ones before reporting.
-        record_error();
+        const size_t size = frame_descs.at(indexes[request]).num_peaks;
+        const FrameOutput& from = outputs[source];
+        const FrameOutput& to = outputs[request];
+        copy_column(from.frame_ids, to.frame_ids, size);
+        copy_column(from.scan_ids, to.scan_ids, size);
+        copy_column(from.tofs, to.tofs, size);
+        copy_column(from.intensities, to.intensities, size);
+        copy_column(from.mzs, to.mzs, size);
+        copy_column(from.inv_ion_mobilities, to.inv_ion_mobilities, size);
+        copy_column(from.retention_times, to.retention_times, size);
     }
-    for(auto& th : threads)
-        th.join();
-
-    ThreadingManager::get_instance().set_converter_threading();
-
-    if(first_error)
-        std::rethrow_exception(first_error);
 }
 
 
@@ -714,32 +751,17 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                                     double* const * inv_ion_mobilities,
                                     double* const * retention_times)
 {
-    std::atomic<size_t> current_task(0);
-
-    ThreadingManager::get_instance().set_shared_threading();
-    size_t n_threads = ThreadingManager::get_instance().get_no_opentims_threads();
-
-    std::vector<std::thread> threads;
-    for(size_t ii=0; ii<n_threads; ii++)
-        threads.emplace_back([&](){
-            std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
-            std::unique_ptr<char[]> decomp_buffer = std::make_unique<char[]>(decomp_buffer_size);
-            while(true)
-            {
-                size_t my_task = current_task.fetch_add(1);
-                if(my_task < indexes.size())
-                {
-                    TimsFrame& frame = get_frame(indexes[my_task]);
-                    frame.decompress(decomp_buffer.get(), zstd.get());
-                    frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task], zstd.get());
-                    frame.close();
-                }
-                else
-                    break;
-            }
-        });
-    for (auto& th : threads) th.join();
-    ThreadingManager::get_instance().set_converter_threading();
+    std::vector<FrameOutput> outputs(indexes.size());
+    for(size_t ii = 0; ii < indexes.size(); ii++)
+        outputs[ii] = FrameOutput{
+            element_or_null(frame_ids, ii),
+            element_or_null(scan_ids, ii),
+            element_or_null(tofs, ii),
+            element_or_null(intensities, ii),
+            element_or_null(mzs, ii),
+            element_or_null(inv_ion_mobilities, ii),
+            element_or_null(retention_times, ii)};
+    decode_frames(indexes.data(), indexes.size(), outputs);
 }
 
 

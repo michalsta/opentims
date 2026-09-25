@@ -166,6 +166,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tdf_extract_separate_frames
+Rcpp::List tdf_extract_separate_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const Rcpp::CharacterVector columns);
+RcppExport SEXP _opentimsr_tdf_extract_separate_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP columnsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type indexes(indexesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector >::type columns(columnsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_separate_frames(tdf, indexes, columns));
+    return rcpp_result_gen;
+END_RCPP
+}
 // tdf_set_num_threads
 void tdf_set_num_threads(const size_t n);
 RcppExport SEXP _opentimsr_tdf_set_num_threads(SEXP nSEXP) {
@@ -190,6 +203,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_tdf_get_range_noend", (DL_FUNC) &_opentimsr_tdf_get_range_noend, 3},
     {"_opentimsr_tdf_extract_frames", (DL_FUNC) &_opentimsr_tdf_extract_frames, 9},
     {"_opentimsr_tdf_extract_frames_slice", (DL_FUNC) &_opentimsr_tdf_extract_frames_slice, 11},
+    {"_opentimsr_tdf_extract_separate_frames", (DL_FUNC) &_opentimsr_tdf_extract_separate_frames, 3},
     {"_opentimsr_tdf_set_num_threads", (DL_FUNC) &_opentimsr_tdf_set_num_threads, 1},
     {NULL, NULL, 0}
 };

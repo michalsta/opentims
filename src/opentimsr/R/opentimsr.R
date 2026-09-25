@@ -420,6 +420,41 @@ query_slice <- function(opentims,
 }
 
 
+#' Get frames as separate data frames.
+#'
+#' Like \code{\link{query}}, but returns one data frame per frame instead of
+#' one table with the peaks of all frames. Frames are decoded in parallel
+#' (see \code{\link{opentims_set_threads}}). A frame requested more than once
+#' is returned once.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frames Vector of frame numbers to extract.
+#' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return A named list of data.frames, one per distinct frame, in order of
+#' first request and named by frame number. Each data.frame has the requested
+#' columns, with one row per peak, as returned by \code{\link{query}}.
+#' @export
+#' @examples
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' frames = get_separate_frames(D, c(1, 2))
+#' names(frames)
+#' head(frames[["2"]])
+#' get_separate_frames(D, 1, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' CloseTIMS(D)
+get_separate_frames <- function(opentims,
+                                frames,
+                                columns=all_columns){
+  if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
+
+  frames = unique(as.integer(frames))
+  res = tdf_extract_separate_frames(opentims@handle, frames, unique(columns))
+  names(res) = frames
+  res
+}
+
+
 get_left_frame <- function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
 get_right_frame <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
 

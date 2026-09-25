@@ -7,6 +7,8 @@
 
 #include <limits>
 #include <stdexcept>
+#include <algorithm>
+#include <string>
 #include <vector>
 #define STRICT_R_HEADERS
 #include <Rcpp.h>
@@ -259,6 +261,77 @@ Rcpp::List tdf_extract_frames_slice(
 
     return out.list();
 }
+
+// Turn a named list of equally long columns into a data.frame, keeping the
+// columns listed in `columns`, in that order.
+Rcpp::List as_data_frame(const Rcpp::List& all_columns, const Rcpp::CharacterVector& columns, size_t rows)
+{
+    Rcpp::List df(columns.size());
+    for(R_xlen_t ii = 0; ii < columns.size(); ii++)
+        df[ii] = all_columns[Rcpp::as<std::string>(columns[ii])];
+    df.names() = columns;
+    df.attr("class") = "data.frame";
+    if(rows == 0)
+        df.attr("row.names") = Rcpp::IntegerVector(0);
+    else
+        df.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -static_cast<int>(rows));
+    return df;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List tdf_extract_separate_frames(
+    const Rcpp::XPtr<TimsDataHandle> tdf,
+    const Rcpp::IntegerVector indexes,
+    const Rcpp::CharacterVector columns)
+{
+    TimsDataHandle& tdh = *tdf;
+
+    const std::vector<std::string> column_names = Rcpp::as<std::vector<std::string>>(columns);
+    auto wanted = [&](const char* name)
+    {
+        return std::find(column_names.begin(), column_names.end(), name) != column_names.end();
+    };
+    const bool get_frames = wanted("frame");
+    const bool get_scans = wanted("scan");
+    const bool get_tofs = wanted("tof");
+    const bool get_intensities = wanted("intensity");
+    const bool get_mzs = wanted("mz");
+    const bool get_inv_ion_mobilities = wanted("inv_ion_mobility");
+    const bool get_retention_times = wanted("retention_time");
+
+    const std::vector<uint32_t> ids(indexes.cbegin(), indexes.cend());
+    const size_t no_frames = ids.size();
+
+    // One set of R vectors per frame, which the core decodes into directly.
+    std::vector<uint32_t*> frame_ids(no_frames), scan_ids(no_frames), tofs(no_frames), intensities(no_frames);
+    std::vector<double*> mzs(no_frames), inv_ion_mobilities(no_frames), retention_times(no_frames);
+    std::vector<size_t> sizes(no_frames);
+    Rcpp::List frames_columns(no_frames);
+
+    for(size_t ii = 0; ii < no_frames; ii++)
+    {
+        sizes[ii] = tdh.get_frame(ids[ii]).num_peaks;
+        RColumns out;
+        frame_ids[ii] = out.add_uint32("frame", sizes[ii], get_frames);
+        scan_ids[ii] = out.add_uint32("scan", sizes[ii], get_scans);
+        tofs[ii] = out.add_uint32("tof", sizes[ii], get_tofs);
+        intensities[ii] = out.add_uint32("intensity", sizes[ii], get_intensities);
+        mzs[ii] = out.add_double("mz", sizes[ii], get_mzs);
+        inv_ion_mobilities[ii] = out.add_double("inv_ion_mobility", sizes[ii], get_inv_ion_mobilities);
+        retention_times[ii] = out.add_double("retention_time", sizes[ii], get_retention_times);
+        frames_columns[ii] = out.list();
+    }
+
+    tdh.extract_frames(ids, frame_ids.data(), scan_ids.data(), tofs.data(), intensities.data(),
+                       mzs.data(), inv_ion_mobilities.data(), retention_times.data());
+
+    Rcpp::List result(no_frames);
+    for(size_t ii = 0; ii < no_frames; ii++)
+        result[ii] = as_data_frame(frames_columns[ii], columns, sizes[ii]);
+    return result;
+}
+
 
 // [[Rcpp::export]]
 void tdf_set_num_threads(const size_t n)

@@ -6,6 +6,8 @@
  */
 
 #include <limits>
+#include <stdexcept>
+#include <vector>
 #define STRICT_R_HEADERS
 #include <Rcpp.h>
 
@@ -67,77 +69,57 @@ size_t tdf_no_peaks_total(Rcpp::XPtr<TimsDataHandle> tdf)
 }
 
 
+// Decode the raw columns (frame, scan, tof, intensity) of the given frames and
+// return them as a data.frame of doubles.
+Rcpp::DataFrame raw_columns_df(TimsDataHandle& tdh, const std::vector<uint32_t>& frame_ids)
+{
+    using namespace Rcpp;
+
+    const size_t peaks_no = tdh.no_peaks_in_frames(frame_ids.data(), frame_ids.size());
+
+    // Uninitialised buffer, filled by the core: 4 consecutive columns of peaks_no values.
+    std::unique_ptr<uint32_t[]> raw(new uint32_t[4 * peaks_no]);
+    tdh.extract_frames(frame_ids.data(), frame_ids.size(), raw.get());
+
+    NumericVector columns[4];
+    for(size_t col = 0; col < 4; col++)
+    {
+        columns[col] = NumericVector(Rf_allocVector(REALSXP, peaks_no));
+        const uint32_t* src = raw.get() + col * peaks_no;
+        double* dst = REAL(columns[col]);
+        for(size_t ii = 0; ii < peaks_no; ii++)
+            dst[ii] = src[ii];
+    }
+
+    return DataFrame::create( Named("frame")     = columns[0],
+                              Named("scan")      = columns[1],
+                              Named("tof")       = columns[2],
+                              Named("intensity") = columns[3] );
+}
+
+
 // [[Rcpp::export]]
 Rcpp::DataFrame tdf_get_range(Rcpp::XPtr<TimsDataHandle> tdf, size_t start, size_t end, int32_t step = 1)
 {
-    using namespace Rcpp;
-    
     TimsDataHandle& tdh = *tdf;
+    if(step <= 0)
+        throw std::invalid_argument("step must be positive");
     if(end > tdh.max_frame_id())
         end = tdh.max_frame_id()+1;
 
     std::vector<uint32_t> frame_ids;
-    std::vector<uint32_t> scan_ids;
-    std::vector<uint32_t> tofs;
-    std::vector<uint32_t> intensities;
-
     for(size_t idx = start; idx < end; idx += step)
-    {
-        size_t frame_size = tdh.expose_frame(idx);
+        frame_ids.push_back(idx);
 
-        // std::cerr << "frame_size" << std::endl;
-
-        for(size_t ii=0; ii<frame_size; ii++)
-        {
-            frame_ids.push_back(idx);
-            scan_ids.push_back(tdh.scan_ids_buffer()[ii]);
-            tofs.push_back(tdh.tofs_buffer()[ii]);
-            intensities.push_back(tdh.intensities_buffer()[ii]);
-        }
-    }
-
-    DataFrame result = DataFrame::create( Named("frame")     = frame_ids,
-                                          Named("scan")      = scan_ids,
-                                          Named("tof")       = tofs,
-                                          Named("intensity") = intensities );
-
-    return result;
+    return raw_columns_df(tdh, frame_ids);
 }
 
 
 // [[Rcpp::export]]
 Rcpp::DataFrame tdf_get_indexes(Rcpp::XPtr<TimsDataHandle> tdf, Rcpp::IntegerVector indexes)
 {
-    using namespace Rcpp;
-
-    TimsDataHandle& tdh = *tdf;
-
-    std::vector<uint32_t> frame_ids;
-    std::vector<uint32_t> scan_ids;
-    std::vector<uint32_t> tofs;
-    std::vector<uint32_t> intensities;
-
-    for(auto idx = indexes.cbegin(); idx != indexes.cend(); idx++)
-    {
-        size_t frame_size = tdh.expose_frame(*idx);
-
-        // std::cerr << "frame_size" << std::endl;
-
-        for(size_t ii=0; ii<frame_size; ii++)
-        {
-            frame_ids.push_back(*idx);
-            scan_ids.push_back(tdh.scan_ids_buffer()[ii]);
-            tofs.push_back(tdh.tofs_buffer()[ii]);
-            intensities.push_back(tdh.intensities_buffer()[ii]);
-        }
-    }
-
-    DataFrame result = DataFrame::create( Named("frame") = frame_ids,
-                                          Named("scan")  = scan_ids,
-                                          Named("tof")   = tofs,
-                                          Named("intensity") = intensities );
-
-    return result;
+    std::vector<uint32_t> frame_ids(indexes.cbegin(), indexes.cend());
+    return raw_columns_df(*tdf, frame_ids);
 }
 
 
@@ -148,30 +130,49 @@ Rcpp::DataFrame tdf_get_range_noend(Rcpp::XPtr<TimsDataHandle> tdf, size_t start
 }
 
 
-template<typename T> std::unique_ptr<T[]> R_get_ptr(const size_t size,
-                                                    const bool really)
+// Named list of R vectors that the core decodes into directly, avoiding a
+// zero-filled intermediate buffer and a copy. The core's uint32 values are
+// stored bit for bit in R's integer storage.
+class RColumns
 {
-    if(really)
-        return std::make_unique<T[]>(size);
-    else
-        return std::unique_ptr<T[]>();
-}
+    Rcpp::List columns;
+    std::vector<std::string> names;
 
+    void add(const char* name, SEXP column)
+    {
+        columns.push_back(column);
+        names.push_back(name);
+    }
 
-template<typename T, typename U> void set_frame(Rcpp::DataFrame& df,
-                                                const std::string& name,
-                                                const std::unique_ptr<T[]>& tbl,
-                                                size_t size)
-{
-    if(tbl){
-        U vec = U::import(tbl.get(), tbl.get() + size);
-        df[name] = vec;
-    } 
-}
+ public:
+    uint32_t* add_uint32(const char* name, size_t size, bool wanted)
+    {
+        if(!wanted)
+            return nullptr;
+        Rcpp::IntegerVector column(Rf_allocVector(INTSXP, size));
+        add(name, column);
+        return reinterpret_cast<uint32_t*>(INTEGER(column));
+    }
+
+    double* add_double(const char* name, size_t size, bool wanted)
+    {
+        if(!wanted)
+            return nullptr;
+        Rcpp::NumericVector column(Rf_allocVector(REALSXP, size));
+        add(name, column);
+        return REAL(column);
+    }
+
+    Rcpp::List list()
+    {
+        columns.names() = names;
+        return columns;
+    }
+};
 
 
 // [[Rcpp::export]]
-Rcpp::DataFrame tdf_extract_frames(
+Rcpp::List tdf_extract_frames(
     const Rcpp::XPtr<TimsDataHandle> tdf,
     const Rcpp::IntegerVector indexes,
     const bool get_frames = true,
@@ -182,54 +183,41 @@ Rcpp::DataFrame tdf_extract_frames(
     const bool get_inv_ion_mobilities = true,
     const bool get_retention_times = true)
 {
-    using namespace Rcpp;
-
     TimsDataHandle& tdh = *tdf;
 
-    std::unique_ptr<uint32_t[]> v = std::make_unique<uint32_t[]>(indexes.size());
+    std::vector<uint32_t> v(indexes.cbegin(), indexes.cend());
 
-    for(R_xlen_t ii=0; ii < indexes.size(); ++ii) v[ii] = indexes[ii];
+    const size_t peaks_no = tdh.no_peaks_in_frames(v.data(), v.size());
 
-    const size_t peaks_no = tdh.no_peaks_in_frames(v.get(), indexes.size()); // conts for compiler optimization.
-
-    std::unique_ptr<uint32_t[]> frames = R_get_ptr<uint32_t>(peaks_no, get_frames);
-    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, true);
-    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
-    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
-    std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
-    std::unique_ptr<double[]> inv_ion_mobilities = R_get_ptr<double>(peaks_no, get_inv_ion_mobilities);
-    std::unique_ptr<double[]> retention_times = R_get_ptr<double>(peaks_no, get_retention_times);
+    // scan, tof and intensity are always returned; R code drops unwanted columns.
+    RColumns out;
+    uint32_t* frames = out.add_uint32("frame", peaks_no, get_frames);
+    uint32_t* scans = out.add_uint32("scan", peaks_no, true);
+    uint32_t* tofs = out.add_uint32("tof", peaks_no, true);
+    uint32_t* intensities = out.add_uint32("intensity", peaks_no, true);
+    double* mzs = out.add_double("mz", peaks_no, get_mzs);
+    double* inv_ion_mobilities = out.add_double("inv_ion_mobility", peaks_no, get_inv_ion_mobilities);
+    double* retention_times = out.add_double("retention_time", peaks_no, get_retention_times);
 
     tdh.extract_frames(
-        v.get(),
-        indexes.size(),
-        frames.get(),
-        scans.get(),
-        tofs.get(),
-        intensities.get(),
-        mzs.get(),
-        inv_ion_mobilities.get(),
-        retention_times.get()
+        v.data(),
+        v.size(),
+        frames,
+        scans,
+        tofs,
+        intensities,
+        mzs,
+        inv_ion_mobilities,
+        retention_times
     );
 
-    DataFrame result = DataFrame::create();
-
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
-    
-    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "inv_ion_mobility", inv_ion_mobilities, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "retention_time", retention_times, peaks_no);
-
-    return result;
+    return out.list();
 }
 
 
 
 // [[Rcpp::export]]
-Rcpp::DataFrame tdf_extract_frames_slice(
+Rcpp::List tdf_extract_frames_slice(
     const Rcpp::XPtr<TimsDataHandle> tdf,
     const size_t start,
     const size_t end,
@@ -242,46 +230,34 @@ Rcpp::DataFrame tdf_extract_frames_slice(
     const bool get_inv_ion_mobilities = true,
     const bool get_retention_times = true)
 {
-    using namespace Rcpp;
-
     TimsDataHandle& tdh = *tdf;
 
     const size_t peaks_no = tdh.no_peaks_in_slice(start, end, step);
 
-    //scan tof intensity always returned and only sometimes cut away
-    std::unique_ptr<uint32_t[]> frames = R_get_ptr<uint32_t>(peaks_no, get_frames);
-    std::unique_ptr<uint32_t[]> scans = R_get_ptr<uint32_t>(peaks_no, true);  
-    std::unique_ptr<uint32_t[]> tofs = R_get_ptr<uint32_t>(peaks_no, true);
-    std::unique_ptr<uint32_t[]> intensities = R_get_ptr<uint32_t>(peaks_no, true);
-    std::unique_ptr<double[]> mzs = R_get_ptr<double>(peaks_no, get_mzs);
-    std::unique_ptr<double[]> inv_ion_mobilities = R_get_ptr<double>(peaks_no, get_inv_ion_mobilities);
-    std::unique_ptr<double[]> retention_times = R_get_ptr<double>(peaks_no, get_retention_times);
+    // scan, tof and intensity are always returned; R code drops unwanted columns.
+    RColumns out;
+    uint32_t* frames = out.add_uint32("frame", peaks_no, get_frames);
+    uint32_t* scans = out.add_uint32("scan", peaks_no, true);
+    uint32_t* tofs = out.add_uint32("tof", peaks_no, true);
+    uint32_t* intensities = out.add_uint32("intensity", peaks_no, true);
+    double* mzs = out.add_double("mz", peaks_no, get_mzs);
+    double* inv_ion_mobilities = out.add_double("inv_ion_mobility", peaks_no, get_inv_ion_mobilities);
+    double* retention_times = out.add_double("retention_time", peaks_no, get_retention_times);
 
     tdh.extract_frames_slice(
-        start, 
+        start,
         end,
         step,
-        frames.get(),
-        scans.get(),
-        tofs.get(),
-        intensities.get(),
-        mzs.get(),
-        inv_ion_mobilities.get(),
-        retention_times.get()
+        frames,
+        scans,
+        tofs,
+        intensities,
+        mzs,
+        inv_ion_mobilities,
+        retention_times
     );
 
-    DataFrame result = DataFrame::create();
-
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "frame", frames, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "scan", scans, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "tof", tofs, peaks_no);
-    set_frame<uint32_t, Rcpp::IntegerVector>(result, "intensity", intensities, peaks_no);
-    
-    set_frame<double, Rcpp::NumericVector>(result, "mz", mzs, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "inv_ion_mobility", inv_ion_mobilities, peaks_no);
-    set_frame<double, Rcpp::NumericVector>(result, "retention_time", retention_times, peaks_no);
-
-    return result;
+    return out.list();
 }
 
 // [[Rcpp::export]]

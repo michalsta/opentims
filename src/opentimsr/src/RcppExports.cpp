@@ -127,7 +127,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_extract_frames
-Rcpp::DataFrame tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+Rcpp::List tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
 RcppExport SEXP _opentimsr_tdf_extract_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -146,7 +146,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_extract_frames_slice
-Rcpp::DataFrame tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+Rcpp::List tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
 RcppExport SEXP _opentimsr_tdf_extract_frames_slice(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

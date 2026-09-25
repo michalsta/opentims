@@ -87,6 +87,7 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
              const double* scans,
              uint32_t size)
 {
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, scans, inv_ion_mobilities, size);
 }
 
@@ -99,6 +100,7 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
     std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_scans[idx] = static_cast<double>(scans[idx]);
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size);
 }
 
@@ -108,6 +110,7 @@ void BrukerScan2InvIonMobilityConverter::inverse_convert(uint32_t frame_id,
              uint32_t size)
 {
     std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_inv_ion_mobility_to_scannum(bruker_file_handle, frame_id, inv_ion_mobilities, dbl_scans.get(), size);
     for(uint32_t idx = 0; idx < size; idx++)
         scans[idx] = static_cast<double>(dbl_scans[idx]);

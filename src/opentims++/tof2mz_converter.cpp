@@ -76,6 +76,7 @@ BrukerTof2MzConverter::~BrukerTof2MzConverter()
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size)
 {
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_index_to_mz(bruker_file_handle, frame_id, tofs, mzs, size);
 }
 
@@ -84,12 +85,14 @@ void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32
     std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_tofs[idx] = static_cast<double>(tofs[idx]);
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
 }
 
 void BrukerTof2MzConverter::inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size)
 {
     std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
+    std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_mz_to_index(bruker_file_handle, frame_id, mzs, dbl_tofs.get(), size);
     for(uint32_t idx = 0; idx < size; idx++)
         tofs[idx] = static_cast<uint32_t>(dbl_tofs[idx]);

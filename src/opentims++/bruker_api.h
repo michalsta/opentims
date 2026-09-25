@@ -7,6 +7,17 @@
 
 #pragma once
 
+#include <mutex>
+
+// Bruker's timsdata library is not safe to call from several threads at once
+// (tims_index_to_mz crashed when frames were converted in parallel), so every
+// conversion call into it holds this lock.
+inline std::mutex& bruker_api_mutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
 typedef uint64_t tims_open_fun_t(const char *path, uint32_t recalibration);
 
 enum pressure_compensation_strategy {

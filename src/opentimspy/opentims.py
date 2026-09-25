@@ -491,6 +491,38 @@ class OpenTIMS:
             ret[frame_ids[ii]] = X
         return ret
 
+    def use_mz_lookup(self, frame: int | None = 1):
+        """Convert tof indices to m/z with a lookup table instead of Bruker's library.
+
+        Bruker's library converts one frame at a time and can only be called by one
+        thread at a time, which limits parallel extraction. The table holds the m/z of
+        every tof index for `frame`, computed once by Bruker's library, and is then used
+        for all frames by all threads.
+
+        Values are exact for `frame` and approximate for other frames: Bruker's m/z
+        calibration changes slightly from frame to frame (by at most 0.16 ppm over four
+        test datasets). Can be called again with another frame, which refills the same
+        table. Only available with Bruker's conversion.
+
+        Args:
+            frame (int | None): frame whose calibration to use; None returns to exact conversion.
+        """
+        self.handle.set_mz_lookup_frame(frame)
+
+    def use_inv_ion_mobility_lookup(self, frame: int | None = 1):
+        """Convert scans to inverse ion mobility with a lookup table instead of Bruker's library.
+
+        Like `use_mz_lookup`, for inverse ion mobility. Exact for all frames with
+        NoPressureCompensation or AnalyisGlobalPressureCompensation, since then the
+        conversion is the same in every frame. With PerFramePressureCompensation the
+        table applies the pressure correction of `frame` to all frames, so the per-frame
+        part of the correction is lost (up to 1.2 scan steps over three test datasets).
+
+        Args:
+            frame (int | None): frame whose calibration to use; None returns to exact conversion.
+        """
+        self.handle.set_inv_ion_mobility_lookup_frame(frame)
+
     def __getitem__(self, frames: FRAMES_TYPE):
         """Get raw data array for given frames and scans.
 

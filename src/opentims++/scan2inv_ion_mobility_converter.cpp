@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <numeric>
 #include <stdexcept>
 
 std::unique_ptr<Scan2InvIonMobilityConverterFactory> DefaultScan2InvIonMobilityConverterFactory::fac_instance;
@@ -97,11 +98,53 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
              const uint32_t* scans,
              uint32_t size)
 {
+    if(use_lookup_table)
+    {
+        const size_t table_size = lookup_table.size();
+        for(uint32_t idx = 0; idx < size; idx++)
+            if(scans[idx] < table_size)
+                inv_ion_mobilities[idx] = lookup_table[scans[idx]];
+            else
+            {
+                // Not expected: scans beyond the table are converted exactly.
+                const double scan = scans[idx];
+                std::lock_guard<std::mutex> lock(bruker_api_mutex());
+                tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, &scan, &inv_ion_mobilities[idx], 1);
+            }
+        return;
+    }
     std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_scans[idx] = static_cast<double>(scans[idx]);
     std::lock_guard<std::mutex> lock(bruker_api_mutex());
     tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size);
+}
+
+void BrukerScan2InvIonMobilityConverter::set_lookup_frame(TimsDataHandle& TDH, std::optional<uint32_t> frame)
+{
+    if(!frame)
+    {
+        use_lookup_table = false;
+        return;
+    }
+    if(!TDH.has_frame(*frame))
+        throw std::invalid_argument("inverse ion mobility lookup table: there is no frame " + std::to_string(*frame) + " in this dataset");
+    uint32_t scan_count = 0;
+    for(const auto& [frame_id, frame_desc] : TDH.get_frame_descs())
+        scan_count = (std::max)(scan_count, frame_desc.num_scans);
+
+    std::vector<double> scans(scan_count);
+    std::iota(scans.begin(), scans.end(), 0.0);
+    lookup_table.resize(scan_count);  // allocates on first use only
+    use_lookup_table = false;         // until the table is complete
+    uint32_t success;
+    {
+        std::lock_guard<std::mutex> lock(bruker_api_mutex());
+        success = tims_scannum_to_inv_ion_mobility(bruker_file_handle, *frame, scans.data(), lookup_table.data(), scan_count);
+    }
+    if(!success)
+        throw std::runtime_error("inverse ion mobility lookup table: " + get_tims_error());
+    use_lookup_table = true;
 }
 
 void BrukerScan2InvIonMobilityConverter::inverse_convert(uint32_t frame_id,

@@ -9,7 +9,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <vector>
 #include "bruker_api.h"
 #include "platform.h"
 
@@ -64,9 +66,25 @@ class BrukerScan2InvIonMobilityConverter final : public Scan2InvIonMobilityConve
     tims_convert_fun_t* tims_scannum_to_inv_ion_mobility;
     tims_convert_fun_t* tims_inv_ion_mobility_to_scannum;
 
+    std::vector<double> lookup_table;  // inverse ion mobility of every scan, see set_lookup_frame()
+    bool use_lookup_table = false;
+
     std::string get_tims_error();
 
  public:
+    //! Convert with a lookup table instead of calling Bruker's library for every frame.
+    /**
+     * The table holds the value of every scan (0 to the largest NumScans - 1) for `frame`, as computed by Bruker's
+     * library, and is then used for all frames: exact for `frame`, approximate for the
+     * others. The table's memory is allocated on first use and reused when it is filled
+     * for another frame. std::nullopt returns to exact conversion. Must not be called
+     * while frames are being extracted.
+     */
+    void set_lookup_frame(TimsDataHandle& TDH, std::optional<uint32_t> frame);
+
+    //! Whether conversion uses the lookup table (and so does not call Bruker's library).
+    bool uses_lookup_table() const { return use_lookup_table; }
+
     BrukerScan2InvIonMobilityConverter(TimsDataHandle& TDH, const std::string& lib_path, pressure_compensation_strategy pcs = NoPressureCompensation);
     ~BrukerScan2InvIonMobilityConverter();
 

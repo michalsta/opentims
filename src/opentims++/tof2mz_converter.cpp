@@ -12,6 +12,7 @@
 #endif
 #include <cmath>
 #include <cstring>
+#include <numeric>
 #include <stdexcept>
 
 std::unique_ptr<Tof2MzConverterFactory> DefaultTof2MzConverterFactory::fac_instance;
@@ -82,6 +83,21 @@ void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const double
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size)
 {
+    if(use_lookup_table)
+    {
+        const size_t table_size = lookup_table.size();
+        for(uint32_t idx = 0; idx < size; idx++)
+            if(tofs[idx] < table_size)
+                mzs[idx] = lookup_table[tofs[idx]];
+            else
+            {
+                // Not expected: tof indices beyond the table are converted exactly.
+                const double tof = tofs[idx];
+                std::lock_guard<std::mutex> lock(bruker_api_mutex());
+                tims_index_to_mz(bruker_file_handle, frame_id, &tof, &mzs[idx], 1);
+            }
+        return;
+    }
     std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_tofs[idx] = static_cast<double>(tofs[idx]);
@@ -242,7 +258,52 @@ int tof2mz_metadata_callback(void* out, int cols, char** row, char** colnames)
         meta->is_otof = (std::strcmp(val, "Bruker otofControl") == 0);
     return 0;
 }
+Tof2MzMetadata read_tof2mz_metadata(TimsDataHandle& TDH)
+{
+    Tof2MzMetadata meta;
+#ifdef OPENTIMS_BUILDING_R
+    for (const auto& [key, value] : TDH.get_global_metadata())
+    {
+        char* row[2] = {const_cast<char*>(key.c_str()), const_cast<char*>(value.c_str())};
+        tof2mz_metadata_callback(&meta, 2, row, nullptr);
+    }
+#else
+    RAIISqlite db(TDH.get_tims_dir_path() + "/analysis.tdf");
+    db.query(
+        "SELECT Key, Value FROM GlobalMetadata "
+        "WHERE Key IN ('MzAcqRangeLower','MzAcqRangeUpper','DigitizerNumSamples','AcquisitionSoftware')",
+        tof2mz_metadata_callback, &meta);
+#endif
+    return meta;
+}
 } // anonymous namespace
+
+void BrukerTof2MzConverter::set_lookup_frame(TimsDataHandle& TDH, std::optional<uint32_t> frame)
+{
+    if(!frame)
+    {
+        use_lookup_table = false;
+        return;
+    }
+    if(!TDH.has_frame(*frame))
+        throw std::invalid_argument("m/z lookup table: there is no frame " + std::to_string(*frame) + " in this dataset");
+    const uint32_t tof_count = read_tof2mz_metadata(TDH).tof_max;
+    if(tof_count == 0)
+        throw std::runtime_error("m/z lookup table: DigitizerNumSamples is missing from GlobalMetadata");
+
+    std::vector<double> tofs(tof_count);
+    std::iota(tofs.begin(), tofs.end(), 0.0);
+    lookup_table.resize(tof_count);  // allocates on first use only
+    use_lookup_table = false;        // until the table is complete
+    uint32_t success;
+    {
+        std::lock_guard<std::mutex> lock(bruker_api_mutex());
+        success = tims_index_to_mz(bruker_file_handle, *frame, tofs.data(), lookup_table.data(), tof_count);
+    }
+    if(!success)
+        throw std::runtime_error("m/z lookup table: " + get_tims_error());
+    use_lookup_table = true;
+}
 
 std::unique_ptr<Tof2MzConverter> OpenSourceTof2MzConverterFactory::produce(
     TimsDataHandle& TDH, pressure_compensation_strategy pcs)
@@ -254,20 +315,7 @@ std::unique_ptr<Tof2MzConverter> OpenSourceTof2MzConverterFactory::produce(
 
     std::string tdf_path = TDH.get_tims_dir_path() + "/analysis.tdf";
 
-    Tof2MzMetadata meta;
-#ifdef OPENTIMS_BUILDING_R
-    for (const auto& [key, value] : TDH.get_global_metadata())
-    {
-        char* row[2] = {const_cast<char*>(key.c_str()), const_cast<char*>(value.c_str())};
-        tof2mz_metadata_callback(&meta, 2, row, nullptr);
-    }
-#else
-    RAIISqlite db(tdf_path);
-    db.query(
-        "SELECT Key, Value FROM GlobalMetadata "
-        "WHERE Key IN ('MzAcqRangeLower','MzAcqRangeUpper','DigitizerNumSamples','AcquisitionSoftware')",
-        tof2mz_metadata_callback, &meta);
-#endif
+    const Tof2MzMetadata meta = read_tof2mz_metadata(TDH);
 
     if (meta.mz_min <= 0 || meta.mz_max <= meta.mz_min || meta.tof_max == 0)
         throw std::runtime_error(

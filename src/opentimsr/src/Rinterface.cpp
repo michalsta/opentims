@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <stdexcept>
+#include <optional>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -330,6 +331,28 @@ Rcpp::List tdf_extract_separate_frames(
     for(size_t ii = 0; ii < no_frames; ii++)
         result[ii] = as_data_frame(frames_columns[ii], columns, sizes[ii]);
     return result;
+}
+
+
+std::optional<uint32_t> optional_frame(const Rcpp::Nullable<Rcpp::IntegerVector>& frame)
+{
+    if(frame.isNull())
+        return std::nullopt;
+    return static_cast<uint32_t>(Rcpp::IntegerVector(frame.get())[0]);
+}
+
+
+// [[Rcpp::export]]
+void tdf_set_mz_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame)
+{
+    tdf->set_mz_lookup_frame(optional_frame(frame));
+}
+
+
+// [[Rcpp::export]]
+void tdf_set_inv_ion_mobility_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame)
+{
+    tdf->set_inv_ion_mobility_lookup_frame(optional_frame(frame));
 }
 
 

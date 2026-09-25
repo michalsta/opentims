@@ -53,6 +53,14 @@ tdf_extract_separate_frames <- function(tdf, indexes, columns) {
     .Call('_opentimsr_tdf_extract_separate_frames', PACKAGE = 'opentimsr', tdf, indexes, columns)
 }
 
+tdf_set_mz_lookup_frame <- function(tdf, frame) {
+    invisible(.Call('_opentimsr_tdf_set_mz_lookup_frame', PACKAGE = 'opentimsr', tdf, frame))
+}
+
+tdf_set_inv_ion_mobility_lookup_frame <- function(tdf, frame) {
+    invisible(.Call('_opentimsr_tdf_set_inv_ion_mobility_lookup_frame', PACKAGE = 'opentimsr', tdf, frame))
+}
+
 tdf_set_num_threads <- function(n) {
     invisible(.Call('_opentimsr_tdf_set_num_threads', PACKAGE = 'opentimsr', n))
 }

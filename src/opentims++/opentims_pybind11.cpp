@@ -172,6 +172,8 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             return new TimsDataHandle(path, pcs, tof_fac, im_fac);
         }), py::arg("path"), py::arg("pcs") = pressure_compensation_strategy::NoPressureCompensation, py::arg("conversion_method") = ConversionMethod::Default)
         .def("no_peaks_total", &TimsDataHandle::no_peaks_total)
+        .def("set_mz_lookup_frame", &TimsDataHandle::set_mz_lookup_frame)
+        .def("set_inv_ion_mobility_lookup_frame", &TimsDataHandle::set_inv_ion_mobility_lookup_frame)
         .def("min_frame_id", &TimsDataHandle::min_frame_id)
         .def("max_frame_id", &TimsDataHandle::max_frame_id)
         .def("get_frame", &TimsDataHandle::get_frame, py::return_value_policy::reference)

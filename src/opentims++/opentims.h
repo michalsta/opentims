@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -262,6 +263,21 @@ public:
 
     const std::vector<std::pair<std::string, std::string>>& get_global_metadata() const { return global_metadata; };
 #endif /* OPENTIMS_BUILDING_R */
+
+    //! Convert tof indices to m/z with a lookup table filled by Bruker's library for `frame`.
+    /**
+     * Faster than calling Bruker's library for every frame (which can only be done by one
+     * thread at a time), exact for `frame` and approximate for other frames. Can be called
+     * again with another frame; std::nullopt returns to exact conversion. Only available
+     * with Bruker's conversion. Must not be called while frames are being extracted.
+     */
+    void set_mz_lookup_frame(std::optional<uint32_t> frame);
+
+    //! Convert scans to inverse ion mobility with a lookup table filled by Bruker's library for `frame`.
+    /**
+     * As set_mz_lookup_frame(). Exact for all frames unless per-frame pressure compensation is used.
+     */
+    void set_inv_ion_mobility_lookup_frame(std::optional<uint32_t> frame);
 
     //! Close and deallocate the TimsTOF data handle (destructor).
     ~TimsDataHandle();

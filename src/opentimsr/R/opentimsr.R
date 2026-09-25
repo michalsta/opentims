@@ -598,6 +598,67 @@ setup_bruker_so <- function(path) .setup_bruker_so(path)
 setup_opensource <- function() invisible(.setup_opensource())
 
 
+lookup_frame <- function(frame){
+  if(is.null(frame)) return(NULL)
+  if(length(frame) != 1 || is.na(frame) || frame < 1) stop("frame must be a single positive frame number, or NULL.")
+  as.integer(frame)
+}
+
+
+#' Use a lookup table for m/z conversion with Bruker's library.
+#'
+#' Bruker's library converts one frame at a time and can only be called by one
+#' thread at a time, which limits parallel extraction. After this call, m/z
+#' values come from a table holding the m/z of every tof index for
+#' \code{frame}, computed once by Bruker's library and then used for all frames.
+#'
+#' Values are exact for \code{frame} and approximate for other frames: Bruker's
+#' m/z calibration changes slightly from frame to frame (by at most 0.16 ppm over
+#' four test datasets). The function can be called again with another frame,
+#' which refills the same table, or with \code{NULL} to return to exact
+#' conversion. Only available with Bruker's conversion
+#' (see \code{\link{setup_bruker_so}}).
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frame Frame whose calibration to use, or \code{NULL} for exact conversion.
+#' @return No return value, called for its side effect of changing the conversion.
+#' @export
+#' @examples
+#' \dontrun{
+#' setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
+#' D = OpenTIMS('path/to/your/folder.d')
+#' use_mz_lookup(D)        # calibration of frame 1 for all frames
+#' use_mz_lookup(D, 500)   # calibration of frame 500 instead
+#' use_mz_lookup(D, NULL)  # back to exact conversion
+#' }
+use_mz_lookup <- function(opentims, frame=1L){
+  tdf_set_mz_lookup_frame(opentims@handle, lookup_frame(frame))
+  invisible(NULL)
+}
+
+
+#' Use a lookup table for inverse ion mobility conversion with Bruker's library.
+#'
+#' Like \code{\link{use_mz_lookup}}, for inverse ion mobility. opentimsr uses no
+#' pressure compensation, so this conversion is the same in every frame and the
+#' table is exact for all frames.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frame Frame whose calibration to use, or \code{NULL} for exact conversion.
+#' @return No return value, called for its side effect of changing the conversion.
+#' @export
+#' @examples
+#' \dontrun{
+#' setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
+#' D = OpenTIMS('path/to/your/folder.d')
+#' use_inv_ion_mobility_lookup(D)
+#' }
+use_inv_ion_mobility_lookup <- function(opentims, frame=1L){
+  tdf_set_inv_ion_mobility_lookup_frame(opentims@handle, lookup_frame(frame))
+  invisible(NULL)
+}
+
+
 #' Set the number of threads to be used for data processing by OpenTIMS
 #'
 #' Frames are decoded in parallel by \code{\link{query}}, \code{\link{query_slice}},

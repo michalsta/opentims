@@ -422,6 +422,22 @@ TimsDataHandle(tims_data_dir, pcs)
 }
 #endif
 
+void TimsDataHandle::set_mz_lookup_frame(std::optional<uint32_t> frame)
+{
+    auto* bruker = dynamic_cast<BrukerTof2MzConverter*>(tof2mz_converter.get());
+    if(bruker == nullptr)
+        throw std::runtime_error("m/z lookup tables need Bruker's conversion; the open-source conversion is the same for all frames");
+    bruker->set_lookup_frame(*this, frame);
+}
+
+void TimsDataHandle::set_inv_ion_mobility_lookup_frame(std::optional<uint32_t> frame)
+{
+    auto* bruker = dynamic_cast<BrukerScan2InvIonMobilityConverter*>(scan2inv_ion_mobility_converter.get());
+    if(bruker == nullptr)
+        throw std::runtime_error("inverse ion mobility lookup tables need Bruker's conversion; the open-source conversion is the same for all frames");
+    bruker->set_lookup_frame(*this, frame);
+}
+
 TimsDataHandle::~TimsDataHandle()
 {
     if(zstd_dctx != nullptr)
@@ -555,6 +571,22 @@ template<typename T> void copy_column(const T* from, T* to, size_t size)
         std::copy(from, from + size, to);
 }
 
+// Whether extracting into `outputs` calls Bruker's library, i.e. m/z or inverse ion
+// mobility is requested and converted by Bruker's library without a lookup table.
+bool extraction_calls_bruker(const TimsDataHandle& tdh, const std::vector<TimsDataHandle::FrameOutput>& outputs)
+{
+    bool wants_mzs = false, wants_inv_ion_mobilities = false;
+    for(const auto& out : outputs)
+    {
+        wants_mzs = wants_mzs || out.mzs != nullptr;
+        wants_inv_ion_mobilities = wants_inv_ion_mobilities || out.inv_ion_mobilities != nullptr;
+    }
+    const auto* mz_converter = dynamic_cast<const BrukerTof2MzConverter*>(tdh.tof2mz_converter.get());
+    const auto* im_converter = dynamic_cast<const BrukerScan2InvIonMobilityConverter*>(tdh.scan2inv_ion_mobility_converter.get());
+    return (wants_mzs && mz_converter != nullptr && !mz_converter->uses_lookup_table())
+        || (wants_inv_ion_mobilities && im_converter != nullptr && !im_converter->uses_lookup_table());
+}
+
 // Closes a frame when leaving scope, so that no frame keeps pointing into a
 // worker's decompression buffer, even if decoding it failed.
 struct FrameCloser
@@ -615,7 +647,12 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
             repeats.emplace_back(ii, it->second);
     }
 
-    ThreadingManager::get_instance().set_shared_threading();
+    // With Bruker's library, shared threading leaves most threads to the library itself;
+    // that only pays off when the extraction actually calls it.
+    if(extraction_calls_bruker(*this, outputs))
+        ThreadingManager::get_instance().set_shared_threading();
+    else
+        ThreadingManager::get_instance().set_opentims_threading();
     const size_t n_threads = (std::min)(ThreadingManager::get_instance().get_no_opentims_threads(), to_decode.size());
 
     if(n_threads <= 1)

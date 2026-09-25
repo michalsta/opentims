@@ -179,6 +179,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tdf_set_mz_lookup_frame
+void tdf_set_mz_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame);
+RcppExport SEXP _opentimsr_tdf_set_mz_lookup_frame(SEXP tdfSEXP, SEXP frameSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::IntegerVector> >::type frame(frameSEXP);
+    tdf_set_mz_lookup_frame(tdf, frame);
+    return R_NilValue;
+END_RCPP
+}
+// tdf_set_inv_ion_mobility_lookup_frame
+void tdf_set_inv_ion_mobility_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame);
+RcppExport SEXP _opentimsr_tdf_set_inv_ion_mobility_lookup_frame(SEXP tdfSEXP, SEXP frameSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::IntegerVector> >::type frame(frameSEXP);
+    tdf_set_inv_ion_mobility_lookup_frame(tdf, frame);
+    return R_NilValue;
+END_RCPP
+}
 // tdf_set_num_threads
 void tdf_set_num_threads(const size_t n);
 RcppExport SEXP _opentimsr_tdf_set_num_threads(SEXP nSEXP) {
@@ -204,6 +226,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_tdf_extract_frames", (DL_FUNC) &_opentimsr_tdf_extract_frames, 9},
     {"_opentimsr_tdf_extract_frames_slice", (DL_FUNC) &_opentimsr_tdf_extract_frames_slice, 11},
     {"_opentimsr_tdf_extract_separate_frames", (DL_FUNC) &_opentimsr_tdf_extract_separate_frames, 3},
+    {"_opentimsr_tdf_set_mz_lookup_frame", (DL_FUNC) &_opentimsr_tdf_set_mz_lookup_frame, 2},
+    {"_opentimsr_tdf_set_inv_ion_mobility_lookup_frame", (DL_FUNC) &_opentimsr_tdf_set_inv_ion_mobility_lookup_frame, 2},
     {"_opentimsr_tdf_set_num_threads", (DL_FUNC) &_opentimsr_tdf_set_num_threads, 1},
     {NULL, NULL, 0}
 };

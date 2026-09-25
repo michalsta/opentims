@@ -478,8 +478,8 @@ class OpenTIMS:
         assert all(
             c in self.all_columns for c in columns
         ), f"Accepted column names: {self.all_columns}"
-        if not isinstance(frame_ids, list):
-            frame_ids = list(frame_ids)
+        # The result has one entry per frame, so decode each frame once.
+        frame_ids = list(dict.fromkeys(frame_ids))
         col_b = [col in columns for col in all_columns]
         A = self.handle.extract_separate_frames(frame_ids, *col_b)
         ret = {}

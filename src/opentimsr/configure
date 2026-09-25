@@ -12,9 +12,13 @@ CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 
-if test -z "${ZSTD_CFLAGS}${ZSTD_LIBS}"; then
+if test -z "${ZSTD_CFLAGS}"; then
   if pkg-config --exists libzstd 2>/dev/null; then
     ZSTD_CFLAGS=`pkg-config --cflags libzstd`
+  fi
+fi
+if test -z "${ZSTD_LIBS}"; then
+  if pkg-config --exists libzstd 2>/dev/null; then
     ZSTD_LIBS=`pkg-config --libs libzstd`
   else
     ZSTD_LIBS="-lzstd"

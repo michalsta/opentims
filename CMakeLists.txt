@@ -15,6 +15,7 @@ project(opentims VERSION "${OPENTIMS_VERSION}" LANGUAGES CXX C)
 # Pass -DBUILD_SHARED_LIBS=ON for a shared library (.so/.dylib).
 option(OPENTIMS_BUILD_LIB    "Build the opentims C++ library"      ON)
 option(OPENTIMS_BUILD_PYTHON "Build Python pybind11 bindings"       OFF)
+option(OPENTIMS_BUILD_TESTS  "Build C++ regression tests"          OFF)
 option(OPENTIMS_LINK_SQLITE_STATICALLY
        "Link sqlite3 at compile time instead of dlopening at runtime (static lib only)" OFF)
 
@@ -260,4 +261,25 @@ if(OPENTIMS_BUILD_PYTHON)
         DESTINATION opentimspy/opentims++
         COMPONENT Python
     )
+endif()
+
+if(OPENTIMS_BUILD_TESTS)
+    if(NOT OPENTIMS_BUILD_LIB)
+        message(FATAL_ERROR "OPENTIMS_BUILD_TESTS requires OPENTIMS_BUILD_LIB")
+    endif()
+    if(NOT BUILD_SHARED_LIBS AND NOT OPENTIMS_LINK_SQLITE_STATICALLY)
+        message(FATAL_ERROR "C++ tests require BUILD_SHARED_LIBS or OPENTIMS_LINK_SQLITE_STATICALLY")
+    endif()
+    enable_testing()
+    add_executable(test_repeated_frames test/test_repeated_frames.cpp)
+    target_link_libraries(test_repeated_frames PRIVATE opentims_cpp Threads::Threads)
+    opentims_compile_options(test_repeated_frames)
+    if(NOT BUILD_SHARED_LIBS)
+        opentims_link_zstd(test_repeated_frames)
+        if(OPENTIMS_LINK_SQLITE_STATICALLY)
+            opentims_link_sqlite(test_repeated_frames)
+        endif()
+    endif()
+    add_test(NAME repeated_frame_columns COMMAND test_repeated_frames
+        "${CMAKE_CURRENT_SOURCE_DIR}/pytest/test.d")
 endif()

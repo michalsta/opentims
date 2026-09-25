@@ -567,8 +567,14 @@ template<typename T> T* element_or_null(T* const * ptrs, size_t index) { return 
 
 template<typename T> void copy_column(const T* from, T* to, size_t size)
 {
-    if(from != nullptr && to != nullptr)
+    if(from != nullptr && to != nullptr && from != to)
         std::copy(from, from + size, to);
+}
+
+template<typename T> void use_buffer_if_missing(T*& buffer, T* candidate)
+{
+    if(buffer == nullptr)
+        buffer = candidate;
 }
 
 // Whether extracting into `outputs` calls Bruker's library, i.e. m/z or inverse ion
@@ -632,19 +638,35 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
                                    const std::vector<FrameOutput>& outputs)
 {
     // A frame keeps decoding state while it is being read, so two threads must
-    // never decode the same frame. Each distinct frame is therefore decoded once,
-    // into the outputs of its first request; repeated requests get a copy.
-    std::vector<size_t> to_decode;
-    std::vector<std::pair<size_t, size_t>> repeats;  // (request, request holding its data)
-    std::unordered_map<uint32_t, size_t> first_request;
-    first_request.reserve(no_indexes);
+    // never decode the same frame. Decode each distinct frame once, using the
+    // first requested buffer for each column, then copy to the other requests.
+    struct DecodeTask
+    {
+        uint32_t frame_id;
+        FrameOutput output;
+    };
+    std::vector<DecodeTask> to_decode;
+    std::vector<std::pair<size_t, size_t>> repeats;  // (request, task holding its data)
+    std::unordered_map<uint32_t, size_t> first_task;
+    first_task.reserve(no_indexes);
     for(size_t ii = 0; ii < no_indexes; ii++)
     {
-        auto [it, is_first] = first_request.emplace(indexes[ii], ii);
+        auto [it, is_first] = first_task.emplace(indexes[ii], to_decode.size());
         if(is_first)
-            to_decode.push_back(ii);
+            to_decode.push_back(DecodeTask{indexes[ii], outputs[ii]});
         else
+        {
             repeats.emplace_back(ii, it->second);
+            FrameOutput& out = to_decode[it->second].output;
+            const FrameOutput& requested = outputs[ii];
+            use_buffer_if_missing(out.frame_ids, requested.frame_ids);
+            use_buffer_if_missing(out.scan_ids, requested.scan_ids);
+            use_buffer_if_missing(out.tofs, requested.tofs);
+            use_buffer_if_missing(out.intensities, requested.intensities);
+            use_buffer_if_missing(out.mzs, requested.mzs);
+            use_buffer_if_missing(out.inv_ion_mobilities, requested.inv_ion_mobilities);
+            use_buffer_if_missing(out.retention_times, requested.retention_times);
+        }
     }
 
     // With Bruker's library, shared threading leaves most threads to the library itself;
@@ -658,10 +680,10 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
     if(n_threads <= 1)
     {
         ThreadingManager::get_instance().set_converter_threading();
-        for(size_t request : to_decode)
+        for(const auto& task : to_decode)
         {
-            const FrameOutput& out = outputs[request];
-            frame_descs.at(indexes[request]).save_to_buffs(
+            const FrameOutput& out = task.output;
+            frame_descs.at(task.frame_id).save_to_buffs(
                 out.frame_ids, out.scan_ids, out.tofs, out.intensities,
                 out.mzs, out.inv_ion_mobilities, out.retention_times, zstd_dctx);
         }
@@ -692,11 +714,10 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
                     const size_t task = next_task.fetch_add(1);
                     if(task >= to_decode.size())
                         break;
-                    const size_t request = to_decode[task];
-                    TimsFrame& frame = frame_descs.at(indexes[request]);
+                    TimsFrame& frame = frame_descs.at(to_decode[task].frame_id);
                     if(frame.num_peaks == 0)
                         continue;
-                    const FrameOutput& out = outputs[request];
+                    const FrameOutput& out = to_decode[task].output;
                     if(frame.bytes0 != nullptr)
                     {
                         // Already decompressed by the caller: read it and leave it open,
@@ -742,7 +763,7 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
     for(const auto& [request, source] : repeats)
     {
         const size_t size = frame_descs.at(indexes[request]).num_peaks;
-        const FrameOutput& from = outputs[source];
+        const FrameOutput& from = to_decode[source].output;
         const FrameOutput& to = outputs[request];
         copy_column(from.frame_ids, to.frame_ids, size);
         copy_column(from.scan_ids, to.scan_ids, size);

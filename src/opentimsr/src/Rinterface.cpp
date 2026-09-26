@@ -72,6 +72,9 @@ Rcpp::DataFrame tdf_get_range(Rcpp::XPtr<TimsDataHandle> tdf, size_t start, size
 {
     using namespace Rcpp;
     
+    if(step <= 0)
+        Rcpp::stop("step must be positive");
+
     TimsDataHandle& tdh = *tdf;
     if(end > tdh.max_frame_id())
         end = tdh.max_frame_id()+1;

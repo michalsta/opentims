@@ -65,6 +65,18 @@ test_that("query rejects unknown columns", {
   expect_error(query(D, frames = 1L, columns = "nonsense"), "Wrong column names")
 })
 
+test_that("query rejects frames not in the dataset", {
+  expect_error(query(D, D@max_frame + 1L), "No such frame")
+  expect_error(query(D, 0L), "No such frame")
+  expect_error(query(D, c(1L, -1L)), "No such frame")
+})
+
+test_that("query rejects non-whole and NA frame numbers", {
+  expect_error(query(D, 1.5), "whole numbers")
+  expect_error(query(D, NA), "whole numbers")
+  expect_error(query(D, "1"), "whole numbers")
+})
+
 # --- query_slice ---
 
 test_that("query_slice over all frames matches query", {
@@ -82,6 +94,14 @@ test_that("query_slice of a single frame matches query", {
 test_that("empty query_slice returns no rows", {
   result <- query_slice(D, D@max_frame, D@min_frame, columns = raw_columns)
   expect_equal(nrow(result), 0L)
+})
+
+test_that("query_slice rejects out-of-range bounds and non-positive steps", {
+  expect_error(query_slice(D, D@min_frame - 1L, D@max_frame), "out of range")
+  expect_error(query_slice(D, D@min_frame, D@max_frame + 1L), "out of range")
+  expect_error(query_slice(D, D@min_frame, D@max_frame, 0), "'by' must be positive")
+  expect_error(query_slice(D, D@min_frame, D@max_frame, -1), "'by' must be positive")
+  expect_error(query_slice(D, 1.5, D@max_frame), "single whole numbers")
 })
 
 # --- rt_query ---
@@ -104,7 +124,13 @@ test_that("[ returns peaks of the requested frame", {
 })
 
 test_that("[ rejects frames out of range", {
-  expect_error(D[D@max_frame + 1L])
+  expect_error(D[D@max_frame + 1L], "No such frame")
+})
+
+test_that("range rejects out-of-range bounds and non-positive steps", {
+  expect_error(range(D, D@min_frame - 1L, D@max_frame), "out of range")
+  expect_error(range(D, D@min_frame, D@max_frame + 2L), "out of range")
+  expect_error(range(D, D@min_frame, D@max_frame, 0), "'by' must be positive")
 })
 
 test_that("range covers all peaks", {

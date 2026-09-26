@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{OpenTIMS data instance.}
 
-\item{i}{An array of nonzero indices to extract.}
+\item{i}{Frame numbers to extract.}
 }
 \value{
 For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.

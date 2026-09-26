@@ -14,6 +14,32 @@ NULL
 
 all_columns = c('frame','scan','tof','intensity','mz','inv_ion_mobility','retention_time')
 
+# Validate user-given frame numbers here: the C++ side only reports 'unordered_map::at'.
+check_frames <- function(opentims, frames){
+  if(!is.numeric(frames) || anyNA(frames) || any(frames != trunc(frames)))
+    stop("Frame numbers must be whole numbers, without NAs.", call.=FALSE)
+  missing = setdiff(frames, opentims@frames$Id)
+  if(length(missing) > 0)
+    stop(sprintf("No such frame(s): %s. The dataset has frames %d to %d.",
+                 paste(head(missing, 5), collapse=", "), opentims@min_frame, opentims@max_frame),
+         call.=FALSE)
+  as.integer(frames)
+}
+
+# Validate a from:to:by slice; 'to' is exclusive. An empty slice (from >= to) is allowed.
+check_slice <- function(opentims, from, to, by){
+  for(arg in list(from, to, by))
+    if(!is.numeric(arg) || length(arg) != 1 || is.na(arg) || arg != trunc(arg))
+      stop("'from', 'to' and 'by' must be single whole numbers.", call.=FALSE)
+  if(by < 1)
+    stop("'by' must be positive.", call.=FALSE)
+  if(from < to && (from < opentims@min_frame || to > opentims@max_frame + 1))
+    stop(sprintf("Frames %d to %d are out of range. The dataset has frames %d to %d.",
+                 as.integer(from), as.integer(to - 1), opentims@min_frame, opentims@max_frame),
+         call.=FALSE)
+  invisible(NULL)
+}
+
 
 #' TimsTOF data accessor.
 #'
@@ -82,7 +108,7 @@ setMethod('length',
 #' Get some frames of data.
 #'
 #' @param x OpenTIMS data instance.
-#' @param i An array of nonzero indices to extract.
+#' @param i Frame numbers to extract.
 #' @return For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
@@ -94,9 +120,7 @@ setMethod('length',
 setMethod("[", 
           signature(x = "OpenTIMS", i = "ANY"),
           function(x, i){
-            i = as.integer(i)
-            stopifnot(all(x@min_frame <= i, i <= x@max_frame))
-            return(tdf_get_indexes(x@handle, i))
+            return(tdf_get_indexes(x@handle, check_frames(x, i)))
         })
 
 #' Select a range of frames to extract.
@@ -120,12 +144,7 @@ setMethod("[",
 setMethod("range", 
           "OpenTIMS",
           function(x, from, to, by=1L, na.rm=FALSE){ 
-            from = as.integer(from)
-            to  = as.integer(to)
-            by  = as.integer(by)
-            stopifnot(from >= x@min_frame,
-                      to <= x@max_frame + 1,
-                      by >= 0)
+            check_slice(x, from, to, by)
             tdf_get_range(x@handle, from, to, by)
           })
 
@@ -363,7 +382,7 @@ query <- function(opentims,
   if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
 
   df = tdf_extract_frames( opentims@handle,
-                           frames,
+                           check_frames(opentims, frames),
                            get_frames = col[1],
                            get_scans = col[2],
                            get_tofs = col[3],
@@ -408,6 +427,7 @@ query_slice <- function(opentims,
   # Border conditions.
   if(is.null(from)) from = opentims@min_frame
   if(is.null(to)) to = opentims@max_frame
+  check_slice(opentims, from, to + 1, by)
 
   df = tdf_extract_frames_slice( opentims@handle,
                                  from,

@@ -1,5 +1,5 @@
 # *   OpenTIMS: a fully open-source library for opening Bruker's TimsTOF data files.
-# *   Copyright (C) 2020-2024 Michał Startek and Mateusz Łącki
+# *   Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
 # *
 # *   Licensed under the MIT License. See LICENCE file in the project root for details.
 

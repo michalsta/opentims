@@ -176,6 +176,10 @@ tables_names <- function(opentims){
 
 #' Get OpenTIMS data representation.
 #' 
+#' Select the converters for 'mz' and 'inv_ion_mobility' first, with
+#' \code{\link{setup_opensource}} or \code{\link{setup_bruker_so}}; without
+#' them, only the raw columns can be queried from the returned object.
+#'
 #' @param path.d Path to the TimsTOF '*.d' folder containing the data (requires the folder to contain only 'analysis.tdf' and 'analysis.tdf_bin').
 #' @return An object of class \code{OpenTIMS}, used as the data handle by the other functions.
 #' @examples
@@ -553,8 +557,13 @@ setup_bruker_so <- function(path) .setup_bruker_so(path)
 #'
 #' Activates the built-in open-source converters for tof-to-mz and
 #' scan-to-inv_ion_mobility transformations. No proprietary Bruker libraries
-#' are required. This is the default mode; call this function before querying
-#' data if you have not called \code{\link{setup_bruker_so}}.
+#' are required.
+#'
+#' No converters are selected when the package is loaded: call either this
+#' function or \code{\link{setup_bruker_so}} before \code{\link{OpenTIMS}}.
+#' The choice is fixed when a dataset is opened. A dataset opened before either
+#' is called still returns the raw columns ('frame', 'scan', 'tof', 'intensity'), but
+#' requesting 'mz' or 'inv_ion_mobility' raises an error.
 #'
 #' @return No return value, called for its side effect of switching the conversion backend.
 #' @examples

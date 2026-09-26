@@ -12,8 +12,14 @@ No return value, called for its side effect of switching the conversion backend.
 \description{
 Activates the built-in open-source converters for tof-to-mz and
 scan-to-inv_ion_mobility transformations. No proprietary Bruker libraries
-are required. This is the default mode; call this function before querying
-data if you have not called \code{\link{setup_bruker_so}}.
+are required.
+}
+\details{
+No converters are selected when the package is loaded: call either this
+function or \code{\link{setup_bruker_so}} before \code{\link{OpenTIMS}}.
+The choice is fixed when a dataset is opened. A dataset opened before either
+is called still returns the raw columns ('frame', 'scan', 'tof', 'intensity'), but
+requesting 'mz' or 'inv_ion_mobility' raises an error.
 }
 \examples{
 setup_opensource()

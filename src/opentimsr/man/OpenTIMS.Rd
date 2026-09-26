@@ -13,7 +13,9 @@ OpenTIMS(path.d)
 An object of class \code{OpenTIMS}, used as the data handle by the other functions.
 }
 \description{
-Get OpenTIMS data representation.
+Select the converters for 'mz' and 'inv_ion_mobility' first, with
+\code{\link{setup_opensource}} or \code{\link{setup_bruker_so}}; without
+them, only the raw columns can be queried from the returned object.
 }
 \examples{
 path.d = system.file("extdata", "test.d", package = "opentimsr")

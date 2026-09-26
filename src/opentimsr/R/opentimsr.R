@@ -145,7 +145,7 @@ setMethod("range",
 #' CloseTIMS(D)
 table2df <- function(opentims, names){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf, flags=RSQLite::SQLITE_RO)
     on.exit(DBI::dbDisconnect(sql_conn))
     tables = lapply(names, function(name) DBI::dbReadTable(sql_conn, name))
     names(tables) = names
@@ -166,7 +166,7 @@ table2df <- function(opentims, names){
 #' CloseTIMS(D)
 tables_names <- function(opentims){
     analysis.tdf = file.path(opentims@path.d, 'analysis.tdf')
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf, flags=RSQLite::SQLITE_RO)
     on.exit(DBI::dbDisconnect(sql_conn))
     tables_names = DBI::dbListTables(sql_conn)
     return(tables_names)
@@ -191,7 +191,7 @@ OpenTIMS <- function(path.d){
     path.d = normalizePath(path.d, mustWork=TRUE)
     # getting tables from SQlite
     analysis.tdf = file.path(path.d, 'analysis.tdf')
-    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf)
+    sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf, flags=RSQLite::SQLITE_RO)
     on.exit(DBI::dbDisconnect(sql_conn))
     frames = DBI::dbReadTable(sql_conn, 'Frames')
     GlobalMetadata = DBI::dbReadTable(sql_conn, 'GlobalMetadata')

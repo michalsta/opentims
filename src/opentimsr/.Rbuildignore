@@ -1,6 +1,6 @@
 ^src/opentims_core/zstd$
 ^src/opentims_core/sqlite$
-^src/opentims_core/sqlite_helper\.cpp$
+^src/opentims_core/sqlite_helper\.(cpp|h)$
 ^src/opentims_core/opentims_pybind11\.cpp$
 ^src/opentims_core/libopentims_py\.cpp$
 ^src/opentims_core/opentims_all\.(cpp|h)$

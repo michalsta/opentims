@@ -152,3 +152,24 @@ def test_context_manager_closes():
     with OpenTIMS(data_path, cm=conversion_method.OpenSource) as handle:
         assert handle.handle is not None
     assert handle.handle is None
+
+
+# --- user-provided output arrays ---
+
+@pytest.mark.parametrize("sanitize", [True, False])
+def test_query_fills_user_provided_arrays(ot, sanitize):
+    expected = ot.query(columns=("frame", "mz"))
+    arrays = {
+        "frame": np.zeros(len(expected["frame"]), dtype=np.uint32),
+        "mz": np.zeros(len(expected["mz"]), dtype=np.double),
+    }
+    result = ot.query(columns=arrays, _sanitize=sanitize)
+    assert result["frame"] is arrays["frame"]
+    assert result["mz"] is arrays["mz"]
+    np.testing.assert_array_equal(arrays["frame"], expected["frame"])
+    np.testing.assert_array_equal(arrays["mz"], expected["mz"])
+
+
+def test_query_rejects_wrong_size_user_array(ot):
+    with pytest.raises(AssertionError):
+        ot.query(columns={"frame": np.zeros(1, dtype=np.uint32)})

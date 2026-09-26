@@ -285,13 +285,15 @@ class OpenTIMS:
         self,
         size: int,
         arrays: dict[str, npt.NDArray],
+        check: bool = True,
     ) -> dict[str, npt.NDArray]:
         final_arrays = {}
         for col, col_dtype in zip(self.all_columns, self.all_columns_dtypes):
             if col in arrays:
                 arr = arrays[col]
-                assert arr.dtype == col_dtype
-                assert len(arr) == size
+                if check:
+                    assert arr.dtype == col_dtype
+                    assert len(arr) == size
             else:
                 arr = np.empty(shape=0, dtype=col_dtype)
             final_arrays[col] = arr
@@ -308,6 +310,7 @@ class OpenTIMS:
         Args:
             frames (int, iterable, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
             columns (tuple|str|dict): which columns to extract? Be default, provide a tuple with column name strings. If you provide one string, it will be a column. If you provide a dictionary, it should map column names to arrays you provide yourself for the outputs instead of having to trouble us. The latter makes sense if you want to store data on disk in a memory mapped files. We do check if your arrays match necessry column types and size.
+            _sanitize (bool): if False, skip the dtype and size checks of user-provided arrays. The arrays are written to unchecked, so a wrong dtype or a too short array corrupts memory.
         Returns:
             dict: columns to numpy array mapping.
         """
@@ -325,8 +328,8 @@ class OpenTIMS:
             frames = np.r_[frames].astype(np.uint32)
             size = self.peaks_per_frame_cnts(frames, convert=False)
             arrays = (
-                self._sanitize_user_provided_arrays(size, columns)
-                if isinstance(columns, dict) and _sanitize
+                self._sanitize_user_provided_arrays(size, columns, check=_sanitize)
+                if isinstance(columns, dict)
                 else self._get_empty_arrays(size, columns)
             )
 

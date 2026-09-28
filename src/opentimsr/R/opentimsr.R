@@ -444,8 +444,9 @@ query_slice <- function(opentims,
 }
 
 
-get_left_frame <- function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
-get_right_frame <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
+# Positions (not frame ids) in the retention time vector y bounding the closed interval.
+get_left_position <- function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
+get_right_position <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
 
 
 #' Get the retention time for each frame.
@@ -470,16 +471,15 @@ rt_query <- function(opentims,
                     columns=all_columns){
   RTS = retention_times(opentims)
 
-  min_frame = get_left_frame(min_retention_time, RTS)
-  max_frame = get_right_frame(max_retention_time, RTS)
+  first = get_left_position(min_retention_time, RTS)
+  last = get_right_position(max_retention_time, RTS)
 
-  if(is.na(min_frame) | is.na(max_frame))
+  if(is.na(first) | is.na(last))
     stop("The [min_retention_time,max_retention_time] interval does not hold any data.")
 
-  query_slice(opentims,
-              from=min_frame,
-              to=max_frame,
-              columns=columns)
+  # Map positions to frame ids: ids need not start at 1 nor be contiguous.
+  frames = if(first <= last) opentims@frames$Id[first:last] else integer(0)
+  query(opentims, frames, columns=columns)
 }
 
 

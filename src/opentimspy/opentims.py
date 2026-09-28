@@ -194,7 +194,7 @@ class OpenTIMS:
 
     @cached_property
     def ms1_frames(self) -> FRAMES_TYPE:
-        return np.arange(self.min_frame, self.max_frame + 1)[self.ms_types == 0]
+        return self.frames["Id"][self.ms_types == 0]
 
     @cached_property
     def _ms1_mask(self) -> npt.NDArray[np.bool_]:
@@ -204,7 +204,7 @@ class OpenTIMS:
 
     @cached_property
     def ms2_frames(self) -> FRAMES_TYPE:
-        return np.arange(self.min_frame, self.max_frame + 1)[~self._ms1_mask]
+        return self.frames["Id"][self.ms_types != 0]
 
     @cached_property
     def frame_properties(self) -> dict[str, npt.NDArray]:
@@ -365,6 +365,15 @@ class OpenTIMS:
     def __iter__(self):
         yield from self.query_iter()
 
+    def _frames_in_retention_time_range(
+        self, min_retention_time: float, max_retention_time: float
+    ) -> npt.NDArray:
+        """Ids of frames with retention time in [min_retention_time, max_retention_time)."""
+        first, last = np.searchsorted(
+            self.retention_times, (min_retention_time, max_retention_time)
+        )
+        return self.frames["Id"][first:last]
+
     def rt_query(
         self,
         min_retention_time: float,
@@ -384,13 +393,10 @@ class OpenTIMS:
         Returns:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = (
-            np.searchsorted(
-                self.retention_times, (min_retention_time, max_retention_time)
-            )
-            + 1
+        frames = self._frames_in_retention_time_range(
+            min_retention_time, max_retention_time
         )
-        return self.query(slice(min_frame, max_frame), columns)
+        return self.query(frames, columns)
 
     def rt_query_iter(
         self, min_retention_time: float, max_retention_time: float, columns=all_columns
@@ -408,13 +414,10 @@ class OpenTIMS:
         Yields:
             dict: column to numpy array mapping.
         """
-        min_frame, max_frame = (
-            np.searchsorted(
-                self.retention_times, (min_retention_time, max_retention_time)
-            )
-            + 1
+        frames = self._frames_in_retention_time_range(
+            min_retention_time, max_retention_time
         )
-        yield from self.query_iter(range(min_frame, max_frame), columns)
+        yield from self.query_iter(frames, columns)
 
     def frame_array(self, frame: int):
         """Get a 2D array of data for a given frame.
@@ -529,9 +532,7 @@ class OpenTIMS:
             binary str: A hash.
         """
         h = algo()
-        for X in self.query_iter(
-            frames=slice(self.min_frame, self.max_frame + 1), columns=columns
-        ):
+        for X in self.query_iter(columns=columns):
             for c in columns:
                 h.update(X[c])
         return h.digest()
@@ -553,9 +554,7 @@ class OpenTIMS:
         """
         return [
             hash_frame(X, columns, algo)
-            for X in self.query_iter(
-                frames=slice(self.min_frame, self.max_frame + 1), columns=columns
-            )
+            for X in self.query_iter(columns=columns)
         ]
 
     def retention_time_to_frame(
@@ -581,7 +580,7 @@ class OpenTIMS:
         ), "Some retention times were higher than the latest one."
         res = np.searchsorted(self.retention_times, retention_time)
         # times past the last frame, but within _buffer, belong to the last frame
-        return np.minimum(res, len(self.retention_times) - 1) + 1
+        return self.frames["Id"][np.minimum(res, len(self.retention_times) - 1)]
 
     def MS1_retention_time_to_frame(
         self,
@@ -602,7 +601,7 @@ class OpenTIMS:
         retention_time = np.array(
             retention_time
         )  # if someone passes a float or a pandas.Series
-        all_ms1_rts = self.retention_times[self.ms1_frames - 1]
+        all_ms1_rts = self.retention_times[self.ms_types == 0]
         assert np.all(
             retention_time <= all_ms1_rts[-1] + _buffer
         ), "Some retention times were higher than the last MS1 one."
@@ -622,9 +621,13 @@ class OpenTIMS:
         Returns:
             np.array: retention time when a frame finishes [second].
         """
-        #        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        #        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-        return self.retention_times[frame - 1]
+        frame = np.asarray(frame)
+        ids = self.frames["Id"]
+        idx = np.minimum(np.searchsorted(ids, frame), len(ids) - 1)
+        if not np.all(ids[idx] == frame):
+            missing = np.setdiff1d(frame, ids)
+            raise IndexError(f"No such frame(s): {missing[:5].tolist()}.")
+        return self.retention_times[idx]
 
     def __scan_to_inv_ion_mobility_assertions(
         self,

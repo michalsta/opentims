@@ -116,6 +116,23 @@ test_that("rt_query outside the data raises", {
   expect_error(rt_query(D, -2, -1), "does not hold any data")
 })
 
+test_that("rt_query returns frame ids, not positions, when ids have gaps", {
+  src <- system.file("extdata", "test.d", package = "opentimsr")
+  gapped <- file.path(tempfile(), "gapped.d")
+  dir.create(gapped, recursive = TRUE)
+  file.copy(file.path(src, c("analysis.tdf", "analysis.tdf_bin")), gapped)
+  conn <- DBI::dbConnect(RSQLite::SQLite(), file.path(gapped, "analysis.tdf"))
+  DBI::dbExecute(conn, "UPDATE Frames SET Id = CASE Id WHEN 2 THEN 5 ELSE Id END")
+  DBI::dbDisconnect(conn)
+
+  G <- OpenTIMS(gapped)
+  on.exit(CloseTIMS(G))
+  rts <- retention_times(G)
+  expect_equal(sort(unique(rt_query(G, min(rts), max(rts))$frame)), c(1L, 5L))
+  expect_equal(unique(rt_query(G, rts[2], rts[2])$frame), 5L)
+  expect_equal(nrow(rt_query(G, rts[1] + 1e-6, rts[2] - 1e-6)), 0L)
+})
+
 # --- OpenTIMS methods ---
 
 test_that("[ returns peaks of the requested frame", {

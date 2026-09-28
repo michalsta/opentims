@@ -149,3 +149,38 @@ def test_failed_open_does_not_leak_file_descriptors(tmp_path):
         with pytest.raises(RuntimeError, match="Compression algorithm"):
             OpenTIMS(path)
     assert len(os.listdir("/proc/self/fd")) == before
+
+
+# --- frame ids that do not run 1..N ---
+
+@pytest.fixture(params=["Id + 10", "CASE Id WHEN 2 THEN 5 ELSE Id END"], ids=["shifted", "gap"])
+def renumbered(request, tmp_path):
+    path = modified_dataset(tmp_path, f"UPDATE Frames SET Id = {request.param}")
+    with OpenTIMS(path, cm=conversion_method.OpenSource) as handle:
+        yield handle
+
+def test_renumbered_ms_frames(renumbered):
+    ids, types = renumbered.frames["Id"], renumbered.ms_types
+    assert np.array_equal(renumbered.ms1_frames, ids[types == 0])
+    assert np.array_equal(renumbered.ms2_frames, ids[types != 0])
+
+def test_renumbered_rt_query(renumbered):
+    ids = renumbered.frames["Id"]
+    assert np.array_equal(np.unique(renumbered.rt_query(0, 1e9)["frame"]), ids)
+    assert [X["frame"][0] for X in renumbered.rt_query_iter(0, 1e9)] == list(ids)
+    assert len(renumbered.rt_query(1e8, 1e9)["frame"]) == 0
+
+def test_renumbered_retention_time_conversions(renumbered):
+    ids, rts = renumbered.frames["Id"], renumbered.retention_times
+    assert np.array_equal(renumbered.retention_time_to_frame(rts), ids)
+    assert np.array_equal(renumbered.frame_to_retention_time(ids), rts)
+    assert np.array_equal(
+        renumbered.MS1_retention_time_to_frame(rts[renumbered.ms_types == 0]),
+        renumbered.ms1_frames,
+    )
+    with pytest.raises(IndexError):
+        renumbered.frame_to_retention_time(ids[-1] + 1)
+
+def test_renumbered_hashes(renumbered):
+    assert len(renumbered.get_hashes()) == len(renumbered.frames["Id"])
+    renumbered.get_hash()

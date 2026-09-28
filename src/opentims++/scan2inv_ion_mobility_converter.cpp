@@ -6,6 +6,7 @@
  */
 
 #include "scan2inv_ion_mobility_converter.h"
+#include "parse_number.h"
 
 #ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
@@ -223,9 +224,9 @@ int scan2im_metadata_callback(void* out, int cols, char** row, char** colnames)
     const char* key = row[0];
     const char* val = row[1];
     if (std::strcmp(key, "OneOverK0AcqRangeLower") == 0)
-        meta->im_min = std::atof(val);
+        meta->im_min = parse_double_c_locale(val);
     else if (std::strcmp(key, "OneOverK0AcqRangeUpper") == 0)
-        meta->im_max = std::atof(val);
+        meta->im_max = parse_double_c_locale(val);
     return 0;
 }
 

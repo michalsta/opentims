@@ -6,6 +6,7 @@
  */
 
 #include "tof2mz_converter.h"
+#include "parse_number.h"
 
 #ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
@@ -230,9 +231,9 @@ int tof2mz_metadata_callback(void* out, int cols, char** row, char** colnames)
     const char* key = row[0];
     const char* val = row[1];
     if (std::strcmp(key, "MzAcqRangeLower") == 0)
-        meta->mz_min = std::atof(val);
+        meta->mz_min = parse_double_c_locale(val);
     else if (std::strcmp(key, "MzAcqRangeUpper") == 0)
-        meta->mz_max = std::atof(val);
+        meta->mz_max = parse_double_c_locale(val);
     else if (std::strcmp(key, "DigitizerNumSamples") == 0)
         meta->tof_max = static_cast<uint32_t>(std::atol(val));
     else if (std::strcmp(key, "AcquisitionSoftware") == 0)

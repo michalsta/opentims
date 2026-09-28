@@ -68,7 +68,7 @@ class TimsFrame
         return ret;
     }
 
-    const char * const tims_bin_frame;
+    const uint64_t tims_bin_offset; ///< Byte offset of the compressed frame within analysis.tdf_bin
 
     friend class TimsDataHandle;
     friend int tims_sql_callback(void* out, int cols, char** row, char** colnames);
@@ -98,7 +98,7 @@ class TimsFrame
               uint32_t _msms_type,
               double _intensity_correction,
               double _time,
-              const char* frame_ptr,
+              uint64_t _tims_bin_offset,
               TimsDataHandle& parent_hndl
             );
 

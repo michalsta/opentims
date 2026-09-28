@@ -26,21 +26,53 @@ static std::string bruker_so_path;
 static bool bruker_so_initialized = false;
 
 
-template<typename T> T* get_ptr(py::buffer& buf)
+// Arrays passed in from Python for input: converted (copied if needed) to a
+// contiguous array of the type C++ reads, so strides and dtypes cannot be misread.
+template<typename T> using input_array = py::array_t<T, py::array::c_style | py::array::forcecast>;
+
+static bool is_contiguous(const py::buffer_info& info, bool fortran_order)
 {
-    py::buffer_info buf_info = buf.request();
-    if(buf_info.size == 0)
+    if(info.size == 0)
+        return true; // strides of empty arrays are arbitrary
+    py::ssize_t expected_stride = info.itemsize;
+    for(py::ssize_t ii = 0; ii < info.ndim; ii++)
+    {
+        const py::ssize_t dim = fortran_order ? ii : info.ndim - 1 - ii;
+        if(info.shape[dim] != 1 && info.strides[dim] != expected_stride)
+            return false;
+        expected_stride *= info.shape[dim];
+    }
+    return true;
+}
+
+// Validate a caller-provided output buffer, which C++ fills through a raw pointer:
+// it must have the right dtype, be writable, contiguous (column-major for the 2D
+// matrix outputs) and hold at least min_size elements. If optional, an empty
+// buffer means "do not compute this column" and yields nullptr.
+template<typename T> T* get_ptr(py::buffer& buf, const char* name, size_t min_size, bool optional = true, bool fortran_order = false)
+{
+    py::buffer_info info = buf.request();
+    if(optional && info.size == 0)
         return nullptr;
-    return static_cast<T*>(buf_info.ptr);
+    const std::string prefix = std::string("Output array '") + name + "' ";
+    if(!info.item_type_is_equivalent_to<T>())
+        throw py::type_error(prefix + "must have dtype " + py::str(py::dtype::of<T>()).cast<std::string>());
+    if(info.readonly)
+        throw py::value_error(prefix + "is read-only");
+    if(!is_contiguous(info, fortran_order))
+        throw py::value_error(prefix + (fortran_order ? "must be Fortran-contiguous (column-major)" : "must be contiguous") + "; pass a copy, e.g. np.ascontiguousarray()");
+    if(static_cast<size_t>(info.size) < min_size)
+        throw py::value_error(prefix + "is too small: holds " + std::to_string(info.size) + " elements, needs " + std::to_string(min_size));
+    return static_cast<T*>(info.ptr);
 }
 
 template<typename T>
-std::unique_ptr<T*[]> extract_ptrs(std::vector<py::array_t<T> > V, size_t size)
+std::unique_ptr<T*[]> extract_ptrs(std::vector<py::array_t<T> >& V, size_t size)
 {
     std::unique_ptr<T*[]> A = std::make_unique<T*[]>(size);
     if(V.size() == size)
         for(size_t ii = 0; ii < size; ii++)
-            A[ii] = get_ptr<T>(V[ii]);
+            A[ii] = V[ii].size() == 0 ? nullptr : V[ii].mutable_data();
     return A;
 }
 
@@ -141,8 +173,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         .def("save_to_pybuffer",
             [](TimsFrame &m, py::buffer& b)
             {
-                py::buffer_info info = b.request();
-                m.save_to_matrix_buffer(static_cast<uint32_t*>(info.ptr));
+                m.save_to_matrix_buffer(get_ptr<uint32_t>(b, "result", 4 * size_t(m.num_peaks), false, true));
             }
         );
 
@@ -176,25 +207,23 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         .def("max_frame_id", &TimsDataHandle::max_frame_id)
         .def("get_frame", &TimsDataHandle::get_frame, py::return_value_policy::reference)
         .def("no_peaks_in_frames",
-            [](TimsDataHandle& dh, py::buffer& b)
+            [](TimsDataHandle& dh, const input_array<uint32_t>& frames)
             {
-                py::buffer_info info = b.request();
-                return dh.no_peaks_in_frames(static_cast<uint32_t*>(info.ptr), info.size);
+                return dh.no_peaks_in_frames(frames.data(), frames.size());
             })
         .def("no_peaks_in_slice", &TimsDataHandle::no_peaks_in_slice)
         .def("extract_frames",
-            [](TimsDataHandle& dh, py::buffer& indexes_b, py::buffer& result_b)
+            [](TimsDataHandle& dh, const input_array<uint32_t>& frames, py::buffer& result_b)
             {
-                py::buffer_info indexes_info = indexes_b.request();
-                py::buffer_info result_info  = result_b.request();
-                dh.extract_frames(static_cast<uint32_t*>(indexes_info.ptr),
-                                  indexes_info.size,
-                                  static_cast<uint32_t*>(result_info.ptr));
+                const size_t n = dh.no_peaks_in_frames(frames.data(), frames.size());
+                dh.extract_frames(frames.data(),
+                                  frames.size(),
+                                  get_ptr<uint32_t>(result_b, "result", 4 * n, false, true));
             })
         .def("extract_frames",
             [](
                 TimsDataHandle& dh,
-                py::buffer& indexes_b,
+                const input_array<uint32_t>& frames,
                 py::buffer& frame_ids,
                 py::buffer& scan_ids,
                 py::buffer& tofs,
@@ -203,17 +232,17 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 py::buffer& inv_ion_mobilities,
                 py::buffer& retention_times)
                 {
-                    py::buffer_info indexes_info = indexes_b.request();
+                    const size_t n = dh.no_peaks_in_frames(frames.data(), frames.size());
                     dh.extract_frames(
-                        get_ptr<uint32_t>(indexes_b),
-                        indexes_info.size,
-                        get_ptr<uint32_t>(frame_ids),
-                        get_ptr<uint32_t>(scan_ids),
-                        get_ptr<uint32_t>(tofs),
-                        get_ptr<uint32_t>(intensities),
-                        get_ptr<double>(mzs),
-                        get_ptr<double>(inv_ion_mobilities),
-                        get_ptr<double>(retention_times)
+                        frames.data(),
+                        frames.size(),
+                        get_ptr<uint32_t>(frame_ids, "frame", n),
+                        get_ptr<uint32_t>(scan_ids, "scan", n),
+                        get_ptr<uint32_t>(tofs, "tof", n),
+                        get_ptr<uint32_t>(intensities, "intensity", n),
+                        get_ptr<double>(mzs, "mz", n),
+                        get_ptr<double>(inv_ion_mobilities, "inv_ion_mobility", n),
+                        get_ptr<double>(retention_times, "retention_time", n)
                     );
                 },
             py::arg("frames"),
@@ -228,8 +257,8 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         .def("extract_frames_slice",
             [](TimsDataHandle& dh, size_t start, size_t end, size_t step, py::buffer& result_b)
             {
-                py::buffer_info result_info  = result_b.request();
-                dh.extract_frames_slice(start, end, step, static_cast<uint32_t*>(result_info.ptr));
+                const size_t n = dh.no_peaks_in_slice(start, end, step);
+                dh.extract_frames_slice(start, end, step, get_ptr<uint32_t>(result_b, "result", 4 * n, false, true));
             })
         .def("extract_frames_slice",
             [](
@@ -245,17 +274,18 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
             py::buffer& inv_ion_mobilities,
             py::buffer& retention_times)
             {
+            const size_t n = dh.no_peaks_in_slice(start, end, step);
             dh.extract_frames_slice(
                 start,
                 end,
                 step,
-                get_ptr<uint32_t>(frame_ids),
-                get_ptr<uint32_t>(scan_ids),
-                get_ptr<uint32_t>(tofs),
-                get_ptr<uint32_t>(intensities),
-                get_ptr<double>(mzs),
-                get_ptr<double>(inv_ion_mobilities),
-                get_ptr<double>(retention_times)
+                get_ptr<uint32_t>(frame_ids, "frame", n),
+                get_ptr<uint32_t>(scan_ids, "scan", n),
+                get_ptr<uint32_t>(tofs, "tof", n),
+                get_ptr<uint32_t>(intensities, "intensity", n),
+                get_ptr<double>(mzs, "mz", n),
+                get_ptr<double>(inv_ion_mobilities, "inv_ion_mobility", n),
+                get_ptr<double>(retention_times, "retention_time", n)
             );
         },
             py::arg("start"),
@@ -275,21 +305,20 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 TimsDataHandle& dh,
                 py::buffer& tics)
             {
-                dh.per_frame_TIC(get_ptr<uint32_t>(tics));
+                const size_t n = dh.get_frame_descs().empty() ? 0 : size_t(dh.max_frame_id()) - dh.min_frame_id() + 1;
+                dh.per_frame_TIC(get_ptr<uint32_t>(tics, "tics", n, n == 0));
             }
         )
         .def("tof_to_mz",
                 [](
                     TimsDataHandle& dh,
                     uint32_t frame_id,
-                    const py::buffer arg
+                    const input_array<uint32_t>& arg
                 )
                 {
-                    py::buffer_info arg_info = arg.request();
-                    const size_t n = arg_info.size;
+                    const size_t n = arg.size();
                     py::array_t<double> ret(n);
-                    py::buffer_info ret_info = ret.request();
-                    dh.tof2mz_converter->convert(frame_id, static_cast<double*>(ret_info.ptr), static_cast<uint32_t*>(arg_info.ptr), n);
+                    dh.tof2mz_converter->convert(frame_id, ret.mutable_data(), arg.data(), n);
                     return ret;
                 }
         )
@@ -297,14 +326,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 [](
                     TimsDataHandle& dh,
                     uint32_t frame_id,
-                    const py::buffer arg
+                    const input_array<double>& arg
                 )
                 {
-                    py::buffer_info arg_info = arg.request();
-                    const size_t n = arg_info.size;
+                    const size_t n = arg.size();
                     py::array_t<uint32_t> ret(n);
-                    py::buffer_info ret_info = ret.request();
-                    dh.tof2mz_converter->inverse_convert(frame_id, static_cast<uint32_t*>(ret_info.ptr), static_cast<double*>(arg_info.ptr), n);
+                    dh.tof2mz_converter->inverse_convert(frame_id, ret.mutable_data(), arg.data(), n);
                     return ret;
                 }
         )
@@ -312,14 +339,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 [](
                     TimsDataHandle& dh,
                     uint32_t frame_id,
-                    const py::buffer arg
+                    const input_array<uint32_t>& arg
                 )
                 {
-                    py::buffer_info arg_info = arg.request();
-                    const size_t n = arg_info.size;
+                    const size_t n = arg.size();
                     py::array_t<double> ret(n);
-                    py::buffer_info ret_info = ret.request();
-                    dh.scan2inv_ion_mobility_converter->convert(frame_id, static_cast<double*>(ret_info.ptr), static_cast<uint32_t*>(arg_info.ptr), n);
+                    dh.scan2inv_ion_mobility_converter->convert(frame_id, ret.mutable_data(), arg.data(), n);
                     return ret;
                 }
         )
@@ -327,14 +352,12 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
                 [](
                     TimsDataHandle& dh,
                     uint32_t frame_id,
-                    const py::buffer arg
+                    const input_array<double>& arg
                 )
                 {
-                    py::buffer_info arg_info = arg.request();
-                    const size_t n = arg_info.size;
+                    const size_t n = arg.size();
                     py::array_t<uint32_t> ret(n);
-                    py::buffer_info ret_info = ret.request();
-                    dh.scan2inv_ion_mobility_converter->inverse_convert(frame_id, static_cast<uint32_t*>(ret_info.ptr), static_cast<double*>(arg_info.ptr), n);
+                    dh.scan2inv_ion_mobility_converter->inverse_convert(frame_id, ret.mutable_data(), arg.data(), n);
                     return ret;
                 }
         )

@@ -310,7 +310,7 @@ class OpenTIMS:
         Args:
             frames (int, iterable, None): Frames to choose. Passing an integer results in extracting that one frame. Default: all of them.
             columns (tuple|str|dict): which columns to extract? Be default, provide a tuple with column name strings. If you provide one string, it will be a column. If you provide a dictionary, it should map column names to arrays you provide yourself for the outputs instead of having to trouble us. The latter makes sense if you want to store data on disk in a memory mapped files. We do check if your arrays match necessry column types and size.
-            _sanitize (bool): if False, skip the dtype and size checks of user-provided arrays. The arrays are written to unchecked, so a wrong dtype or a too short array corrupts memory.
+            _sanitize (bool): if False, skip the Python-side checks of user-provided arrays. The C++ side still rejects arrays that have the wrong dtype, are read-only, non-contiguous or too short.
         Returns:
             dict: columns to numpy array mapping.
         """
@@ -468,7 +468,7 @@ class OpenTIMS:
             np.array: raw data from the selection of frames.
         """
         start = self.min_frame if frames_slice.start is None else frames_slice.start
-        stop = self.max_frame if frames_slice.stop is None else frames_slice.stop
+        stop = self.max_frame + 1 if frames_slice.stop is None else frames_slice.stop
         step = 1 if frames_slice.step is None else frames_slice.step
         if step == 0:
             raise RuntimeError("frame_arrays_slice: step must be > 0")
@@ -576,11 +576,12 @@ class OpenTIMS:
         retention_time = np.array(
             retention_time
         )  # if someone passes a float or a pandas.Series
-        assert all(
+        assert np.all(
             retention_time <= self.max_retention_time + _buffer
         ), "Some retention times were higher than the latest one."
         res = np.searchsorted(self.retention_times, retention_time)
-        return res + 1
+        # times past the last frame, but within _buffer, belong to the last frame
+        return np.minimum(res, len(self.retention_times) - 1) + 1
 
     def MS1_retention_time_to_frame(
         self,
@@ -602,11 +603,12 @@ class OpenTIMS:
             retention_time
         )  # if someone passes a float or a pandas.Series
         all_ms1_rts = self.retention_times[self.ms1_frames - 1]
-        assert all(
+        assert np.all(
             retention_time <= all_ms1_rts[-1] + _buffer
         ), "Some retention times were higher than the last MS1 one."
         res = np.searchsorted(all_ms1_rts, retention_time)
-        return self.ms1_frames[res]
+        # times past the last MS1 frame, but within _buffer, belong to that frame
+        return self.ms1_frames[np.minimum(res, len(all_ms1_rts) - 1)]
 
     # TODO: this should be numbized or something: we make a copy of frame-1.
     def frame_to_retention_time(self, frame: FRAMES_TYPE) -> np.array:

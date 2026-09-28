@@ -5,9 +5,16 @@
 
 std::unique_ptr<ThreadingManager> ThreadingManager::instance;
 
+// hardware_concurrency() may return 0 when it cannot tell; never run with zero threads.
+static size_t default_num_threads()
+{
+    const unsigned int hc = std::thread::hardware_concurrency();
+    return hc > 0 ? hc : 1;
+}
+
 
 ThreadingManager::ThreadingManager() :
-n_threads(std::thread::hardware_concurrency()),
+n_threads(default_num_threads()),
 threading_type(CONVERTER_THREADING)
 {}
 
@@ -42,7 +49,7 @@ void ThreadingManager::set_shared_threading()
 void ThreadingManager::set_num_threads(size_t n)
 {
     if(n == 0)
-        n_threads = std::thread::hardware_concurrency();
+        n_threads = default_num_threads();
     else
         n_threads = n;
 

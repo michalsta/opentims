@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <string>
 #include <stdexcept>
 
@@ -84,27 +85,69 @@ class RAIISqlite
 {
     sqlite3* db_conn;
 
+    // Exceptions must not unwind through sqlite3_exec(): it is C code (possibly
+    // without unwind tables), and skipping its cleanup leaks the prepared
+    // statement, which makes sqlite3_close() fail and leaks the connection.
+    // Callbacks run inside this trampoline instead; an exception aborts the
+    // query and is rethrown once sqlite3_exec() has returned.
+    struct CallbackContext
+    {
+        int (*callback)(void*,int,char**,char**);
+        void* arg;
+        std::exception_ptr error;
+    };
+
+    static int callback_trampoline(void* ctx_ptr, int cols, char** row, char** colnames)
+    {
+        CallbackContext* ctx = static_cast<CallbackContext*>(ctx_ptr);
+        try
+        {
+            return ctx->callback(ctx->arg, cols, row, colnames);
+        }
+        catch(...)
+        {
+            ctx->error = std::current_exception();
+            return 1; // makes sqlite3_exec() abort with SQLITE_ABORT
+        }
+    }
+
  public:
     RAIISqlite(const std::string& tims_tdf_path) : db_conn(nullptr)
     {
         if(ot_sqlite::sqlite3_open_v2(tims_tdf_path.c_str(), &db_conn, SQLITE_OPEN_READONLY, NULL))
-            throw std::runtime_error(std::string("ERROR opening database: " + tims_tdf_path + " SQLite error msg: ") + ot_sqlite::sqlite3_errmsg(db_conn));
+        {
+            std::string err_msg = "ERROR opening database: " + tims_tdf_path + " SQLite error msg: ";
+            const char* sqlite_msg = db_conn != nullptr ? ot_sqlite::sqlite3_errmsg(db_conn) : nullptr;
+            err_msg += sqlite_msg != nullptr ? sqlite_msg : "out of memory";
+            // The handle must be closed even when opening failed.
+            if(db_conn != nullptr)
+                ot_sqlite::sqlite3_close(db_conn);
+            throw std::runtime_error(err_msg);
+        }
     }
     ~RAIISqlite()
     {
         if(db_conn != nullptr)
             ot_sqlite::sqlite3_close(db_conn);
     }
+    RAIISqlite(const RAIISqlite&) = delete;
+    RAIISqlite& operator=(const RAIISqlite&) = delete;
+
     void query(const std::string& sql, int (*callback)(void*,int,char**,char**), void* arg)
     {
         char* error = NULL;
+        CallbackContext ctx{callback, arg, nullptr};
 
-        if(ot_sqlite::sqlite3_exec(db_conn, sql.c_str(), callback, arg, &error) != SQLITE_OK)
-        {
-	    std::string err_msg(std::string("ERROR performing SQL query. SQLite error msg: ") + error);
-	    ot_sqlite::sqlite3_free(error);
-	    throw std::runtime_error(err_msg);
-        }
+        const int rc = ot_sqlite::sqlite3_exec(db_conn, sql.c_str(), callback != nullptr ? callback_trampoline : nullptr, &ctx, &error);
+        std::string err_msg;
+        if(rc != SQLITE_OK)
+            err_msg = std::string("ERROR performing SQL query. SQLite error msg: ") + (error != NULL ? error : "unknown error");
+        if(error != NULL)
+            ot_sqlite::sqlite3_free(error);
+        if(ctx.error)
+            std::rethrow_exception(ctx.error);
+        if(rc != SQLITE_OK)
+            throw std::runtime_error(err_msg);
     }
 
 };

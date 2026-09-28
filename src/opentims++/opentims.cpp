@@ -13,9 +13,9 @@
 #include <atomic>
 #include <vector>
 #include <iostream>
-#include <locale>
 #include <memory>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
@@ -31,6 +31,7 @@
 #include "tof2mz_converter.h"
 #include "scan2inv_ion_mobility_converter.h"
 #include "thread_mgr.h"
+#include "parse_number.h"
 #ifndef OPENTIMS_BUILDING_R
 #include "sqlite_helper.h"
 #endif
@@ -41,12 +42,12 @@ TimsFrame::TimsFrame(uint32_t _id,
                      uint32_t _msms_type,
                      double _intensity_correction,
                      double _time,
-                     const char* frame_ptr,
+                     uint64_t _tims_bin_offset,
                      TimsDataHandle& parent_hndl
                      )
 :
     bytes0(nullptr),
-    tims_bin_frame(frame_ptr),
+    tims_bin_offset(_tims_bin_offset),
     parent_tdh(parent_hndl),
     id(_id),
     num_scans(_num_scans),
@@ -69,9 +70,9 @@ TimsFrame TimsFrame::TimsFrameFromSql(char** sql_row, TimsDataHandle& parent_han
             atol(sql_row[1]),
             atol(sql_row[2]),
             atol(sql_row[3]),
-            100.0 / atof(sql_row[4]),
-            atof(sql_row[5]),
-            std::strtoull(sql_row[6], nullptr, 10) + parent_handle.tims_data_bin.data(),
+            100.0 / parse_double_c_locale(sql_row[4]),
+            parse_double_c_locale(sql_row[5]),
+            std::strtoull(sql_row[6], nullptr, 10),
             parent_handle
     );
 }
@@ -84,10 +85,23 @@ void TimsFrame::print() const
 }
 
 
+[[noreturn]] static void throw_corrupted_frame(uint32_t frame_id, const std::string& what)
+{
+    throw std::runtime_error("Frame " + std::to_string(frame_id) + ": " + what + ". File is either truncated or corrupted.");
+}
+
 void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
 {
+    const size_t file_size = parent_tdh.tims_data_bin.size();
+    if(tims_bin_offset > file_size || file_size - tims_bin_offset < 8)
+        throw_corrupted_frame(id, "data starts beyond the end of analysis.tdf_bin");
+
+    const char* tims_bin_frame = parent_tdh.tims_data_bin.data() + tims_bin_offset;
     uint32_t tims_packet_size = *reinterpret_cast<const uint32_t*>(tims_bin_frame);
     assert(num_scans == *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1));
+
+    if(tims_packet_size < 8 || tims_packet_size > file_size - tims_bin_offset)
+        throw_corrupted_frame(id, "compressed data size (" + std::to_string(tims_packet_size) + " bytes) is invalid or extends beyond the end of analysis.tdf_bin");
 
     size_t dsbytes = data_size_bytes();
 
@@ -104,13 +118,15 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
     size_t dec_result = ZSTD_decompressDCtx(decomp_ctx, decompression_buffer, dsbytes, tims_bin_frame + 8, tims_packet_size - 8);
     if(ZSTD_isError(dec_result))
     {
-        std::string err = "Error uncompressing frame, error code: ";
+        std::string err = "Frame " + std::to_string(id) + ": error uncompressing frame, error code: ";
         err += std::to_string(dec_result);
         err += " (";
         err += ZSTD_getErrorName(dec_result);
         err += "). File is either corrupted, or in a (yet) unsupported variant of the format.";
         throw std::runtime_error(err);
     }
+    if(dec_result != dsbytes)
+        throw_corrupted_frame(id, "decompressed to " + std::to_string(dec_result) + " bytes, but NumScans and NumPeaks imply " + std::to_string(dsbytes));
 
     size_t dsints = data_size_ints();
     bytes0 = decompression_buffer;
@@ -125,6 +141,16 @@ void TimsFrame::close()
     back_buffer.reset(nullptr);
 }
 
+namespace {
+// Calls close() on scope exit, so that a frame never keeps pointing into a
+// decompression buffer that is being reused or freed after an exception.
+struct FrameCloser
+{
+    TimsFrame* frame;
+    ~FrameCloser() { if(frame != nullptr) frame->close(); }
+};
+}
+
 void TimsFrame::save_to_buffs(uint32_t* frame_ids,
                               uint32_t* scan_ids,
                               uint32_t* tofs,
@@ -136,6 +162,8 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 {
     if(num_peaks == 0)
         return;
+    if(num_scans == 0)
+        throw_corrupted_frame(id, "has peaks, but no scans");
 
     std::unique_ptr<uint32_t[]> scan_ids_hndl;
     std::unique_ptr<uint32_t[]> tofs_hndl;
@@ -157,12 +185,14 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         intensities = intensities_hndl.get();
     }
 
-    bool needs_closure = false;
+    FrameCloser closer{nullptr};
     if(bytes0 == nullptr)
     {
         decompress(nullptr, decomp_ctx);
-        needs_closure = true;
+        closer.frame = this;
     }
+
+    const uint32_t nnum_peaks = num_peaks;
 
     uint32_t peaks_processed = 0;
     // The decompressed buffer layout: first num_scans uint32s are scan headers,
@@ -182,6 +212,8 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
         // Scan header stores byte offset; divide by 2 (words) to get peak count
         // for this scan (difference from next scan header gives peaks in this scan).
         const uint32_t no_peaks = back_data(scan_idx+1) / 2;
+        if(no_peaks > nnum_peaks - peaks_processed)
+            throw_corrupted_frame(id, "scan headers hold more peaks than NumPeaks");
 
         const uint32_t for_loop_end = no_peaks + peaks_processed;
 
@@ -201,8 +233,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     }
 
     accum_tofs = -1; // same 1-indexed delta convention for the last scan
-
-    const uint32_t nnum_peaks = num_peaks;
 
     if(scan_ids != nullptr)
         for(uint32_t ii = peaks_processed; ii < nnum_peaks; ii++)
@@ -235,9 +265,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
     if(inv_ion_mobilities != nullptr)
         parent_tdh.scan2inv_ion_mobility_converter->convert(id, inv_ion_mobilities, scan_ids, nnum_peaks);
-
-    if(needs_closure)
-        close();
 }
 
 int tims_sql_callback(void* out, [[maybe_unused]] int cols, char** row, char**)
@@ -271,20 +298,9 @@ int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
     return 0;
 }
 
-#ifndef OPENTIMS_BUILDING_R
-class RAIILocaleHelper
-{
-    const std::locale previous_locale;
- public:
-    RAIILocaleHelper() : previous_locale(std::locale::global(std::locale("C"))) {};
-    ~RAIILocaleHelper() { std::locale::global(previous_locale); };
-};
-#endif
-
 void TimsDataHandle::read_sql(const std::string& tims_tdf_path)
 {
 #ifndef OPENTIMS_BUILDING_R
-    RAIILocaleHelper locale_guard;
     RAIISqlite DB(tims_tdf_path);
 
     const std::string sql = "SELECT Id, NumScans, NumPeaks, MsMsType, AccumulationTime, Time, TimsId from Frames;";
@@ -411,7 +427,7 @@ TimsDataHandle(tims_data_dir, pcs)
                 msms_type[ii],
                 100.0 / accum_time[ii],
                 time[ii],
-                tims_id[ii] + tims_data_bin.data(),
+                tims_id[ii],
                 *this));
     }
 
@@ -626,31 +642,44 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                                     double* const * retention_times)
 {
     std::atomic<size_t> current_task(0);
+    // An exception escaping a std::thread calls std::terminate, killing the
+    // host interpreter; keep the first one and rethrow it after joining.
+    std::exception_ptr first_error;
+    std::mutex first_error_mutex;
 
     ThreadingManager::get_instance().set_shared_threading();
-    size_t n_threads = ThreadingManager::get_instance().get_no_opentims_threads();
+    size_t n_threads = (std::max)(ThreadingManager::get_instance().get_no_opentims_threads(), size_t(1));
 
     std::vector<std::thread> threads;
     for(size_t ii=0; ii<n_threads; ii++)
         threads.emplace_back([&](){
-            std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
-            std::unique_ptr<char[]> decomp_buffer = std::make_unique<char[]>(decomp_buffer_size);
-            while(true)
+            try
             {
-                size_t my_task = current_task.fetch_add(1);
-                if(my_task < indexes.size())
+                std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> zstd(ZSTD_createDCtx(), &ZSTD_freeDCtx);
+                std::unique_ptr<char[]> decomp_buffer = std::make_unique<char[]>(decomp_buffer_size);
+                while(true)
                 {
+                    size_t my_task = current_task.fetch_add(1);
+                    if(my_task >= indexes.size())
+                        break;
                     TimsFrame& frame = get_frame(indexes[my_task]);
                     frame.decompress(decomp_buffer.get(), zstd.get());
+                    FrameCloser closer{&frame};
                     frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task], zstd.get());
-                    frame.close();
                 }
-                else
-                    break;
+            }
+            catch(...)
+            {
+                std::lock_guard<std::mutex> lock(first_error_mutex);
+                if(!first_error)
+                    first_error = std::current_exception();
+                current_task = indexes.size(); // stop the other workers
             }
         });
     for (auto& th : threads) th.join();
     ThreadingManager::get_instance().set_converter_threading();
+    if(first_error)
+        std::rethrow_exception(first_error);
 }
 
 

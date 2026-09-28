@@ -5,6 +5,7 @@
  *   Licensed under the MIT License. See LICENCE file in the project root for details.
  */
 
+#include <algorithm>
 #include <cstdlib>
 #include <cassert>
 #include <cstdint>
@@ -718,6 +719,10 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
 
 void TimsDataHandle::per_frame_TIC(uint32_t* result)
 {
+    if(frame_descs.empty())
+        return;
+    std::fill(result, result + (size_t(_max_frame_id) - _min_frame_id + 1), uint32_t(0));
+
     const size_t m_peaks_in_frame = max_peaks_in_frame();
     if(m_peaks_in_frame == 0)
         return;

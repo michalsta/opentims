@@ -199,3 +199,23 @@ def test_separate_frames_with_duplicates(ot):
         for ii, frame in enumerate(frames):
             for col, per_frame in zip(columns, arrays):
                 assert np.array_equal(per_frame[ii], expected[frame][col]), (frame, col)
+
+
+# --- per-frame TIC ---
+
+def test_frames_tic_with_gapped_ids(tmp_path):
+    path = modified_dataset(tmp_path, "UPDATE Frames SET Id = CASE Id WHEN 2 THEN 5 ELSE Id END")
+    with OpenTIMS(path, cm=conversion_method.OpenSource) as handle:
+        tic = handle.framesTIC()
+        assert tic.tolist() == [197, 0, 0, 0, 91]
+        # the C++ side zero-fills, whatever the buffer held before
+        buf = np.full(5, 12345, dtype=np.uint32)
+        handle.handle.per_frame_TIC(buf)
+        assert buf.tolist() == [197, 0, 0, 0, 91]
+
+def test_frames_tic_without_peaks(tmp_path):
+    with OpenTIMS(modified_dataset(tmp_path, "UPDATE Frames SET NumPeaks = 0"),
+                  cm=conversion_method.OpenSource) as handle:
+        buf = np.full(2, 12345, dtype=np.uint32)
+        handle.handle.per_frame_TIC(buf)
+        assert buf.tolist() == [0, 0]

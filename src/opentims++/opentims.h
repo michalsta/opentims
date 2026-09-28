@@ -497,8 +497,9 @@ public:
 
     //! Obtain the Total Ionic Current for each frame present in the spectrum
     /** The data is saved to the argument buffer - which must be able to hold at least
-     * max_frame_id()-1 values. The number at nth index corresponds to n+1st frame (as
-     * frames are numbered starting at 1).
+     * max_frame_id() - min_frame_id() + 1 values (none if the dataset has no frames).
+     * The number at nth index corresponds to frame min_frame_id() + n; indexes of frame
+     * ids absent from the dataset are set to 0.
      */
     void per_frame_TIC(uint32_t* result);
 

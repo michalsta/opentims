@@ -184,3 +184,18 @@ def test_renumbered_retention_time_conversions(renumbered):
 def test_renumbered_hashes(renumbered):
     assert len(renumbered.get_hashes()) == len(renumbered.frames["Id"])
     renumbered.get_hash()
+
+
+# --- duplicated frames in the multithreaded path ---
+
+def test_separate_frames_with_duplicates(ot):
+    # Before the fix, threads decoding the same frame raced on its state;
+    # 20 rounds reliably crashed the process on a 60-thread machine.
+    columns = ("frame", "scan", "tof", "intensity", "mz", "inv_ion_mobility")
+    expected = {f: ot.query(f, columns=columns) for f in ot.frames["Id"]}
+    frames = list(ot.frames["Id"]) * 500
+    for _ in range(20):
+        arrays = ot.handle.extract_separate_frames(frames, True, True, True, True, True, True, False)
+        for ii, frame in enumerate(frames):
+            for col, per_frame in zip(columns, arrays):
+                assert np.array_equal(per_frame[ii], expected[frame][col]), (frame, col)

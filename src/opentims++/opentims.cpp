@@ -46,7 +46,6 @@ TimsFrame::TimsFrame(uint32_t _id,
                      TimsDataHandle& parent_hndl
                      )
 :
-    bytes0(nullptr),
     tims_bin_offset(_tims_bin_offset),
     parent_tdh(parent_hndl),
     id(_id),
@@ -90,7 +89,7 @@ void TimsFrame::print() const
     throw std::runtime_error("Frame " + std::to_string(frame_id) + ": " + what + ". File is either truncated or corrupted.");
 }
 
-void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
+TimsFrame::DecompressedView TimsFrame::decompress_into(char* decompression_buffer, ZSTD_DCtx* decomp_ctx) const
 {
     const size_t file_size = parent_tdh.tims_data_bin.size();
     if(tims_bin_offset > file_size || file_size - tims_bin_offset < 8)
@@ -105,16 +104,6 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
 
     size_t dsbytes = data_size_bytes();
 
-    if(decompression_buffer == nullptr)
-    {
-        decompression_buffer = parent_tdh.decompression_buffer.get();
-//        back_buffer = std::make_unique<char[]>(dsbytes);
-//        decompression_buffer = reinterpret_cast<char*>(back_buffer.get());
-    }
-
-    if(decomp_ctx == nullptr)
-        decomp_ctx = parent_tdh.zstd_dctx;
-
     size_t dec_result = ZSTD_decompressDCtx(decomp_ctx, decompression_buffer, dsbytes, tims_bin_frame + 8, tims_packet_size - 8);
     if(ZSTD_isError(dec_result))
     {
@@ -128,27 +117,31 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
     if(dec_result != dsbytes)
         throw_corrupted_frame(id, "decompressed to " + std::to_string(dec_result) + " bytes, but NumScans and NumPeaks imply " + std::to_string(dsbytes));
 
-    size_t dsints = data_size_ints();
-    bytes0 = decompression_buffer;
-    bytes1 = bytes0 + dsints;
-    bytes2 = bytes1 + dsints;
-    bytes3 = bytes2 + dsints;
+    const size_t dsints = data_size_ints();
+    DecompressedView ret;
+    ret.bytes0 = decompression_buffer;
+    ret.bytes1 = ret.bytes0 + dsints;
+    ret.bytes2 = ret.bytes1 + dsints;
+    ret.bytes3 = ret.bytes2 + dsints;
+    return ret;
+}
+
+void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
+{
+    std::unique_ptr<char[]> own_buffer;
+    if(decompression_buffer == nullptr)
+    {
+        own_buffer = std::make_unique<char[]>(data_size_bytes());
+        decompression_buffer = own_buffer.get();
+    }
+    cached = decompress_into(decompression_buffer, decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx);
+    back_buffer = std::move(own_buffer);
 }
 
 void TimsFrame::close()
 {
-    bytes0 = nullptr;
+    cached = DecompressedView();
     back_buffer.reset(nullptr);
-}
-
-namespace {
-// Calls close() on scope exit, so that a frame never keeps pointing into a
-// decompression buffer that is being reused or freed after an exception.
-struct FrameCloser
-{
-    TimsFrame* frame;
-    ~FrameCloser() { if(frame != nullptr) frame->close(); }
-};
 }
 
 void TimsFrame::save_to_buffs(uint32_t* frame_ids,
@@ -165,6 +158,55 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     if(num_scans == 0)
         throw_corrupted_frame(id, "has peaks, but no scans");
 
+    if(cached.bytes0 != nullptr)
+        decode(cached, frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times);
+    else
+        decode(decompress_into(parent_tdh.decompression_buffer.get(), decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx),
+               frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times);
+}
+
+void TimsFrame::save_to_buffs(uint32_t* frame_ids,
+                              uint32_t* scan_ids,
+                              uint32_t* tofs,
+                              uint32_t* intensities,
+                              double* mzs,
+                              double* inv_ion_mobilities,
+                              double* retention_times,
+                              char* decompression_buffer,
+                              ZSTD_DCtx* decomp_ctx) const
+{
+    if(num_peaks == 0)
+        return;
+    if(num_scans == 0)
+        throw_corrupted_frame(id, "has peaks, but no scans");
+
+    std::unique_ptr<char[]> own_buffer;
+    if(decompression_buffer == nullptr)
+    {
+        own_buffer = std::make_unique<char[]>(data_size_bytes());
+        decompression_buffer = own_buffer.get();
+    }
+    std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> own_ctx(nullptr, &ZSTD_freeDCtx);
+    if(decomp_ctx == nullptr)
+    {
+        own_ctx.reset(ZSTD_createDCtx());
+        if(!own_ctx)
+            throw std::bad_alloc();
+        decomp_ctx = own_ctx.get();
+    }
+    decode(decompress_into(decompression_buffer, decomp_ctx),
+           frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times);
+}
+
+void TimsFrame::decode(const DecompressedView& data,
+                       uint32_t* frame_ids,
+                       uint32_t* scan_ids,
+                       uint32_t* tofs,
+                       uint32_t* intensities,
+                       double* mzs,
+                       double* inv_ion_mobilities,
+                       double* retention_times) const
+{
     std::unique_ptr<uint32_t[]> scan_ids_hndl;
     std::unique_ptr<uint32_t[]> tofs_hndl;
     std::unique_ptr<uint32_t[]> intensities_hndl;
@@ -183,13 +225,6 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     {
         intensities_hndl = std::make_unique<uint32_t[]>(num_peaks);
         intensities = intensities_hndl.get();
-    }
-
-    FrameCloser closer{nullptr};
-    if(bytes0 == nullptr)
-    {
-        decompress(nullptr, decomp_ctx);
-        closer.frame = this;
     }
 
     const uint32_t nnum_peaks = num_peaks;
@@ -211,7 +246,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
         // Scan header stores byte offset; divide by 2 (words) to get peak count
         // for this scan (difference from next scan header gives peaks in this scan).
-        const uint32_t no_peaks = back_data(scan_idx+1) / 2;
+        const uint32_t no_peaks = data[scan_idx+1] / 2;
         if(no_peaks > nnum_peaks - peaks_processed)
             throw_corrupted_frame(id, "scan headers hold more peaks than NumPeaks");
 
@@ -223,10 +258,10 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
         for(uint32_t ii = 0; ii < no_peaks; ii++)
         {
-            accum_tofs += back_data(read_offset);
+            accum_tofs += data[read_offset];
             tofs[peaks_processed] = accum_tofs;
             read_offset++;
-            intensities[peaks_processed] = back_data(read_offset);
+            intensities[peaks_processed] = data[read_offset];
             read_offset++;
             peaks_processed++;
         }
@@ -240,10 +275,10 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
 
     while(peaks_processed < nnum_peaks)
     {
-        accum_tofs += back_data(read_offset);
+        accum_tofs += data[read_offset];
         tofs[peaks_processed] = accum_tofs;
         read_offset++;
-        intensities[peaks_processed] = back_data(read_offset);
+        intensities[peaks_processed] = data[read_offset];
         read_offset++;
         peaks_processed++;
     }
@@ -662,10 +697,8 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                     size_t my_task = current_task.fetch_add(1);
                     if(my_task >= indexes.size())
                         break;
-                    TimsFrame& frame = get_frame(indexes[my_task]);
-                    frame.decompress(decomp_buffer.get(), zstd.get());
-                    FrameCloser closer{&frame};
-                    frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task], zstd.get());
+                    const TimsFrame& frame = get_frame(indexes[my_task]);
+                    frame.save_to_buffs(frame_ids[my_task], scan_ids[my_task], tofs[my_task], intensities[my_task], mzs[my_task], inv_ion_mobilities[my_task], retention_times[my_task], decomp_buffer.get(), zstd.get());
                 }
             }
             catch(...)

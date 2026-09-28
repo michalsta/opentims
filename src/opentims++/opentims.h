@@ -48,25 +48,44 @@ int tims_sql_callback(void* out, int cols, char** row, char** colnames);
 
 class TimsFrame
 {
-    std::unique_ptr<char[]> back_buffer;
-
-    char* bytes0;
-    char* bytes1;
-    char* bytes2;
-    char* bytes3;
-
-    inline uint32_t back_data(size_t index)
+    // A decompressed frame: its uint32 words stored as four byte planes.
+    struct DecompressedView
     {
-        uint32_t ret;
-        char* bytes = reinterpret_cast<char*>(&ret);
+        const char* bytes0 = nullptr;
+        const char* bytes1 = nullptr;
+        const char* bytes2 = nullptr;
+        const char* bytes3 = nullptr;
 
-        bytes[0] = bytes0[index];
-        bytes[1] = bytes1[index];
-        bytes[2] = bytes2[index];
-        bytes[3] = bytes3[index];
+        inline uint32_t operator[](size_t index) const
+        {
+            uint32_t ret;
+            char* bytes = reinterpret_cast<char*>(&ret);
 
-        return ret;
-    }
+            bytes[0] = bytes0[index];
+            bytes[1] = bytes1[index];
+            bytes[2] = bytes2[index];
+            bytes[3] = bytes3[index];
+
+            return ret;
+        }
+    };
+
+    // Set by decompress(), cleared by close(). Only the explicit caching API
+    // touches these; extraction decodes into caller-provided or temporary
+    // buffers, so it never modifies the frame.
+    std::unique_ptr<char[]> back_buffer;
+    DecompressedView cached;
+
+    DecompressedView decompress_into(char* decompression_buffer, ZSTD_DCtx* decomp_ctx) const;
+
+    void decode(const DecompressedView& data,
+                uint32_t* frame_ids,
+                uint32_t* scan_ids,
+                uint32_t* tofs,
+                uint32_t* intensities,
+                double* mzs,
+                double* inv_ion_mobilities,
+                double* retention_times) const;
 
     const uint64_t tims_bin_offset; ///< Byte offset of the compressed frame within analysis.tdf_bin
 
@@ -134,14 +153,10 @@ public:
      * afterward.
      *
      * @param decompression_buffer optional, a pre-allocated buffer which will be used for
-     *        the decompression.
-     *        If null, a pre-allocated buffer from parent TimsDataFrame will be used,
-     *        making this method non-thread-safe. If TimsFrame is to be used in multithreaded
-     *        context, a thread-local buffer must be passed here (or a mutex must be used).
-     *        The buffer must be at least data_size_bytes() large.
-     * @param decomp_ctx optonal, a decompression buffer to be used by the method. If null,
-     *        a ctx from parent handle will be used, possibly making this non-thread-safe.
-     *        To ensure thread safety a thread-local context must be passed here.
+     *        the decompression; it must stay valid until close(), and must be at least
+     *        data_size_bytes() large. If null, the frame allocates a buffer of its own.
+     * @param decomp_ctx optional, a zstd decompression context. If null, the context of
+     *        the parent handle will be used, making this non-thread-safe.
      */
     void decompress(char* decompression_buffer = nullptr, ZSTD_DCtx* decomp_ctx = nullptr);
 
@@ -154,6 +169,11 @@ public:
      * may be passed as the corresponding pointer.
      * The buffers are passed and returned by columns. Each row corresponds to one MS peak.
      * Each buffer must be albe to hold at least this->num_peaks values.
+     *
+     * Uses the data cached by decompress() if present. Otherwise decompresses into the
+     * parent handle's shared buffer (and its context, unless decomp_ctx is given), so it
+     * must not run concurrently with other extractions from the same handle; use the
+     * overload taking a decompression buffer for that.
      *
      * @param frame_ids     The repeated ID of this frame.
      * @param scan_ids      IDs of the scan a peak comes from.
@@ -171,6 +191,28 @@ public:
                        double* inv_ion_mobilities,
                        double* retention_times,
                        ZSTD_DCtx* decomp_ctx = nullptr);
+
+    //! Retrieve the MS peak data held by the frame; thread-safe.
+    /**
+     * As above, but never modifies the frame and uses no state shared through the parent
+     * handle, so it may run concurrently for any frames, including the same frame.
+     * The data cached by decompress() is not used. Computing mzs or inv_ion_mobilities is
+     * only as thread-safe as the handle's converters.
+     *
+     * @param decompression_buffer  Buffer of at least data_size_bytes(); if null, one is
+     *                              allocated for the call.
+     * @param decomp_ctx            zstd context owned by the calling thread; if null, one
+     *                              is created for the call.
+     */
+    void save_to_buffs(uint32_t* frame_ids,
+                       uint32_t* scan_ids,
+                       uint32_t* tofs,
+                       uint32_t* intensities,
+                       double* mzs,
+                       double* inv_ion_mobilities,
+                       double* retention_times,
+                       char* decompression_buffer,
+                       ZSTD_DCtx* decomp_ctx) const;
 
     //! This function is deprecated and intentionally undocumented; do not use.
     void save_to_matrix_buffer(uint32_t* buf,

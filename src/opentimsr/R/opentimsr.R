@@ -489,7 +489,8 @@ rt_query <- function(opentims,
 #' part of opentimsr and is not distributed with it: this function downloads it
 #' only when called, from "https://github.com/MatteoLacki/opentims_bruker_bridge",
 #' and by using it you agree to the license terms stated there.
-#' The library is available only for Linux and Windows. opentimsr works without it,
+#' The library is available only for 64-bit x86 Linux and Windows; elsewhere this
+#' function stops with an error. opentimsr works without it,
 #' using its built-in open-source converters (see \code{\link{setup_opensource}}).
 #'
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
@@ -509,25 +510,27 @@ download_bruker_proprietary_code <- function(
                  "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode="wb",
   ...){
-  sys_info = Sys.info()
-  if(sys_info['sysname'] == "Linux"){
+  # Bruker's library exists only for 64-bit x86 Linux and Windows; what matters
+  # is the architecture of R itself, since R loads the library.
+  sysname = Sys.info()[['sysname']]
+  arch = R.version$arch
+  if(!(sysname %in% c("Linux", "Windows")) || !(arch %in% c("x86_64", "x86-64", "amd64")))
+    stop(sprintf(paste0("Bruker's proprietary library is available only for 64-bit x86 Linux ",
+                        "and Windows, not for %s on %s. Use the built-in open-source ",
+                        "converters instead: see ?setup_opensource."), sysname, arch),
+         call.=FALSE)
+  if(sysname == "Linux"){
     message("Downloading 64-bit Linux binary.")
-    url_ending = file="libtimsdata.so"
-  }
-  if(sys_info['sysname'] == "Windows"){
+    url_ending = file = "libtimsdata.so"
+  } else {
+    message("Downloading Windows 64-bit binary.")
     file = "timsdata.dll"
-    if(sys_info['machine'] == "x86-64"){
-      message("Downloading Windows 64-bit binary.")
-      url_ending="win64/timsdata.dll"   
-    } else {
-      message("Downloading Windows 32-bit binary.")
-      url_ending="win32/timsdata.dll"
-    }
+    url_ending = "win64/timsdata.dll"
   }
   url = paste0(net_url, url_ending)
   target.file = file.path(target.folder, file)
   message("Downloading from: ", url)
-  download.file(url, target.file, mode="wb", ...)
+  download.file(url, target.file, mode=mode, ...)
 
   target.file
 }
@@ -559,7 +562,7 @@ CloseTIMS <- function(opentims){
 #' Bruker's 'timsdata' library is proprietary software owned by Bruker. It is not
 #' part of opentimsr and is not distributed with it; obtain it with
 #' \code{\link{download_bruker_proprietary_code}}, whose license terms apply.
-#' The library is available only for Linux and Windows. opentimsr works without it,
+#' The library is available only for 64-bit x86 Linux and Windows. opentimsr works without it,
 #' using its built-in open-source converters (see \code{\link{setup_opensource}}).
 #'
 #' @param path Path to the 'libtimsdata.so' on Linux or 'timsdata.dll' on Windows, as produced by 'download_bruker_proprietary_code'.

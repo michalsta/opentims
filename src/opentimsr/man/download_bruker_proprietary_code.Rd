@@ -29,7 +29,8 @@ Bruker's 'timsdata' library is proprietary software owned by Bruker. It is not
 part of opentimsr and is not distributed with it: this function downloads it
 only when called, from "https://github.com/MatteoLacki/opentims_bruker_bridge",
 and by using it you agree to the license terms stated there.
-The library is available only for Linux and Windows. opentimsr works without it,
+The library is available only for 64-bit x86 Linux and Windows; elsewhere this
+function stops with an error. opentimsr works without it,
 using its built-in open-source converters (see \code{\link{setup_opensource}}).
 }
 \examples{

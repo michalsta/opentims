@@ -16,7 +16,7 @@ No return value, called for its side effect of switching the conversion backend.
 Bruker's 'timsdata' library is proprietary software owned by Bruker. It is not
 part of opentimsr and is not distributed with it; obtain it with
 \code{\link{download_bruker_proprietary_code}}, whose license terms apply.
-The library is available only for Linux and Windows. opentimsr works without it,
+The library is available only for 64-bit x86 Linux and Windows. opentimsr works without it,
 using its built-in open-source converters (see \code{\link{setup_opensource}}).
 }
 \examples{

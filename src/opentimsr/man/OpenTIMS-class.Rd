@@ -18,9 +18,9 @@ S4 class that facilitates data queries for TimsTOF data.
 
 \item{\code{max_frame}}{The index of the miximal frame.}
 
-\item{\code{min_scan}}{The minimal scan number. It is assumed to be equal to 1.}
+\item{\code{min_scan}}{The minimal scan number: 0, as scans are numbered from 0, like in Bruker's own tables and libraries.}
 
-\item{\code{max_scan}}{The maximal scan number.}
+\item{\code{max_scan}}{The maximal scan number: the largest NumScans minus 1.}
 
 \item{\code{min_intensity}}{The minimal value of intensity. Set to 0, but actually 9 is more sensible.}
 

@@ -49,8 +49,8 @@ check_slice <- function(opentims, from, to, by){
 #' @slot handle Pointer to raw data.
 #' @slot min_frame The index of the minimal frame.
 #' @slot max_frame The index of the miximal frame.
-#' @slot min_scan The minimal scan number. It is assumed to be equal to 1.
-#' @slot max_scan The maximal scan number.
+#' @slot min_scan The minimal scan number: 0, as scans are numbered from 0, like in Bruker's own tables and libraries.
+#' @slot max_scan The maximal scan number: the largest NumScans minus 1.
 #' @slot min_intensity The minimal value of intensity. Set to 0, but actually 9 is more sensible.
 #' @slot max_intensity The maximal intensity: the max over values reported in the frames.
 #' @slot min_retention_time The lowest recorded retention time.
@@ -229,8 +229,9 @@ OpenTIMS <- function(path.d){
     # max_frame=as.integer(tdf_max_frame_id(handle)),
     min_frame = as.integer(min(frames$Id)) # just in case
     max_frame = as.integer(max(frames$Id)) # just in case
-    min_scan = 1L
-    max_scan = as.integer(max(frames$NumScans))
+    # Scans are 0-based: a frame with NumScans scans has scans 0..NumScans-1.
+    min_scan = 0L
+    max_scan = as.integer(max(frames$NumScans)) - 1L
     min_intensity = 0L
     max_intensity = max(frames$MaxIntensity)
     min_retention_time = min(frames$Time)

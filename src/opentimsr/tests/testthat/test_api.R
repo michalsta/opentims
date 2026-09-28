@@ -13,8 +13,10 @@ test_that("frame bounds are consistent", {
   expect_equal(nrow(D@frames), D@max_frame - D@min_frame + 1L)
 })
 
-test_that("max_scan is positive", {
-  expect_gt(D@max_scan, 0L)
+test_that("scan bounds are 0-based: 0 .. NumScans - 1", {
+  expect_equal(D@min_scan, 0L)
+  expect_equal(D@max_scan, as.integer(max(D@frames$NumScans)) - 1L)
+  expect_equal(min_max_measurements(D)$scan, c(D@min_scan, D@max_scan))
 })
 
 test_that("retention times have one entry per frame and are monotone", {
@@ -48,7 +50,7 @@ test_that("query returns requested columns", {
 test_that("query frame and scan values are in range", {
   result <- query(D, frames = D@frames$Id, columns = c("frame", "scan"))
   expect_true(all(result$frame >= D@min_frame & result$frame <= D@max_frame))
-  expect_true(all(result$scan >= 0L & result$scan <= D@max_scan))
+  expect_true(all(result$scan >= D@min_scan & result$scan <= D@max_scan))
 })
 
 test_that("query intensities are positive", {

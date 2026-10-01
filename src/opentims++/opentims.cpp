@@ -6,6 +6,7 @@
  */
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include <cstdint>
@@ -292,8 +293,11 @@ void TimsFrame::decode(const DecompressedView& data,
     }
 
 
+    // Clamped before conversion: a double out of uint32's range converts with
+    // undefined behaviour. Only nonsensical AccumulationTime values (zero,
+    // negative, tiny) get there; fmax also turns NaN (0 * inf) into 0.
     for(size_t idx = 0; idx < nnum_peaks; idx++)
-        intensities[idx] = static_cast<double>(intensities[idx]) * intensity_correction + 0.5;
+        intensities[idx] = static_cast<uint32_t>(std::fmin(std::fmax(static_cast<double>(intensities[idx]) * intensity_correction + 0.5, 0.0), 4294967295.0));
 
     if(mzs != nullptr)
         parent_tdh.tof2mz_converter->convert(id, mzs, tofs, nnum_peaks);

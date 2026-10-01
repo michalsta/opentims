@@ -249,7 +249,8 @@ private:
     std::unique_ptr<uint32_t[]> _tofs_buffer;
     std::unique_ptr<uint32_t[]> _intensities_buffer;
 
-    ZSTD_DCtx* zstd_dctx;
+    // Owned, so that a constructor throwing after init() created it does not leak it.
+    std::unique_ptr<ZSTD_DCtx, size_t(*)(ZSTD_DCtx*)> zstd_dctx;
 
 public:
     size_t get_decomp_buffer_size() const { return decomp_buffer_size; };

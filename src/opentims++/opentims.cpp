@@ -143,7 +143,7 @@ void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
         own_buffer = std::make_unique<char[]>(data_size_bytes());
         decompression_buffer = own_buffer.get();
     }
-    cached = decompress_into(decompression_buffer, decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx);
+    cached = decompress_into(decompression_buffer, decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx.get());
     back_buffer = std::move(own_buffer);
 }
 
@@ -170,7 +170,7 @@ void TimsFrame::save_to_buffs(uint32_t* frame_ids,
     if(cached.bytes0 != nullptr)
         decode(cached, frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times);
     else
-        decode(decompress_into(parent_tdh.decompression_buffer.get(), decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx),
+        decode(decompress_into(parent_tdh.decompression_buffer.get(), decomp_ctx != nullptr ? decomp_ctx : parent_tdh.zstd_dctx.get()),
                frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times);
 }
 
@@ -373,7 +373,7 @@ void TimsDataHandle::init(pressure_compensation_strategy pcs,
     }
     decompression_buffer = std::make_unique<char[]>(decomp_buffer_size);
 
-    zstd_dctx = ZSTD_createDCtx();
+    zstd_dctx.reset(ZSTD_createDCtx());
 
     tof2mz_converter = tof_factory
         ? tof_factory->produce(*this, pcs)
@@ -384,7 +384,7 @@ void TimsDataHandle::init(pressure_compensation_strategy pcs,
 }
 
 TimsDataHandle::TimsDataHandle(const std::string& tims_tdf_bin_path, const std::string& tims_tdf_path, const std::string& tims_data_dir, pressure_compensation_strategy pcs, Tof2MzConverterFactory* tof_factory, Scan2InvIonMobilityConverterFactory* im_factory)
-: tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr)
+: tims_dir_path(tims_data_dir), tims_data_bin(tims_tdf_bin_path), zstd_dctx(nullptr, &ZSTD_freeDCtx)
 {
 #ifndef OPENTIMS_BUILDING_R
     read_sql(tims_tdf_path);
@@ -482,11 +482,7 @@ TimsDataHandle(tims_data_dir, pcs)
 }
 #endif
 
-TimsDataHandle::~TimsDataHandle()
-{
-    if(zstd_dctx != nullptr)
-        ZSTD_freeDCtx(zstd_dctx);
-}
+TimsDataHandle::~TimsDataHandle() {}
 
 
 TimsFrame& TimsDataHandle::get_frame(uint32_t frame_no)
@@ -556,7 +552,7 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
     for(size_t ii = 0; ii < no_indexes; ii++)
     {
         TimsFrame& frame = frame_descs.at(indexes[ii]);
-        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx);
+        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx.get());
         offset0 += frame.num_peaks;
         offset1 += frame.num_peaks;
         offset2 += frame.num_peaks;
@@ -582,7 +578,7 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
     for(uint32_t ii = start; ii < end; ii += step)
     {
         TimsFrame& frame = frame_descs.at(ii);
-        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx);
+        frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx.get());
         offset0 += frame.num_peaks;
         offset1 += frame.num_peaks;
         offset2 += frame.num_peaks;
@@ -606,7 +602,7 @@ void TimsDataHandle::extract_frames(const uint32_t* indexes,
     {
         TimsFrame& frame = frame_descs.at(indexes[ii]);
         const size_t n = frame.num_peaks;
-        frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
+        frame_descs.at(indexes[ii]).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx.get());
         move_ptr(frame_ids);
         move_ptr(scan_ids);
         move_ptr(tofs);
@@ -634,7 +630,7 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
     {
         TimsFrame& frame = frame_descs.at(ii);
         const size_t n = frame.num_peaks;
-        frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx);
+        frame_descs.at(ii).save_to_buffs(frame_ids, scan_ids, tofs, intensities, mzs, inv_ion_mobilities, retention_times, zstd_dctx.get());
         move_ptr(frame_ids);
         move_ptr(scan_ids);
         move_ptr(tofs);
@@ -675,7 +671,7 @@ size_t TimsDataHandle::expose_frame(size_t frame_no)
 {
     ensure_buffers_allocated();
     TimsFrame& frame = get_frame(frame_no);
-    frame.save_to_buffs(nullptr, _scan_ids_buffer.get(), _tofs_buffer.get(), _intensities_buffer.get(), nullptr, nullptr, nullptr, zstd_dctx);
+    frame.save_to_buffs(nullptr, _scan_ids_buffer.get(), _tofs_buffer.get(), _intensities_buffer.get(), nullptr, nullptr, nullptr, zstd_dctx.get());
     return frame.num_peaks;
 }
 
@@ -741,7 +737,7 @@ void TimsDataHandle::per_frame_TIC(uint32_t* result)
 
     for(auto it = frame_descs.begin(); it != frame_descs.end(); it++)
     {
-        it->second.save_to_buffs(nullptr, nullptr, nullptr, intensities.get(), nullptr, nullptr, nullptr, zstd_dctx);
+        it->second.save_to_buffs(nullptr, nullptr, nullptr, intensities.get(), nullptr, nullptr, nullptr, zstd_dctx.get());
         uint32_t acc = 0;
         const size_t n_peaks = it->second.num_peaks;
         for(size_t ii = 0; ii < n_peaks; ii++)

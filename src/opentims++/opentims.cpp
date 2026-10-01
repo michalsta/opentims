@@ -505,7 +505,7 @@ size_t TimsDataHandle::no_peaks_in_slice(uint32_t start, uint32_t end, uint32_t 
     if(step == 0)
         throw std::runtime_error("no_peaks_in_slice: step must be > 0");
     size_t ret = 0;
-    for(uint32_t ii = start; ii < end; ii += step)
+    for(uint64_t ii = start; ii < end; ii += step)
         ret += frame_descs.at(ii).num_peaks;
     return ret;
 }
@@ -571,7 +571,7 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
     uint32_t* offset2 = offset1 + no_peaks;
     uint32_t* offset3 = offset2 + no_peaks;
 
-    for(uint32_t ii = start; ii < end; ii += step)
+    for(uint64_t ii = start; ii < end; ii += step)
     {
         TimsFrame& frame = frame_descs.at(ii);
         frame.save_to_buffs(offset0, offset1, offset2, offset3, nullptr, nullptr, nullptr, zstd_dctx.get());
@@ -622,7 +622,7 @@ void TimsDataHandle::extract_frames_slice(uint32_t start,
 {
     if(step == 0)
         throw std::runtime_error("extract_frames_slice: step must be > 0");
-    for(uint32_t ii = start; ii < end; ii += step)
+    for(uint64_t ii = start; ii < end; ii += step)
     {
         TimsFrame& frame = frame_descs.at(ii);
         const size_t n = frame.num_peaks;

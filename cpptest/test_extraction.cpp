@@ -128,6 +128,25 @@ TEST(TestD, SecondFrameAlone)
     expect_golden(c, 5);
 }
 
+TEST(TestD, SliceStepDoesNotWrap)
+{
+    TimsDataHandle h(test_d().string());
+    const uint32_t step = (std::numeric_limits<uint32_t>::max)();
+    const Columns expected = extract_all(h, {1});
+    ASSERT_EQ(h.no_peaks_in_slice(1, 3, step), expected.size());
+    Columns actual;
+    actual.resize(expected.size());
+    h.extract_frames_slice(1, 3, step, actual.frame.data(), actual.scan.data(), actual.tof.data(),
+                          actual.intensity.data(), actual.mz.data(), actual.inv_ion_mobility.data(),
+                          actual.retention_time.data());
+    expect_columns_eq(actual, expected);
+
+    std::vector<uint32_t> matrix(4 * expected.size()), expected_matrix(matrix.size());
+    h.get_frame(1).save_to_matrix_buffer(expected_matrix.data());
+    h.extract_frames_slice(1, 3, step, matrix.data());
+    EXPECT_EQ(matrix, expected_matrix);
+}
+
 TEST(TestD, PerFrameTIC)
 {
     TimsDataHandle h(test_d().string());

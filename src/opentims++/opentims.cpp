@@ -96,9 +96,16 @@ TimsFrame::DecompressedView TimsFrame::decompress_into(char* decompression_buffe
     if(tims_bin_offset > file_size || file_size - tims_bin_offset < 8)
         throw_corrupted_frame(id, "data starts beyond the end of analysis.tdf_bin");
 
+    // Packets are not 4-byte aligned in the file: copy the header words out
+    // rather than dereferencing a cast pointer.
     const char* tims_bin_frame = parent_tdh.tims_data_bin.data() + tims_bin_offset;
-    uint32_t tims_packet_size = *reinterpret_cast<const uint32_t*>(tims_bin_frame);
-    assert(num_scans == *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1));
+    uint32_t tims_packet_size;
+    std::memcpy(&tims_packet_size, tims_bin_frame, sizeof(tims_packet_size));
+#ifndef NDEBUG
+    uint32_t header_num_scans;
+    std::memcpy(&header_num_scans, tims_bin_frame + 4, sizeof(header_num_scans));
+    assert(num_scans == header_num_scans);
+#endif
 
     if(tims_packet_size < 8 || tims_packet_size > file_size - tims_bin_offset)
         throw_corrupted_frame(id, "compressed data size (" + std::to_string(tims_packet_size) + " bytes) is invalid or extends beyond the end of analysis.tdf_bin");

@@ -40,6 +40,15 @@ TEST(ParseDouble, StopsAtTrailingGarbage)
 {
     EXPECT_EQ(parse_double_c_locale("3.5xyz"), 3.5);
     EXPECT_EQ(parse_double_c_locale("3,5"), 3.0); // ',' is never a decimal separator here
+    // Letters that may continue a hex float must not spoil the parse (libc++).
+    EXPECT_EQ(parse_double_c_locale("1.5abc"), 1.5);
+    EXPECT_EQ(parse_double_c_locale("0x10"), 0.0);
+    EXPECT_EQ(parse_double_c_locale("2.5e"), 2.5);
+    EXPECT_EQ(parse_double_c_locale("7e+"), 7.0);
+    EXPECT_EQ(parse_double_c_locale("7e-1x"), 0.7);
+    EXPECT_EQ(parse_double_c_locale(".5"), 0.5);
+    EXPECT_EQ(parse_double_c_locale("5."), 5.0);
+    EXPECT_EQ(parse_double_c_locale("."), 0.0);
 }
 
 TEST(ParseDouble, StateDoesNotLeakBetweenCalls)

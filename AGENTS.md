@@ -120,11 +120,35 @@ R CMD check --as-cran opentimsr_*.tar.gz   # runs src/opentimsr/tests/testthat
 - `test/` holds older ad-hoc scripts, not a suite; `test/print_sqlite_backend.py`
   is used by CI to report which sqlite got loaded.
 
+### C++ (cpptest/)
+
+```bash
+cmake -B build-tests -DOPENTIMS_BUILD_TESTS=ON -DOPENTIMS_BUILD_LIB=OFF -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j8
+```
+
+- GoogleTest is fetched at configure time. The core, the bundled zstd and the
+  bundled sqlite are compiled from source into two executables running the same
+  tests: `opentims_tests` (sqlite linked in) and `opentims_tests_dlopen` (sqlite
+  dlopen'ed, as in the Python module).
+- `dataset_builder.*` writes synthetic `.d` datasets at test time (frames stored
+  as raw zstd blocks), so tests cover shapes, gapped ids and corruption without
+  shipping data; pytest/test.d is used for the real compressed path.
+- Checking modes (they apply to everything in `cpptest/`, gtest included):
+  `-DOPENTIMS_SANITIZE="address;undefined"` (or `thread`; MSVC: `address`),
+  `-DOPENTIMS_HARDENED=ON` (debug-mode libstdc++/libc++, `_FORTIFY_SOURCE=3`;
+  use RelWithDebInfo), `-DOPENTIMS_BUILD_FUZZERS=ON` (Clang; builds
+  `opentims_fuzz_frame`). One sanitizer family per build directory.
+- `cpptest/consumer/` builds against an installed shared library (CI's packaging check).
+
 ## CI
 
 - `run_tests.yml` — pytest on Linux x86/ARM, Windows x86/ARM, macOS Intel/ARM,
   Python 3.9–3.14, plus a clang job on Linux; also runs with the Bruker bridge on
   Linux/Windows.
+- `cpp_tests.yml` — the C++ suite on the same platforms, plus ASan+UBSan, TSan,
+  hardened standard libraries, Valgrind, a 5-minute libFuzzer run, and an
+  install-and-consume check of the shared library. Not part of `publish.yml`.
 - `r_check.yml` — builds the R tarball on Linux, then `rcmdcheck --as-cran`
   with `error_on = "warning"` on Windows/macOS/Linux, R release/devel/4.3.
   Warnings fail the job.

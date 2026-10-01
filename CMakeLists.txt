@@ -17,6 +17,7 @@ option(OPENTIMS_BUILD_LIB    "Build the opentims C++ library"      ON)
 option(OPENTIMS_BUILD_PYTHON "Build Python pybind11 bindings"       OFF)
 option(OPENTIMS_LINK_SQLITE_STATICALLY
        "Link sqlite3 at compile time instead of dlopening at runtime (static lib only)" OFF)
+option(OPENTIMS_BUILD_TESTS  "Build the C++ test suite (cpptest/; downloads GoogleTest)" OFF)
 
 find_package(Threads REQUIRED)
 
@@ -260,4 +261,12 @@ if(OPENTIMS_BUILD_PYTHON)
         DESTINATION opentimspy/opentims++
         COMPONENT Python
     )
+endif()
+
+#------------------------------------------------------------------------------
+# C++ tests
+#------------------------------------------------------------------------------
+if(OPENTIMS_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(cpptest)
 endif()

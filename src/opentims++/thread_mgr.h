@@ -1,6 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <cmath>
+#include <memory>
 
 #include "bruker_api.h"
 #include "so_manager.h"
@@ -16,16 +18,18 @@ class ThreadingManager
 {
  protected:
     static std::unique_ptr<ThreadingManager> instance;
-    size_t n_threads;
+    // Atomic: concurrent threaded extractions (on separate handles) switch the
+    // threading type while others read it, and set_num_threads() may race them.
+    std::atomic<size_t> n_threads;
     const double io_overhead = 1.2;
-    OpentimsThreadingType threading_type;
+    std::atomic<OpentimsThreadingType> threading_type;
 
     virtual void signal_threading_changed() = 0;
     virtual void signal_threads_changed() = 0;
 
  public:
     ThreadingManager();
-    ThreadingManager(const ThreadingManager& other) = default;
+    ThreadingManager(const ThreadingManager& other);
     virtual ~ThreadingManager();
 
     static ThreadingManager& get_instance();

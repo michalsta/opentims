@@ -1,3 +1,4 @@
+#include <mutex>
 #include <thread>
 #include "thread_mgr.h"
 #include "so_manager.h"
@@ -18,12 +19,21 @@ n_threads(default_num_threads()),
 threading_type(CONVERTER_THREADING)
 {}
 
+ThreadingManager::ThreadingManager(const ThreadingManager& other) :
+n_threads(other.n_threads.load()),
+threading_type(other.threading_type.load())
+{}
+
 ThreadingManager::~ThreadingManager() {}
 
 ThreadingManager& ThreadingManager::get_instance()
 {
-    if(!instance)
-        instance = std::make_unique<DefaultThreadingManager>();
+    // The first calls may come from several threads at once.
+    static std::once_flag default_created;
+    std::call_once(default_created, []() {
+        if(!instance)
+            instance = std::make_unique<DefaultThreadingManager>();
+    });
     return *instance.get();
 }
 

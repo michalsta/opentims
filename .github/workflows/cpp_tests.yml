@@ -1,0 +1,198 @@
+name: C++ tests
+
+on:
+    push:
+        branches:
+            - ci-test
+            - main
+            - master
+            - devel
+            - tests
+    workflow_call:
+    workflow_dispatch:
+
+jobs:
+  # The suite on every platform the Python wheels target, optimised builds.
+  cpp_tests:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,    compiler: gcc,   build_type: Release }
+          - { os: ubuntu-latest,    compiler: clang, build_type: Release }
+          - { os: ubuntu-24.04-arm, compiler: gcc,   build_type: Release }
+          - { os: macos-latest,     compiler: clang, build_type: Release }
+          - { os: macos-15-intel,   compiler: clang, build_type: Release }
+          # Debug on MSVC: asserts, and the debug CRT's checked iterators.
+          - { os: windows-latest,   compiler: msvc,  build_type: Debug }
+          - { os: windows-latest,   compiler: msvc,  build_type: Release }
+          - { os: windows-11-arm,   compiler: msvc,  build_type: Release }
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Clang
+        if: matrix.compiler == 'clang' && runner.os == 'Linux'
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+      - name: Configure
+        run: cmake -S . -B build -DOPENTIMS_BUILD_TESTS=ON -DOPENTIMS_BUILD_LIB=OFF -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure --parallel 4
+
+  # Sanitizers and hardened standard libraries.
+  checked:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ASan+UBSan / gcc
+            os: ubuntu-latest
+            compiler: gcc
+            build_type: Debug
+            cmake_args: -DOPENTIMS_SANITIZE=address;undefined;float-cast-overflow
+          - name: ASan+UBSan / clang
+            os: ubuntu-latest
+            compiler: clang
+            build_type: Debug
+            cmake_args: -DOPENTIMS_SANITIZE=address;undefined
+          - name: TSan / gcc
+            os: ubuntu-latest
+            compiler: gcc
+            build_type: Debug
+            cmake_args: -DOPENTIMS_SANITIZE=thread
+          - name: TSan / clang
+            os: ubuntu-latest
+            compiler: clang
+            build_type: Debug
+            cmake_args: -DOPENTIMS_SANITIZE=thread
+          - name: Hardened libstdc++ / gcc
+            os: ubuntu-latest
+            compiler: gcc
+            build_type: RelWithDebInfo
+            cmake_args: -DOPENTIMS_HARDENED=ON
+          - name: ASan+UBSan / macOS
+            os: macos-latest
+            compiler: clang
+            build_type: Debug
+            cmake_args: -DOPENTIMS_SANITIZE=address;undefined
+          - name: Hardened libc++ / macOS
+            os: macos-latest
+            compiler: clang
+            build_type: RelWithDebInfo
+            cmake_args: -DOPENTIMS_HARDENED=ON
+          - name: ASan / MSVC
+            os: windows-latest
+            compiler: msvc
+            build_type: RelWithDebInfo
+            cmake_args: -DOPENTIMS_SANITIZE=address
+    env:
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Clang
+        if: matrix.compiler == 'clang' && runner.os == 'Linux'
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+      - name: Lower ASLR entropy for the sanitizers
+        # Recent kernels' mmap randomisation breaks TSan/ASan shadow memory.
+        if: runner.os == 'Linux'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: ASan options
+        # LeakSanitizer exists on Linux only.
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            echo "ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1" >> $GITHUB_ENV
+          else
+            echo "ASAN_OPTIONS=strict_string_checks=1" >> $GITHUB_ENV
+          fi
+      - name: Put the MSVC ASan runtime on PATH
+        if: runner.os == 'Windows' && contains(matrix.cmake_args, 'address')
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $dll = Get-ChildItem -Recurse "$vs\VC\Tools\MSVC" -Filter clang_rt.asan_dynamic-x86_64.dll |
+                 Where-Object { $_.FullName -like '*Hostx64\x64*' } | Select-Object -First 1
+          $dll.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build -DOPENTIMS_BUILD_TESTS=ON -DOPENTIMS_BUILD_LIB=OFF -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} "${{ matrix.cmake_args }}"
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel 4
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure --parallel 4
+
+  valgrind:
+    name: Valgrind memcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+      - name: Configure
+        run: cmake -S . -B build -DOPENTIMS_BUILD_TESTS=ON -DOPENTIMS_BUILD_LIB=OFF -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build --parallel 4
+      - name: Test under Valgrind
+        run: |
+          for t in opentims_tests opentims_tests_dlopen; do
+            valgrind --error-exitcode=99 --leak-check=full --errors-for-leak-kinds=definite,indirect \
+                     --track-origins=yes build/cpptest/$t --gtest_brief=1
+          done
+
+  fuzz:
+    name: libFuzzer (frame decoding)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lower ASLR entropy for the sanitizers
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: Configure
+        run: >
+          cmake -S . -B build -DOPENTIMS_BUILD_TESTS=ON -DOPENTIMS_BUILD_LIB=OFF -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          "-DOPENTIMS_SANITIZE=address;undefined" -DOPENTIMS_BUILD_FUZZERS=ON
+      - name: Build
+        run: cmake --build build --parallel 4 --target opentims_fuzz_frame
+      - name: Fuzz
+        run: |
+          mkdir -p corpus artifacts
+          build/cpptest/opentims_fuzz_frame -max_total_time=300 -max_len=4096 -artifact_prefix=artifacts/ corpus
+      - name: Keep crashing inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts
+          path: artifacts/
+
+  # The installed shared library, consumed via CMake and pkg-config.
+  package:
+    name: Installed library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev libzstd-dev pkg-config
+      - name: Build and install
+        run: |
+          cmake -S . -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PWD/prefix
+          cmake --build build --parallel 4
+          cmake --install build
+      - name: CMake consumer
+        run: |
+          cmake -S cpptest/consumer -B build-consumer -DCMAKE_PREFIX_PATH=$PWD/prefix
+          cmake --build build-consumer
+          LD_LIBRARY_PATH=$PWD/prefix/lib build-consumer/opentims_consumer pytest/test.d 10
+      - name: pkg-config consumer
+        run: |
+          export PKG_CONFIG_PATH=$PWD/prefix/lib/pkgconfig
+          g++ -std=c++20 cpptest/consumer/consumer.cpp $(pkg-config --cflags --libs opentims) -o consumer-pc
+          LD_LIBRARY_PATH=$PWD/prefix/lib ./consumer-pc pytest/test.d 10

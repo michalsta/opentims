@@ -13,6 +13,8 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <limits>
+#include <stdexcept>
 
 #include "platform.h"
 #include "bruker_api.h"
@@ -124,7 +126,16 @@ class TimsFrame
     static TimsFrame TimsFrameFromSql(char** sql_row,
                                       TimsDataHandle& parent_handle);
 
-    inline size_t data_size_ints() const { return num_scans + num_peaks + num_peaks; };
+    inline size_t data_size_ints() const
+    {
+        const uint64_t words = uint64_t(num_scans) + 2 * uint64_t(num_peaks);
+        // Reject sizes outside the supported 32-bit word-count range before
+        // allocating, and ensure the byte count fits on narrower platforms.
+        if(words > (std::numeric_limits<uint32_t>::max)() ||
+           words > (std::numeric_limits<size_t>::max)() / 4)
+            throw std::runtime_error("Frame " + std::to_string(id) + ": decompressed size exceeds the supported range");
+        return static_cast<size_t>(words);
+    }
 
 
 public:

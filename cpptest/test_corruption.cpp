@@ -97,6 +97,31 @@ TEST(Corruption, OffsetBeyondEndOfFile)
     s.expect_frame2_fails("beyond the end");
 }
 
+TEST(Corruption, DecompressedWordCountOverflow)
+{
+    for(const auto& counts : {std::pair{"4294967294", "1"},
+                              std::pair{"1", "2147483648"}})
+    {
+        TempDir tmp;
+        DatasetSpec spec;
+        FrameSpec f;
+        f.sql_num_scans = counts.first;
+        f.sql_num_peaks = counts.second;
+        f.packet = frame_packet(static_cast<uint32_t>(std::stoull(counts.first)), zstd_raw_frame(""));
+        spec.frames = {f};
+        write_dataset(spec, tmp.path());
+        try
+        {
+            TimsDataHandle h(tmp.path().string());
+            FAIL() << "overflowing metadata accepted";
+        }
+        catch(const std::runtime_error& e)
+        {
+            EXPECT_NE(std::string(e.what()).find("decompressed size exceeds"), std::string::npos);
+        }
+    }
+}
+
 TEST(Corruption, NegativeOffset)
 {
     FrameSpec f = good_frame(2);

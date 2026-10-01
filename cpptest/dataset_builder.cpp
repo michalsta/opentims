@@ -165,7 +165,7 @@ void exec_sql(const fs::path& tdf, const std::string& sql)
 }
 
 // The packet header repeats NumScans; keep it consistent with what the Frames
-// table claims, since the reader asserts the two agree.
+// table claims, since the reader rejects packets where the two disagree.
 static uint32_t packet_num_scans(const FrameSpec& frame)
 {
     if(frame.sql_num_scans)

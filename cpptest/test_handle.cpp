@@ -202,6 +202,23 @@ TEST(Open, UnsupportedCompressionTypeThrows)
     }
 }
 
+TEST(Open, NullCompressionTypeThrows)
+{
+    DatasetSpec spec = small_spec();
+    spec.extra_sql = {"UPDATE GlobalMetadata SET Value = NULL WHERE Key = 'TimsCompressionType'"};
+    TempDir tmp;
+    write_dataset(spec, tmp.path());
+    try
+    {
+        TimsDataHandle h(tmp.path().string());
+        FAIL() << "expected an exception";
+    }
+    catch(const std::runtime_error& e)
+    {
+        EXPECT_NE(std::string(e.what()).find("TimsCompressionType"), std::string::npos) << e.what();
+    }
+}
+
 TEST(Open, AbsentCompressionTypeIsAccepted)
 {
     DatasetSpec spec = small_spec();

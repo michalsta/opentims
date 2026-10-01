@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <cassert>
 #include <cstdint>
 #include <string>
 #include <cstring>
@@ -102,11 +101,10 @@ TimsFrame::DecompressedView TimsFrame::decompress_into(char* decompression_buffe
     const char* tims_bin_frame = parent_tdh.tims_data_bin.data() + tims_bin_offset;
     uint32_t tims_packet_size;
     std::memcpy(&tims_packet_size, tims_bin_frame, sizeof(tims_packet_size));
-#ifndef NDEBUG
     uint32_t header_num_scans;
     std::memcpy(&header_num_scans, tims_bin_frame + 4, sizeof(header_num_scans));
-    assert(num_scans == header_num_scans);
-#endif
+    if(header_num_scans != num_scans)
+        throw_corrupted_frame(id, "analysis.tdf_bin holds " + std::to_string(header_num_scans) + " scans, but the Frames table says " + std::to_string(num_scans));
 
     if(tims_packet_size < 8 || tims_packet_size > file_size - tims_bin_offset)
         throw_corrupted_frame(id, "compressed data size (" + std::to_string(tims_packet_size) + " bytes) is invalid or extends beyond the end of analysis.tdf_bin");
@@ -314,11 +312,10 @@ void TimsFrame::decode(const DecompressedView& data,
         parent_tdh.scan2inv_ion_mobility_converter->convert(id, inv_ion_mobilities, scan_ids, nnum_peaks);
 }
 
-int tims_sql_callback(void* out, [[maybe_unused]] int cols, char** row, char**)
+int tims_sql_callback(void* out, int cols, char** row, char**)
 {
-    assert(cols == 7);
-    assert(row != NULL);
-    assert(row[0] != NULL);
+    if(cols != 7 || row == nullptr || row[0] == nullptr)
+        throw std::runtime_error("Frames table: unexpected row (null Id, or wrong number of columns)");
     uint32_t frame_id = atol(row[0]);
     TimsDataHandle* hndl = reinterpret_cast<TimsDataHandle*>(out);
     hndl->frame_descs.emplace(frame_id, TimsFrame::TimsFrameFromSql(row, *hndl));
@@ -336,11 +333,10 @@ void check_compression_type(const char* compression_type)
     }
 }
 
-int check_compression(void*, [[maybe_unused]] int cols, char** row, char**)
+int check_compression(void*, int cols, char** row, char**)
 {
-    assert(cols == 1);
-    assert(row != NULL);
-    assert(row[0] != NULL);
+    if(cols != 1 || row == nullptr || row[0] == nullptr)
+        throw std::runtime_error("GlobalMetadata: TimsCompressionType has no value");
     check_compression_type(row[0]);
     return 0;
 }

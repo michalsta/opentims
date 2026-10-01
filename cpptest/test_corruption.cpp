@@ -9,7 +9,6 @@
 // access (the sanitizer builds check that part), and the handle stays usable.
 
 #include <cstdint>
-#include <cstring>
 #include <fstream>
 #include <random>
 #include <stdexcept>
@@ -231,6 +230,16 @@ TEST(Corruption, ScanHeaderWrapAround)
     s.expect_frame2_fails("more peaks than NumPeaks");
 }
 
+TEST(Corruption, PacketNumScansDisagreesWithFramesTable)
+{
+    FrameSpec f = good_frame(2);
+    std::string packet = frame_packet(f.num_scans(), zstd_raw_frame(byte_planes(frame_words(f))));
+    packet[4] = char(f.num_scans() + 1);
+    f.packet = packet;
+    Sandwich s(f);
+    s.expect_frame2_fails("holds 5 scans, but the Frames table says 4");
+}
+
 TEST(Corruption, PeaksButNoScans)
 {
     FrameSpec f;
@@ -341,30 +350,13 @@ TEST(Corruption, RandomByteFlips)
         std::ifstream in(tmp / "analysis.tdf_bin", std::ios::binary);
         bin.assign(std::istreambuf_iterator<char>(in), {});
     }
-    // The reader assert()s that a packet's NumScans word matches the Frames
-    // table, so debug builds abort on that one; leave those words alone.
-    std::vector<bool> flippable(bin.size(), true);
-    for(size_t off = 0; off + 8 <= bin.size(); )
-    {
-        uint32_t packet_size;
-        std::memcpy(&packet_size, bin.data() + off, 4);
-        for(size_t i = off + 4; i < off + 8; i++)
-            flippable[i] = false;
-        off += packet_size;
-    }
     std::mt19937 rng(1234);
     for(int round = 0; round < 300; round++)
     {
         std::string damaged = bin;
         const int flips = 1 + round % 4;
-        for(int k = 0; k < flips; )
-        {
-            const size_t pos = rng() % damaged.size();
-            if(!flippable[pos])
-                continue;
-            damaged[pos] ^= char(1u << (rng() % 8));
-            k++;
-        }
+        for(int k = 0; k < flips; k++)
+            damaged[rng() % damaged.size()] ^= char(1u << (rng() % 8));
         {
             std::ofstream out(tmp / "analysis.tdf_bin", std::ios::binary | std::ios::trunc);
             out.write(damaged.data(), std::streamsize(damaged.size()));

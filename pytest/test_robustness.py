@@ -1,9 +1,11 @@
 """Regression tests: locale independence, user-supplied arrays, corrupted datasets."""
 import locale
+import gc
 import os
 import shutil
 import sqlite3
 import sys
+import weakref
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +14,23 @@ import pytest
 from opentimspy import OpenTIMS, conversion_method
 
 data_path = Path(__file__).parent / "test.d"
+
+
+def test_frame_keeps_closed_handle_alive():
+    data = OpenTIMS(data_path, cm=conversion_method.NoConversion)
+    expected = data.frame_array(1)
+    owner = weakref.ref(data.handle)
+    frame = data.handle.get_frame(1)
+    data.close()
+    del data
+    gc.collect()
+    assert owner() is not None
+    actual = np.empty(expected.shape, dtype=np.uint32, order="F")
+    frame.save_to_pybuffer(actual)
+    np.testing.assert_array_equal(actual, expected)
+    del frame
+    gc.collect()
+    assert owner() is None
 
 
 @pytest.fixture(scope="module")

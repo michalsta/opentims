@@ -205,7 +205,7 @@ PYBIND11_MODULE(opentimspy_cpp, m) {
         .def("no_peaks_total", &TimsDataHandle::no_peaks_total)
         .def("min_frame_id", &TimsDataHandle::min_frame_id)
         .def("max_frame_id", &TimsDataHandle::max_frame_id)
-        .def("get_frame", &TimsDataHandle::get_frame, py::return_value_policy::reference)
+        .def("get_frame", &TimsDataHandle::get_frame, py::return_value_policy::reference_internal)
         .def("no_peaks_in_frames",
             [](TimsDataHandle& dh, const input_array<uint32_t>& frames)
             {

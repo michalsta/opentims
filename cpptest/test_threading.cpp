@@ -144,6 +144,18 @@ TEST(Threading, ThreadedExtractionWithManyWorkers)
     }
 }
 
+TEST(Threading, WorkerCountIsBoundedByRequestedFrames)
+{
+    ThreadCountGuard guard;
+    TempDir tmp;
+    const DatasetSpec spec = random_dataset(27, 1, 4, 4, 1, 1, 0);
+    write_dataset(spec, tmp.path());
+    TimsDataHandle h(tmp.path().string());
+    ThreadingManager::get_instance().set_num_threads(1000000);
+    EXPECT_TRUE(threaded_extract_matches(h, spec, {}));
+    EXPECT_TRUE(threaded_extract_matches(h, spec, {1}));
+}
+
 TEST(Threading, HandlesOpenedAndUsedConcurrently)
 {
     TempDir tmp;

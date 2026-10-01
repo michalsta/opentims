@@ -680,16 +680,35 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
                                     double* const * inv_ion_mobilities,
                                     double* const * retention_times)
 {
+    if(indexes.empty())
+        return;
     std::atomic<size_t> current_task(0);
     // An exception escaping a std::thread calls std::terminate, killing the
     // host interpreter; keep the first one and rethrow it after joining.
     std::exception_ptr first_error;
     std::mutex first_error_mutex;
 
+    // Restore converter threading on every exit, after all workers have joined.
+    struct RestoreConverterThreading
+    {
+        ~RestoreConverterThreading() { ThreadingManager::get_instance().set_converter_threading(); }
+    } restore_threading;
     ThreadingManager::get_instance().set_shared_threading();
-    size_t n_threads = (std::max)(ThreadingManager::get_instance().get_no_opentims_threads(), size_t(1));
+    size_t n_threads = (std::min)(indexes.size(),
+        (std::max)(ThreadingManager::get_instance().get_no_opentims_threads(), size_t(1)));
 
+    // Keep std::thread for older platform standard libraries. Join during
+    // unwinding too, if a later thread constructor or vector allocation fails.
     std::vector<std::thread> threads;
+    struct JoinThreads
+    {
+        std::vector<std::thread>& threads;
+        ~JoinThreads()
+        {
+            for(auto& thread : threads)
+                if(thread.joinable()) thread.join();
+        }
+    } join_threads{threads};
     for(size_t ii=0; ii<n_threads; ii++)
         threads.emplace_back([&](){
             try
@@ -714,7 +733,6 @@ void TimsDataHandle::extract_frames(const std::vector<uint32_t>& indexes,
             }
         });
     for (auto& th : threads) th.join();
-    ThreadingManager::get_instance().set_converter_threading();
     if(first_error)
         std::rethrow_exception(first_error);
 }

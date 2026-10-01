@@ -16,6 +16,7 @@ public:
     static int sqlite3_exec(sqlite3* db, const char* query, int (*callback)(void*,int,char**,char**), void* arg, char **err) { return ::sqlite3_exec(db, query, callback, arg, err); }
     static void sqlite3_free(void* ptr) { ::sqlite3_free(ptr); }
     static const char* sqlite3_errmsg(sqlite3* db) { return ::sqlite3_errmsg(db); }
+    static int sqlite3_busy_timeout(sqlite3* db, int ms) { return ::sqlite3_busy_timeout(db, ms); }
 };
 
 #elif defined(OPENTIMS_LINK_SQLITE_STATICALLY)
@@ -31,6 +32,7 @@ public:
     static int sqlite3_exec(sqlite3* db, const char* query, int (*callback)(void*,int,char**,char**), void* arg, char **err) { return ::sqlite3_exec(db, query, callback, arg, err); }
     static void sqlite3_free(void* ptr) { ::sqlite3_free(ptr); }
     static const char* sqlite3_errmsg(sqlite3* db) { return ::sqlite3_errmsg(db); }
+    static int sqlite3_busy_timeout(sqlite3* db, int ms) { return ::sqlite3_busy_timeout(db, ms); }
 };
 
 #else // dynamic loading via so_manager
@@ -76,6 +78,13 @@ public:
         if(fun == nullptr)
             fun = sqlite_so_handle.value().symbol_lookup<decltype(::sqlite3_errmsg)>("sqlite3_errmsg");
         return fun(db);
+    }
+    static int sqlite3_busy_timeout(sqlite3* db, int ms)
+    {
+        static decltype(::sqlite3_busy_timeout)* fun = nullptr;
+        if(fun == nullptr)
+            fun = sqlite_so_handle.value().symbol_lookup<decltype(::sqlite3_busy_timeout)>("sqlite3_busy_timeout");
+        return fun(db, ms);
     }
 
 };
@@ -124,6 +133,11 @@ class RAIISqlite
                 ot_sqlite::sqlite3_close(db_conn);
             throw std::runtime_error(err_msg);
         }
+        // Even read-only connections take file locks, and on Windows a reader
+        // briefly holds the PENDING lock while acquiring SHARED, retrying only
+        // a few times; readers opening the same file at once then fail with
+        // SQLITE_BUSY ("database is locked"). Wait for each other instead.
+        ot_sqlite::sqlite3_busy_timeout(db_conn, 5000);
     }
     ~RAIISqlite()
     {

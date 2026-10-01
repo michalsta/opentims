@@ -11,6 +11,8 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -151,6 +153,8 @@ TEST(Threading, HandlesOpenedAndUsedConcurrently)
     const Columns exp = expected_columns(spec, ids);
 
     std::atomic<int> failures{0};
+    std::mutex errors_mutex;
+    std::vector<std::string> errors;
     std::vector<std::thread> threads;
     for(int t = 0; t < 8; t++)
         threads.emplace_back([&]() {
@@ -167,6 +171,12 @@ TEST(Threading, HandlesOpenedAndUsedConcurrently)
                         failures++;
                 }
             }
+            catch(const std::exception& e)
+            {
+                failures++;
+                std::lock_guard<std::mutex> lock(errors_mutex);
+                errors.push_back(e.what());
+            }
             catch(...)
             {
                 failures++;
@@ -175,6 +185,8 @@ TEST(Threading, HandlesOpenedAndUsedConcurrently)
     for(auto& th : threads)
         th.join();
     EXPECT_EQ(failures.load(), 0);
+    for(const auto& e : errors)
+        ADD_FAILURE() << e;
 }
 
 TEST(Threading, ThreadedExtractionOnSeparateHandlesConcurrently)

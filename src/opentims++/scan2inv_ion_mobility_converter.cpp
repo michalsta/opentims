@@ -88,7 +88,8 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
              const double* scans,
              uint32_t size)
 {
-    tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, scans, inv_ion_mobilities, size);
+    if(tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, scans, inv_ion_mobilities, size) == 0)
+        throw std::runtime_error("tims_scannum_to_oneoverk0(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
 }
 
 
@@ -100,7 +101,8 @@ void BrukerScan2InvIonMobilityConverter::convert(uint32_t frame_id,
     std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_scans[idx] = static_cast<double>(scans[idx]);
-    tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size);
+    if(tims_scannum_to_inv_ion_mobility(bruker_file_handle, frame_id, dbl_scans.get(), inv_ion_mobilities, size) == 0)
+        throw std::runtime_error("tims_scannum_to_oneoverk0(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
 }
 
 void BrukerScan2InvIonMobilityConverter::inverse_convert(uint32_t frame_id,
@@ -109,7 +111,8 @@ void BrukerScan2InvIonMobilityConverter::inverse_convert(uint32_t frame_id,
              uint32_t size)
 {
     std::unique_ptr<double[]> dbl_scans = std::make_unique<double[]>(size);
-    tims_inv_ion_mobility_to_scannum(bruker_file_handle, frame_id, inv_ion_mobilities, dbl_scans.get(), size);
+    if(tims_inv_ion_mobility_to_scannum(bruker_file_handle, frame_id, inv_ion_mobilities, dbl_scans.get(), size) == 0)
+        throw std::runtime_error("tims_oneoverk0_to_scannum(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
     for(uint32_t idx = 0; idx < size; idx++)
         scans[idx] = static_cast<double>(dbl_scans[idx]);
 }

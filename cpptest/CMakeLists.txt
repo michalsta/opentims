@@ -120,6 +120,10 @@ endforeach()
 #------------------------------------------------------------------------------
 # Test executables
 #------------------------------------------------------------------------------
+add_library(opentims_test_bruker_module MODULE "${CMAKE_CURRENT_SOURCE_DIR}/bruker_stub.cpp")
+opentims_compile_options(opentims_test_bruker_module)
+target_include_directories(opentims_test_bruker_module PRIVATE "${OPENTIMS_SRC_DIR}")
+
 set(OPENTIMS_TEST_SUPPORT
     "${CMAKE_CURRENT_SOURCE_DIR}/dataset_builder.cpp"
 )
@@ -129,6 +133,7 @@ set(OPENTIMS_TEST_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_helper.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_so_manager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_converters.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_bruker_errors.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_handle.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_extraction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_corruption.cpp"
@@ -163,6 +168,9 @@ foreach(_variant static dlopen)
     add_executable(${_exe} ${OPENTIMS_TEST_SOURCES})
     opentims_test_target(${_exe} ${_static})
     target_link_libraries(${_exe} PRIVATE GTest::gtest)
+    add_dependencies(${_exe} opentims_test_bruker_module)
+    target_compile_definitions(${_exe} PRIVATE
+        "OPENTIMS_TEST_BRUKER_MODULE=\"$<TARGET_FILE:opentims_test_bruker_module>\"")
     gtest_discover_tests(${_exe}
         TEST_PREFIX "${_variant}."
         DISCOVERY_MODE PRE_TEST

@@ -77,7 +77,8 @@ BrukerTof2MzConverter::~BrukerTof2MzConverter()
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const double* tofs, uint32_t size)
 {
-    tims_index_to_mz(bruker_file_handle, frame_id, tofs, mzs, size);
+    if(tims_index_to_mz(bruker_file_handle, frame_id, tofs, mzs, size) == 0)
+        throw std::runtime_error("tims_index_to_mz(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
 }
 
 void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32_t* tofs, uint32_t size)
@@ -85,13 +86,15 @@ void BrukerTof2MzConverter::convert(uint32_t frame_id, double* mzs, const uint32
     std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
     for(uint32_t idx = 0; idx < size; idx++)
         dbl_tofs[idx] = static_cast<double>(tofs[idx]);
-    tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size);
+    if(tims_index_to_mz(bruker_file_handle, frame_id, dbl_tofs.get(), mzs, size) == 0)
+        throw std::runtime_error("tims_index_to_mz(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
 }
 
 void BrukerTof2MzConverter::inverse_convert(uint32_t frame_id, uint32_t* tofs, const double* mzs, uint32_t size)
 {
     std::unique_ptr<double[]> dbl_tofs = std::make_unique<double[]>(size);
-    tims_mz_to_index(bruker_file_handle, frame_id, mzs, dbl_tofs.get(), size);
+    if(tims_mz_to_index(bruker_file_handle, frame_id, mzs, dbl_tofs.get(), size) == 0)
+        throw std::runtime_error("tims_mz_to_index(frame " + std::to_string(frame_id) + ") failed. Reason: " + get_tims_error());
     for(uint32_t idx = 0; idx < size; idx++)
         tofs[idx] = static_cast<uint32_t>(dbl_tofs[idx]);
 }

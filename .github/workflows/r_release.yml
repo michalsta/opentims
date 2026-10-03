@@ -1,0 +1,109 @@
+name: R release
+
+# On a v* tag, attach installable R packages to the GitHub release:
+# the source tarball (any platform, built on Linux so the symlinks are
+# resolved) and a Windows binary (no Rtools needed).
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  version:
+    name: Check DESCRIPTION version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # R versions cannot carry pre-release suffixes, so v1.2.0b4 must match
+      # Version: 1.2.0.
+      - name: Compare tag with DESCRIPTION
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          base="$(echo "$tag" | sed -E 's/^([0-9]+(\.[0-9]+)*).*/\1/')"
+          desc="$(sed -n 's/^Version: *//p' src/opentimsr/DESCRIPTION)"
+          if [ "$base" != "$desc" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match DESCRIPTION Version $desc"
+            exit 1
+          fi
+
+  check:
+    needs: version
+    uses: ./.github/workflows/r_check.yml
+
+  windows_binary:
+    name: Windows binary
+    needs: check
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: opentimsr-tarball
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Extract DESCRIPTION for dependency resolution
+        run: tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: opentimsr
+
+      - name: Build binary
+        run: |
+          mkdir binary
+          cd binary
+          R CMD INSTALL --build ../opentimsr_*.tar.gz
+
+      - name: Install the binary into a fresh library and read the test data
+        shell: Rscript {0}
+        run: |
+          lib <- file.path(tempdir(), "lib")
+          dir.create(lib)
+          install.packages(Sys.glob("binary/opentimsr_*.zip"), lib = lib, repos = NULL)
+          library(opentimsr, lib.loc = lib)
+          setup_opensource()
+          D <- OpenTIMS(system.file("extdata", "test.d", package = "opentimsr", lib.loc = lib))
+          stopifnot(nrow(query(D, frames = 1L)) > 0)
+          CloseTIMS(D)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentimsr-windows-binary
+          path: binary/opentimsr_*.zip
+
+  release:
+    name: Attach to GitHub release
+    needs: windows_binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: opentimsr-*
+          path: dist
+          merge-multiple: true
+
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -l dist
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            prerelease=""
+            case "${GITHUB_REF_NAME#v}" in
+              *[!0-9.]*) prerelease="--prerelease" ;;
+            esac
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" \
+              --generate-notes $prerelease
+          fi
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

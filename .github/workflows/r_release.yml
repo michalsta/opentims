@@ -6,34 +6,64 @@ name: R release
 # - opentimsr_X.zip: a Windows binary of it (no Rtools needed);
 # - opentims-X.tar.gz: the whole repository with symlinks replaced by
 #   copies, installable with remotes (subdir) and pip on any platform.
+#
+# Run manually (workflow_dispatch) without a tag to build and test the files
+# from the chosen branch; they are then only kept as run artifacts. With a
+# tag, the files are built from that tag and attached to its release.
 
 on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v* tag to build and attach to its release (empty to only build and test)
+        type: string
+        default: ''
 
 jobs:
   version:
     name: Check DESCRIPTION version
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine tag
+        id: tag
+        env:
+          TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: |
+          if [ -n "$TAG" ] && ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::No such tag: $TAG"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       # R versions cannot carry pre-release suffixes, so v1.2.0b4 must match
       # Version: 1.2.0.
       - name: Compare tag with DESCRIPTION
+        if: steps.tag.outputs.tag != ''
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          base="$(echo "$tag" | sed -E 's/^([0-9]+(\.[0-9]+)*).*/\1/')"
-          desc="$(sed -n 's/^Version: *//p' src/opentimsr/DESCRIPTION)"
+          base="$(echo "${TAG#v}" | sed -E 's/^([0-9]+(\.[0-9]+)*).*/\1/')"
+          desc="$(git show "refs/tags/$TAG:src/opentimsr/DESCRIPTION" | sed -n 's/^Version: *//p')"
           if [ "$base" != "$desc" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match DESCRIPTION Version $desc"
+            echo "::error::Tag $TAG does not match DESCRIPTION Version $desc"
             exit 1
           fi
 
   check:
     needs: version
     uses: ./.github/workflows/r_check.yml
+    with:
+      ref: ${{ needs.version.outputs.tag }}
 
   windows_binary:
     name: Windows binary
@@ -87,10 +117,21 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
+      # The script comes from this commit; the archived tree from the tag.
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Build archive
-        run: .github/scripts/make_source_archive.sh "$GITHUB_REF_NAME" "opentims-${GITHUB_REF_NAME#v}" dist
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          if [ -n "$TAG" ]; then
+            .github/scripts/make_source_archive.sh "refs/tags/$TAG" "opentims-${TAG#v}" dist
+          else
+            .github/scripts/make_source_archive.sh HEAD "opentims-$(git rev-parse --short HEAD)" dist
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -99,7 +140,8 @@ jobs:
 
   release:
     name: Attach to GitHub release
-    needs: [windows_binary, source_archive]
+    needs: [version, windows_binary, source_archive]
+    if: needs.version.outputs.tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -114,14 +156,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
         run: |
           ls -l dist
-          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
             prerelease=""
-            case "${GITHUB_REF_NAME#v}" in
+            case "${TAG#v}" in
               *[!0-9.]*) prerelease="--prerelease" ;;
             esac
-            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" \
+            gh release create "$TAG" --verify-tag --title "$TAG" \
               --generate-notes $prerelease
           fi
-          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          gh release upload "$TAG" dist/* --clobber

@@ -56,13 +56,15 @@ def test_open_neither_changes_nor_depends_on_locale():
     for candidate in ("pl_PL.UTF-8", "pl_PL.utf8", "de_DE.UTF-8", "de_DE.utf8", "Polish_Poland.1250"):
         try:
             locale.setlocale(locale.LC_ALL, candidate)
-            break
         except locale.Error:
             continue
+        # musl accepts any locale name but never switches the decimal point
+        if locale.localeconv()["decimal_point"] == ",":
+            break
     else:
+        locale.setlocale(locale.LC_ALL, old)
         pytest.skip("no locale with a decimal comma available")
     try:
-        assert locale.localeconv()["decimal_point"] == ","
         with OpenTIMS(data_path, cm=conversion_method.OpenSource) as handle:
             assert locale.setlocale(locale.LC_NUMERIC) != "C"
             q = handle.query(1, columns=("inv_ion_mobility", "retention_time"))

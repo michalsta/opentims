@@ -66,10 +66,10 @@ TimsFrame TimsFrame::TimsFrameFromSql(char** sql_row, TimsDataHandle& parent_han
             throw std::runtime_error("TimsFrameFromSql: null value in SQL column " + std::to_string(i));
 
     return TimsFrame(
-            atol(sql_row[0]),
-            atol(sql_row[1]),
-            atol(sql_row[2]),
-            atol(sql_row[3]),
+            static_cast<uint32_t>(std::strtoull(sql_row[0], nullptr, 10)),
+            static_cast<uint32_t>(std::strtoull(sql_row[1], nullptr, 10)),
+            static_cast<uint32_t>(std::strtoull(sql_row[2], nullptr, 10)),
+            static_cast<uint32_t>(std::strtoull(sql_row[3], nullptr, 10)),
             100.0 / parse_double_c_locale(sql_row[4]),
             parse_double_c_locale(sql_row[5]),
             std::strtoull(sql_row[6], nullptr, 10),

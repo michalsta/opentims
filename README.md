@@ -62,7 +62,32 @@ ZSTD_CFLAGS="-I/path/to/include" ZSTD_LIBS="-L/path/to/lib -lzstd" R CMD INSTALL
 
 ### Installation
 
-On Linux and macOS, from an R terminal:
+Each [GitHub release](https://github.com/michalsta/opentims/releases) carries
+ready-to-install files; replace `X.Y.Z` below with the release version.
+
+From source, on any platform (needs a compiler, i.e. Rtools on Windows, and
+zstd as described above):
+```r
+install.packages("remotes")
+remotes::install_url(
+  "https://github.com/michalsta/opentims/releases/download/vX.Y.Z/opentims-X.Y.Z.tar.gz",
+  subdir = "src/opentimsr")
+```
+
+Windows binary, no Rtools needed (built for the R version current at release
+time; on other R versions use the source install above):
+```r
+install.packages(c("Rcpp", "DBI", "RSQLite"))
+zip <- file.path(tempdir(), "opentimsr_X.Y.Z.zip")   # keep this file name
+download.file(
+  "https://github.com/michalsta/opentims/releases/download/vX.Y.Z/opentimsr_X.Y.Z.zip",
+  zip, mode = "wb")
+install.packages(zip, repos = NULL)
+```
+
+#### Development version
+
+On Linux and macOS:
 ```r
 install.packages("remotes")
 remotes::install_github("michalsta/opentims", subdir = "src/opentimsr")

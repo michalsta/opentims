@@ -1,8 +1,11 @@
 name: R release
 
-# On a v* tag, attach installable R packages to the GitHub release:
-# the source tarball (any platform, built on Linux so the symlinks are
-# resolved) and a Windows binary (no Rtools needed).
+# On a v* tag, attach installable packages to the GitHub release:
+# - opentimsr_X.tar.gz: the R source package (built on Linux, so the
+#   symlinks are resolved);
+# - opentimsr_X.zip: a Windows binary of it (no Rtools needed);
+# - opentims-X.tar.gz: the whole repository with symlinks replaced by
+#   copies, installable with remotes (subdir) and pip on any platform.
 
 on:
   push:
@@ -79,9 +82,24 @@ jobs:
           name: opentimsr-windows-binary
           path: binary/opentimsr_*.zip
 
+  source_archive:
+    name: Repository archive without symlinks
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build archive
+        run: .github/scripts/make_source_archive.sh "$GITHUB_REF_NAME" "opentims-${GITHUB_REF_NAME#v}" dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentimsr-repository-archive
+          path: dist/*.tar.gz
+
   release:
     name: Attach to GitHub release
-    needs: windows_binary
+    needs: [windows_binary, source_archive]
     runs-on: ubuntu-latest
     permissions:
       contents: write

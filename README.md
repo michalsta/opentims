@@ -68,17 +68,17 @@ install.packages("remotes")
 remotes::install_github("michalsta/opentims", subdir = "src/opentimsr")
 ```
 
-**Windows:** `install_github` and plain `git clone` do not work, because the
-package directory contains symbolic links that Windows does not restore by
-default. Build a source tarball on Linux, macOS or WSL instead, and install it
-on Windows (requires Rtools):
-```bash
+**Windows:** `install_github` does not work, because the package directory
+contains a symbolic link that Windows does not restore by default. Clone the
+repository, replace the link with a copy of the C++ core, and install from the
+directory (requires [Rtools](https://cran.r-project.org/bin/windows/Rtools/)),
+in PowerShell:
+```powershell
 git clone https://github.com/michalsta/opentims
 cd opentims
-R CMD build src/opentimsr            # on Linux/macOS/WSL
-```
-```bat
-R.exe CMD INSTALL opentimsr_*.tar.gz
+Remove-Item src\opentimsr\src\opentims_core
+Copy-Item -Recurse src\opentims++ src\opentimsr\src\opentims_core
+R.exe CMD INSTALL src\opentimsr
 ```
 You can download git [from here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 

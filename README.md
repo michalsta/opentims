@@ -47,14 +47,13 @@ When `opentims_bruker_bridge` is installed it is used automatically; otherwise t
 ### System requirements
 
 `opentimsr` links against the system [zstd](https://github.com/facebook/zstd) library.
-Installing from source (e.g. from GitHub, or from CRAN on Linux) needs zstd with its development headers:
+Installing from source needs zstd with its development headers:
 ```bash
 sudo apt install libzstd-dev         # Debian/Ubuntu
 sudo dnf install libzstd-devel       # Fedora/RHEL
 brew install zstd pkg-config         # macOS (Homebrew)
 ```
 On Windows, zstd comes with [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which is needed to build any R package from source.
-Binary packages from CRAN (Windows and macOS) need nothing extra.
 
 If zstd is installed in a non-standard location, point the build at it:
 ```bash
@@ -63,28 +62,24 @@ ZSTD_CFLAGS="-I/path/to/include" ZSTD_LIBS="-L/path/to/lib -lzstd" R CMD INSTALL
 
 ### Installation
 
-From R terminal (opened either in powershell or in RStudio and similar):
-```bash
-install.packages('opentimsr')
+On Linux and macOS, from an R terminal:
+```r
+install.packages("remotes")
+remotes::install_github("michalsta/opentims", subdir = "src/opentimsr")
 ```
-or using devtools
-```bash
-install.packages('devtools')
-library(devtools)
 
-install_github("michalsta/opentims", subdir="src/opentimsr")
-```
-On Windows the last command might give you a warning about tar stopping with non-zero exit code. It's safe to ignore.
-
-
-If that does not work, first clone the repository and then install manually with:
+**Windows:** `install_github` and plain `git clone` do not work, because the
+package directory contains symbolic links that Windows does not restore by
+default. Build a source tarball on Linux, macOS or WSL instead, and install it
+on Windows (requires Rtools):
 ```bash
 git clone https://github.com/michalsta/opentims
 cd opentims
-R CMD build src/opentimsr
-R CMD INSTALL opentimsr_*.tar.gz
+R CMD build src/opentimsr            # on Linux/macOS/WSL
 ```
-On windows, replace `R` with `R.exe`.
+```bat
+R.exe CMD INSTALL opentimsr_*.tar.gz
+```
 You can download git [from here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 # Usage
@@ -252,7 +247,7 @@ pprint(D[1:10])
 
 ## R
 
-For a detailed documentation of the `R` package, consult the [CRAN webpage of the project](https://cran.r-project.org/web/packages/opentimsr/index.html) (especially the reference manual linked there).
+For detailed documentation of the `R` package, see its help pages after installing (`help(package = "opentimsr")`).
 
 ```R
 library(opentimsr)

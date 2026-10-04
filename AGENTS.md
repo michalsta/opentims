@@ -43,8 +43,8 @@ them:
   - `OPENTIMS_LINK_SQLITE_STATICALLY`: link a system/consumer sqlite (used by
     the shared C++ lib and by OpenMS);
   - `OPENTIMS_BUILDING_R`: no C++ SQLite at all — R reads the tables through
-    `DBI`/`RSQLite` and hands metadata to C++. (The comment in `sqlite_helper.h`
-    mentioning a bundled `sqlite3_cpl.c` for R is stale.)
+    `DBI`/`RSQLite` and hands metadata to C++; `sqlite_helper.h` errors out
+    if included there.
 - `OPENTIMS_BUILDING_R` also switches to the system `<zstd.h>` and silences
   stdout (CRAN forbids printing). Code touching I/O or includes must respect
   that macro.

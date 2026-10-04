@@ -1,3 +1,10 @@
+/*
+ *   OpenTIMS: a fully open-source library for opening Bruker's TimsTOF data files.
+ *   Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
+ *
+ *   Licensed under the MIT License. See LICENCE file in the project root for details.
+ */
+
 #pragma once
 
 #include <exception>
@@ -5,19 +12,7 @@
 #include <stdexcept>
 
 #if defined(OPENTIMS_BUILDING_R)
-// R builds: use the bundled sqlite3 amalgamation compiled in via sqlite3_cpl.c.
-#include "sqlite/sqlite3.h"
-
-class ot_sqlite
-{
-public:
-    static int sqlite3_open_v2(const char* s, sqlite3** ptr, int flags, const char*) { return ::sqlite3_open_v2(s, ptr, flags, NULL); }
-    static int sqlite3_close(sqlite3* db) { return ::sqlite3_close(db); }
-    static int sqlite3_exec(sqlite3* db, const char* query, int (*callback)(void*,int,char**,char**), void* arg, char **err) { return ::sqlite3_exec(db, query, callback, arg, err); }
-    static void sqlite3_free(void* ptr) { ::sqlite3_free(ptr); }
-    static const char* sqlite3_errmsg(sqlite3* db) { return ::sqlite3_errmsg(db); }
-    static int sqlite3_busy_timeout(sqlite3* db, int ms) { return ::sqlite3_busy_timeout(db, ms); }
-};
+#error "R builds read SQLite tables through DBI/RSQLite; sqlite_helper.h must not be included"
 
 #elif defined(OPENTIMS_LINK_SQLITE_STATICALLY)
 // When linking sqlite3 statically (e.g., as part of a larger project like OpenMS),

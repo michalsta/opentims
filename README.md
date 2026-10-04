@@ -79,11 +79,9 @@ Windows binary, no Rtools needed (built for the R version current at release
 time; on other R versions use the source install above):
 ```r
 install.packages(c("Rcpp", "DBI", "RSQLite"))
-zip <- file.path(tempdir(), "opentimsr_1.2.1.zip")   # keep this file name
-download.file(
+install.packages(
   "https://github.com/michalsta/opentims/releases/download/v1.2.1/opentimsr_1.2.1.zip",
-  zip, mode = "wb")
-install.packages(zip, repos = NULL)
+  repos = NULL)
 ```
 
 #### Development version

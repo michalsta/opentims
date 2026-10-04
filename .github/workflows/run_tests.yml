@@ -8,9 +8,12 @@ on:
             - master
             - devel
             - tests
-        tags:
-            - 'v*'
     workflow_call:
+        inputs:
+            ref:
+                description: Git ref to test (default the triggering commit)
+                type: string
+                default: ''
 
 jobs:
   run_pytest:
@@ -41,6 +44,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:

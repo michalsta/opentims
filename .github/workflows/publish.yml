@@ -1,20 +1,215 @@
-name: Publish to PyPI
+name: Release
+
+# On a v* tag, build and test everything, then publish all of it or nothing:
+# - Python wheels and sdist, to PyPI;
+# - opentimsr_X.tar.gz: the R source package (built on Linux, so the
+#   symlinks are resolved);
+# - opentimsr_X.zip: a Windows binary of it (no Rtools needed);
+# - opentims-X.tar.gz: the whole repository with symlinks replaced by
+#   copies, installable with remotes (subdir) and pip on any platform;
+# the last three attached to the tag's GitHub release.
+#
+# Nothing is published until every build and test has passed. The GitHub
+# release is then prepared as a draft, the files go to PyPI, and only after
+# that is the draft made public. PyPI cannot be undone, so it runs once
+# everything that can fail on the GitHub side already has; if a later step
+# fails, re-running the failed jobs finishes the release (the PyPI upload
+# skips files already there).
+#
+# This file must keep its name: PyPI's trusted publisher is bound to it.
+#
+# Run manually (workflow_dispatch) without a tag to build and test everything
+# from the chosen branch; nothing is published and the files are only kept as
+# run artifacts. With a tag, that tag is built and released.
 
 on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v* tag to build and release (empty to only build and test)
+        type: string
+        default: ''
+
+# One release of a tag at a time; a second one waits rather than racing it.
+concurrency:
+  group: release-${{ github.event_name == 'push' && github.ref_name || inputs.tag || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
+  version:
+    name: Check versions
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine tag
+        id: tag
+        env:
+          TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: |
+          if [ -n "$TAG" ] && ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::No such tag: $TAG"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # The tag must equal v + the pyproject.toml version. R versions cannot
+      # carry pre-release suffixes, so 1.2.0b4 must match Version: 1.2.0.
+      - name: Compare tag, pyproject.toml and DESCRIPTION
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          ref="${TAG:+refs/tags/$TAG}"
+          ref="${ref:-HEAD}"
+          py="$(git show "$ref:pyproject.toml" | sed -n 's/^version *= *"\(.*\)"/\1/p' | head -n 1)"
+          desc="$(git show "$ref:src/opentimsr/DESCRIPTION" | sed -n 's/^Version: *//p')"
+          base="$(echo "$py" | sed -E 's/^([0-9]+(\.[0-9]+)*).*/\1/')"
+          echo "tag: ${TAG:-none}, pyproject.toml: $py, DESCRIPTION: $desc"
+          if [ -n "$TAG" ] && [ "$TAG" != "v$py" ]; then
+            echo "::error::Tag $TAG does not match pyproject.toml version $py"
+            exit 1
+          fi
+          if [ "$base" != "$desc" ]; then
+            echo "::error::pyproject.toml version $py does not match DESCRIPTION Version $desc"
+            exit 1
+          fi
+
   build_wheels:
+    needs: version
     uses: ./.github/workflows/build_wheels.yml
+    with:
+      ref: ${{ needs.version.outputs.tag }}
 
   tests:
+    needs: version
     uses: ./.github/workflows/run_tests.yml
+    with:
+      ref: ${{ needs.version.outputs.tag }}
+
+  r_check:
+    needs: version
+    uses: ./.github/workflows/r_check.yml
+    with:
+      ref: ${{ needs.version.outputs.tag }}
+
+  r_windows_binary:
+    name: R Windows binary
+    needs: r_check
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: opentimsr-tarball
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Extract DESCRIPTION for dependency resolution
+        run: tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: opentimsr
+
+      - name: Build binary
+        run: |
+          mkdir binary
+          cd binary
+          R CMD INSTALL --build ../opentimsr_*.tar.gz
+
+      - name: Install the binary into a fresh library and read the test data
+        shell: Rscript {0}
+        run: |
+          lib <- file.path(tempdir(), "lib")
+          dir.create(lib)
+          install.packages(Sys.glob("binary/opentimsr_*.zip"), lib = lib, repos = NULL)
+          library(opentimsr, lib.loc = lib)
+          setup_opensource()
+          D <- OpenTIMS(system.file("extdata", "test.d", package = "opentimsr", lib.loc = lib))
+          stopifnot(nrow(query(D, frames = 1L)) > 0)
+          CloseTIMS(D)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentimsr-windows-binary
+          path: binary/opentimsr_*.zip
+
+  source_archive:
+    name: Repository archive without symlinks
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      # The script comes from this commit; the archived tree from the tag.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Build archive
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          if [ -n "$TAG" ]; then
+            .github/scripts/make_source_archive.sh "refs/tags/$TAG" "opentims-${TAG#v}" dist
+          else
+            .github/scripts/make_source_archive.sh HEAD "opentims-$(git rev-parse --short HEAD)" dist
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentimsr-repository-archive
+          path: dist/*.tar.gz
+
+  draft_release:
+    name: Prepare GitHub release (draft)
+    needs: [version, build_wheels, tests, r_check, r_windows_binary, source_archive]
+    if: needs.version.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: opentimsr-*
+          path: dist
+          merge-multiple: true
+
+      # A release that already exists (made by hand, or published by an
+      # earlier run) is left as it is and only gets the files.
+      - name: Create draft and upload files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          ls -l dist
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            prerelease=""
+            case "${TAG#v}" in
+              *[!0-9.]*) prerelease="--prerelease" ;;
+            esac
+            gh release create "$TAG" --draft --verify-tag --title "$TAG" \
+              --generate-notes $prerelease
+          fi
+          gh release upload "$TAG" dist/* --clobber
 
   upload_pypi:
     name: Upload to PyPI
-    needs: [build_wheels, tests]
+    needs: [version, draft_release]
+    if: needs.version.outputs.tag != ''
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -28,3 +223,23 @@ jobs:
           merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+  publish_release:
+    name: Publish GitHub release
+    needs: [version, upload_pypi]
+    if: needs.version.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Undraft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
+            gh release edit "$TAG" --draft=false
+          fi

@@ -152,9 +152,13 @@ cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j
 - `r_check.yml` — builds the R tarball on Linux, then `rcmdcheck --as-cran`
   with `error_on = "warning"` on Windows/macOS/Linux, R release/devel/4.3.
   Warnings fail the job.
-- `build_wheels.yml` / `publish.yml` — cibuildwheel; **pushing a `v*` tag
-  publishes to PyPI.** `check_version.py` requires the tag to equal
-  `v` + `pyproject.toml` version.
+- `publish.yml` — the release; **pushing a `v*` tag publishes.** It calls
+  `build_wheels.yml` (cibuildwheel), `run_tests.yml` and `r_check.yml`, builds
+  the R Windows binary and a symlink-free repository archive, and publishes
+  only if all of it passed: GitHub release as a draft first, then PyPI, then
+  the draft made public. The tag must equal `v` + `pyproject.toml` version,
+  whose numeric part must equal `DESCRIPTION`'s. Keep the file name — PyPI's
+  trusted publisher is bound to it. Manual dispatch without a tag is a dry run.
 
 ## Rules
 

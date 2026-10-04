@@ -1,12 +1,14 @@
-import numpy as np
+import contextlib
 import sqlite3
 from collections import namedtuple
 
+import numpy as np
+
 
 def _sql2list(path, query):
-    with sqlite3.connect(path) as conn:
-        c = conn.cursor()
-        return list(c.execute(query))
+    # A connection's context manager only ends the transaction; close it too.
+    with contextlib.closing(sqlite3.connect(path)) as conn:
+        return list(conn.execute(query))
 
 
 def tables_names(path):
@@ -33,7 +35,8 @@ def table2dict(path, name):
     Returns:
         dict: Maps column name to a list of values.
     """
-    assert name in tables_names(path), f"Table '{name}' is not in the database."
+    if name not in tables_names(path):
+        raise ValueError(f"Table '{name}' is not in the database.")
     _, colnames, _, _, _, _ = zip(*_sql2list(path, f"PRAGMA table_info({name});"))
     rows = _sql2list(path, f"SELECT * FROM {name}")
     if not rows:
@@ -57,7 +60,8 @@ def table2keyed_dict(connection, tblname):
             "SELECT name FROM pragma_table_info(?) WHERE pk == 1", [tblname]
         )
     )
-    assert len(sql_key) == 1
+    if len(sql_key) != 1:
+        raise ValueError(f"Table '{tblname}' does not have a single-column primary key.")
     sql_key = sql_key[0][0]
     # other_colnames = [res[0] for res in conn.execute("SELECT name FROM pragma_table_info(?) WHERE pk == 0", [tblname])]
     cur = connection.execute("SELECT * FROM " + tblname)

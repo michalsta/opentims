@@ -4,7 +4,7 @@
 #    Licensed under the MIT License. See LICENCE file in the project root for details.
 from __future__ import annotations
 
-import functools
+import contextlib
 import hashlib
 import pathlib
 import sqlite3
@@ -93,6 +93,7 @@ class OpenTIMS:
                 conversion_method.NoConversion: skip conversion entirely.
         """
         self.handle = None
+        self._framesTIC = None
         self.analysis_directory = pathlib.Path(analysis_directory)
         if not self.analysis_directory.exists():
             raise RuntimeError(f"No such directory: {str(self.analysis_directory)}")
@@ -240,17 +241,19 @@ class OpenTIMS:
         return table2dict(self.analysis_directory / "analysis.tdf", name)
 
     def table2keyed_dict(self, name: str):
-        with self.get_sql_connection() as sqlcon:
+        with contextlib.closing(self.get_sql_connection()) as sqlcon:
             return table2keyed_dict(sqlcon, name)
 
     def frame2retention_time(self, frames: FRAMES_TYPE):
         frames = np.r_[frames]
-        assert (
-            frames.min() >= self.min_frame
-        ), f"Minimal frame {frames.min()} <= truly minimal {self.min_frame}."
-        assert (
-            frames.max() <= self.max_frame
-        ), f"Maximal frame {frames.max()} <= truly maximal {self.max_frame}."
+        if frames.min() < self.min_frame:
+            raise IndexError(
+                f"Frame {frames.min()} is below the minimal one, {self.min_frame}."
+            )
+        if frames.max() > self.max_frame:
+            raise IndexError(
+                f"Frame {frames.max()} is above the maximal one, {self.max_frame}."
+            )
         return np.array([self.handle.get_frame(i).time for i in frames])
 
     def peaks_per_frame_cnts(self, frames: FRAMES_TYPE, convert=True):
@@ -266,15 +269,20 @@ class OpenTIMS:
             frames = np.array(frames, dtype=np.uint32)
         return self.handle.no_peaks_in_frames(frames)
 
+    def _check_columns(self, columns) -> None:
+        unknown = [c for c in columns if c not in self.all_columns]
+        if unknown:
+            raise ValueError(
+                f"Unknown column(s) {unknown}. Accepted column names: {self.all_columns}"
+            )
+
     def _get_empty_arrays(
         self,
         size,
         selected_columns=all_columns,
     ):
         """Return a dictionary of empty numpy arrays to be filled with raw data. Some are left empty and thus not filled."""
-        assert all(
-            c in self.all_columns for c in selected_columns
-        ), f"Accepted column names: {self.all_columns}"
+        self._check_columns(selected_columns)
 
         return {
             col: np.empty(shape=size if col in selected_columns else 0, dtype=dtype)
@@ -292,8 +300,14 @@ class OpenTIMS:
             if col in arrays:
                 arr = arrays[col]
                 if check:
-                    assert arr.dtype == col_dtype
-                    assert len(arr) == size
+                    if arr.dtype != col_dtype:
+                        raise TypeError(
+                            f"Array for column '{col}' must have dtype {np.dtype(col_dtype)}, not {arr.dtype}."
+                        )
+                    if len(arr) != size:
+                        raise ValueError(
+                            f"Array for column '{col}' must have length {size}, not {len(arr)}."
+                        )
             else:
                 arr = np.empty(shape=0, dtype=col_dtype)
             final_arrays[col] = arr
@@ -317,9 +331,7 @@ class OpenTIMS:
         if isinstance(columns, str):
             columns = (columns,)
 
-        assert all(
-            c in self.all_columns for c in columns
-        ), f"Accepted column names: {self.all_columns}"
+        self._check_columns(columns)
 
         if frames is None:
             frames = self.frames["Id"]
@@ -481,9 +493,7 @@ class OpenTIMS:
         return X
 
     def get_separate_frames(self, frame_ids, columns: COLUMNS_TYPE = all_columns):
-        assert all(
-            c in self.all_columns for c in columns
-        ), f"Accepted column names: {self.all_columns}"
+        self._check_columns(columns)
         if not isinstance(frame_ids, list):
             frame_ids = list(frame_ids)
         col_b = [col in columns for col in all_columns]
@@ -575,9 +585,8 @@ class OpenTIMS:
         retention_time = np.array(
             retention_time
         )  # if someone passes a float or a pandas.Series
-        assert np.all(
-            retention_time <= self.max_retention_time + _buffer
-        ), "Some retention times were higher than the latest one."
+        if not np.all(retention_time <= self.max_retention_time + _buffer):
+            raise ValueError("Some retention times were higher than the latest one.")
         res = np.searchsorted(self.retention_times, retention_time)
         # times past the last frame, but within _buffer, belong to the last frame
         return self.frames["Id"][np.minimum(res, len(self.retention_times) - 1)]
@@ -602,9 +611,8 @@ class OpenTIMS:
             retention_time
         )  # if someone passes a float or a pandas.Series
         all_ms1_rts = self.retention_times[self.ms_types == 0]
-        assert np.all(
-            retention_time <= all_ms1_rts[-1] + _buffer
-        ), "Some retention times were higher than the last MS1 one."
+        if not np.all(retention_time <= all_ms1_rts[-1] + _buffer):
+            raise ValueError("Some retention times were higher than the last MS1 one.")
         res = np.searchsorted(all_ms1_rts, retention_time)
         # times past the last MS1 frame, but within _buffer, belong to that frame
         return self.ms1_frames[np.minimum(res, len(all_ms1_rts) - 1)]
@@ -629,18 +637,6 @@ class OpenTIMS:
             raise IndexError(f"No such frame(s): {missing[:5].tolist()}.")
         return self.retention_times[idx]
 
-    def __scan_to_inv_ion_mobility_assertions(
-        self,
-        scan: np.array,
-        frame: np.array,
-    ) -> None:
-        pass
-
-    #        assert all(scan >= self.min_scan), "Some scans were below the minimal one."
-    #        assert all(scan <= self.max_scan), "Some scans were above the maximal one."
-    #        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-    #        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-
     def scan_to_inv_ion_mobility(
         self,
         scan: np.array,
@@ -661,7 +657,6 @@ class OpenTIMS:
             np.array: inverse ion mobilities [1/k0].
         """
         scan, frame = cast_to_numpy_arrays(scan, frame)
-        self.__scan_to_inv_ion_mobility_assertions(scan, frame)
         return translate_values_frames_not_guaranteed_sorted(
             x=scan,
             frame=frame,
@@ -689,7 +684,6 @@ class OpenTIMS:
             np.array: inverse ion mobilities [1/k0].
         """
         scan, frame = cast_to_numpy_arrays(scan, frame)
-        self.__scan_to_inv_ion_mobility_assertions(scan, frame)
         return translate_values_frame_sorted(
             x_frame_sorted=scan,
             frame_sorted=frame,
@@ -697,18 +691,6 @@ class OpenTIMS:
             x_dtype=np.uint32,
             result_dtype=np.double,
         )
-
-    def __inv_ion_mobility_to_scan_assertions(
-        self,
-        inv_ion_mobility: np.array,
-        frame: np.array,
-        _buffer: float = 0.0,
-    ) -> None:
-        pass
-        # assert all(inv_ion_mobility >= self.min_inv_ion_mobility - _buffer), "Some inverse ion mobilities were below the minimal one."
-        # assert all(inv_ion_mobility <= self.max_inv_ion_mobility + _buffer), "Some inverse ion mobilities were above the maximal one."
-        # assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        # assert all(frame <= self.max_frame), "Some frames were above the maximal one."
 
     def inv_ion_mobility_to_scan(
         self,
@@ -732,7 +714,6 @@ class OpenTIMS:
             np.array: inverse ion mobilities [1/k0].
         """
         inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
-        self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
         return translate_values_frames_not_guaranteed_sorted(
             x=inv_ion_mobility,
             frame=frame,
@@ -762,7 +743,6 @@ class OpenTIMS:
             np.array: inverse ion mobilities [1/k0].
         """
         inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
-        self.__inv_ion_mobility_to_scan_assertions(inv_ion_mobility, frame, _buffer)
         return translate_values_frame_sorted(
             x_frame_sorted=inv_ion_mobility,
             frame_sorted=frame,
@@ -776,8 +756,10 @@ class OpenTIMS:
         tof: np.array,
         frame: np.array,
     ) -> None:
-        assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        assert all(frame <= self.max_frame), "Some frames were above the maximal one."
+        if np.any(frame < self.min_frame):
+            raise IndexError("Some frames were below the minimal one.")
+        if np.any(frame > self.max_frame):
+            raise IndexError("Some frames were above the maximal one.")
 
     def tof_to_mz(self, tof: np.array, frame: np.array) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
@@ -830,18 +812,6 @@ class OpenTIMS:
             result_dtype=np.double,
         )
 
-    def __mz_to_tof_assertions(
-        self,
-        mz: np.array,
-        frame: np.array,
-        _buffer: float,
-    ) -> None:
-        pass
-        # assert all(mz >= self.min_mz - _buffer), "Some m/z values were below the minimal one."
-        # assert all(mz <= self.max_mz + _buffer), "Some m/z values were above the maximal one."
-        # assert all(frame >= self.min_frame), "Some frames were below the minimal one."
-        # assert all(frame <= self.max_frame), "Some frames were above the maximal one."
-
     def mz_to_tof(
         self,
         mz: np.array,
@@ -864,7 +834,6 @@ class OpenTIMS:
             np.array: integer time of flight indices.
         """
         mz, frame = cast_to_numpy_arrays(mz, frame)
-        self.__mz_to_tof_assertions(mz, frame, _buffer)
         return translate_values_frames_not_guaranteed_sorted(
             x=mz,
             frame=frame,
@@ -894,7 +863,6 @@ class OpenTIMS:
             np.array: integer time of flight indices.
         """
         mz, frame = cast_to_numpy_arrays(mz, frame)
-        self.__mz_to_tof_assertions(mz, frame, _buffer)
         return translate_values_frame_sorted(
             x_frame_sorted=mz,
             frame_sorted=frame,
@@ -903,7 +871,6 @@ class OpenTIMS:
             result_dtype=np.uint32,
         )
 
-    @functools.lru_cache(maxsize=1)
     def framesTIC(self):
         """Get the Total Ion Current for each frame.
 
@@ -911,9 +878,13 @@ class OpenTIMS:
             np.array: Total Ion Current values per each frame. Frame N has its TIC at index N - min_frame;
             frame ids absent from the dataset have 0.
         """
-        res = np.empty(shape=self.frames_no, dtype=np.uint32)
-        self.handle.per_frame_TIC(res)
-        return res
+        # Cached per instance (an lru_cache on the method would keep self alive);
+        # callers get a copy, so they cannot alter the cached values.
+        if self._framesTIC is None:
+            res = np.empty(shape=self.frames_no, dtype=np.uint32)
+            self.handle.per_frame_TIC(res)
+            self._framesTIC = res
+        return self._framesTIC.copy()
 
     def count_frame_scan_occurrences(
         self,
@@ -940,7 +911,7 @@ class OpenTIMS:
 
         Raises
         ------
-        AssertionError
+        TypeError
             If `counts` is provided and is not a NumPy array.
         """
         if counts is None:
@@ -948,7 +919,8 @@ class OpenTIMS:
                 dtype=np.uint64,
                 shape=(self.max_frame + 1, self.max_scan + 1),
             )
-        assert isinstance(counts, np.ndarray)
+        if not isinstance(counts, np.ndarray):
+            raise TypeError("'counts' must be a numpy array.")
 
         if frames is None:
             frames = self.frames["Id"]

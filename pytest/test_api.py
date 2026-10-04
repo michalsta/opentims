@@ -171,5 +171,5 @@ def test_query_fills_user_provided_arrays(ot, sanitize):
 
 
 def test_query_rejects_wrong_size_user_array(ot):
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="length"):
         ot.query(columns={"frame": np.zeros(1, dtype=np.uint32)})

@@ -1,4 +1,5 @@
 """Regression tests: locale independence, user-supplied arrays, corrupted datasets."""
+import contextlib
 import locale
 import gc
 import os
@@ -43,7 +44,7 @@ def modified_dataset(tmp_path, *sql):
     """Copy test.d and apply SQL statements to its analysis.tdf."""
     target = tmp_path / "modified.d"
     shutil.copytree(data_path, target)
-    with sqlite3.connect(target / "analysis.tdf") as conn:
+    with contextlib.closing(sqlite3.connect(target / "analysis.tdf")) as conn, conn:
         for stmt in sql:
             conn.execute(stmt)
     return target

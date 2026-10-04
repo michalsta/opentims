@@ -62,25 +62,26 @@ ZSTD_CFLAGS="-I/path/to/include" ZSTD_LIBS="-L/path/to/lib -lzstd" R CMD INSTALL
 
 ### Installation
 
-Each [GitHub release](https://github.com/michalsta/opentims/releases) carries
-ready-to-install files; replace `X.Y.Z` below with the release version.
+The recommended way is to install from a
+[GitHub release](https://github.com/michalsta/opentims/releases); the latest
+is [1.2.1](https://github.com/michalsta/opentims/releases/tag/v1.2.1).
 
 From source, on any platform (needs a compiler, i.e. Rtools on Windows, and
 zstd as described above):
 ```r
-install.packages("remotes")
-remotes::install_url(
-  "https://github.com/michalsta/opentims/releases/download/vX.Y.Z/opentims-X.Y.Z.tar.gz",
-  subdir = "src/opentimsr")
+install.packages(c("Rcpp", "DBI", "RSQLite"))
+install.packages(
+  "https://github.com/michalsta/opentims/releases/download/v1.2.1/opentimsr_1.2.1.tar.gz",
+  repos = NULL, type = "source")
 ```
 
 Windows binary, no Rtools needed (built for the R version current at release
 time; on other R versions use the source install above):
 ```r
 install.packages(c("Rcpp", "DBI", "RSQLite"))
-zip <- file.path(tempdir(), "opentimsr_X.Y.Z.zip")   # keep this file name
+zip <- file.path(tempdir(), "opentimsr_1.2.1.zip")   # keep this file name
 download.file(
-  "https://github.com/michalsta/opentims/releases/download/vX.Y.Z/opentimsr_X.Y.Z.zip",
+  "https://github.com/michalsta/opentims/releases/download/v1.2.1/opentimsr_1.2.1.zip",
   zip, mode = "wb")
 install.packages(zip, repos = NULL)
 ```

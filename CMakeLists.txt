@@ -77,7 +77,7 @@ endmacro()
 macro(opentims_link_sqlite _target)
     find_package(SQLite3 REQUIRED)
     target_link_libraries(${_target} PRIVATE SQLite::SQLite3)
-    target_compile_definitions(${_target} PUBLIC OPENTIMS_LINK_SQLITE_STATICALLY)
+    target_compile_definitions(${_target} PRIVATE OPENTIMS_LINK_SQLITE_STATICALLY)
 endmacro()
 
 #------------------------------------------------------------------------------

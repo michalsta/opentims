@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <iostream>
 #include <vector>
 #include <unordered_map>
 #include <limits>
@@ -18,14 +17,6 @@
 
 #include "platform.h"
 #include "bruker_api.h"
-
-#ifndef OPENTIMS_BUILDING_R
-#ifdef OPENTIMS_LINK_SQLITE_STATICALLY
-#include <sqlite3.h>
-#else
-#include "sqlite/sqlite3.h"
-#endif
-#endif
 
 #ifdef OPENTIMS_BUILDING_R
 #include <zstd.h>

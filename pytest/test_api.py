@@ -173,3 +173,36 @@ def test_query_fills_user_provided_arrays(ot, sanitize):
 def test_query_rejects_wrong_size_user_array(ot):
     with pytest.raises(ValueError, match="length"):
         ot.query(columns={"frame": np.zeros(1, dtype=np.uint32)})
+
+
+# --- frame id validation in query / frame_arrays ---
+
+@pytest.mark.parametrize("method", ["query", "frame_arrays"])
+def test_fractional_frame_rejected(ot, method):
+    with pytest.raises(ValueError, match="whole numbers"):
+        getattr(ot, method)([ot.min_frame + 0.5])
+
+@pytest.mark.parametrize("method", ["query", "frame_arrays"])
+def test_negative_frame_rejected(ot, method):
+    with pytest.raises(IndexError, match=r"No such frame\(s\): \[-1\]"):
+        getattr(ot, method)([-1])
+
+@pytest.mark.parametrize("method", ["query", "frame_arrays"])
+def test_huge_frame_rejected(ot, method):
+    # 2**32 + min_frame would wrap around to min_frame in uint32
+    with pytest.raises(IndexError, match="No such frame"):
+        getattr(ot, method)([2**32 + ot.min_frame])
+
+def test_non_numeric_frame_rejected(ot):
+    with pytest.raises(TypeError, match="integers"):
+        ot.query(["1"])
+    with pytest.raises(TypeError, match="integers"):
+        ot.query([True])
+
+def test_whole_float_frames_accepted(ot):
+    as_float = ot.query([float(ot.min_frame)], columns="tof")
+    as_int = ot.query([ot.min_frame], columns="tof")
+    np.testing.assert_array_equal(as_float["tof"], as_int["tof"])
+
+def test_empty_frame_list(ot):
+    assert len(ot.query([], columns="tof")["tof"]) == 0

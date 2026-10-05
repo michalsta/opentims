@@ -269,6 +269,34 @@ class OpenTIMS:
             frames = np.array(frames, dtype=np.uint32)
         return self.handle.no_peaks_in_frames(frames)
 
+    def _frame_ids(self, frames: FRAMES_TYPE) -> npt.NDArray[np.uint32]:
+        """Validate frame ids and return them as uint32.
+
+        Casting straight to uint32 would truncate 1.5 to 1 and wrap -1 around to
+        4294967295; reject such input instead, and name the frames that are absent.
+        Whole-valued floats (e.g. from a pandas column holding NaNs elsewhere) are accepted.
+        """
+        frames = np.r_[frames]
+        if frames.size == 0:
+            return np.empty(0, dtype=np.uint32)
+        if np.issubdtype(frames.dtype, np.floating):
+            if not np.all(np.isfinite(frames) & (frames == np.trunc(frames))):
+                raise ValueError("Frame ids must be whole numbers.")
+        elif not np.issubdtype(frames.dtype, np.integer):
+            raise TypeError(f"Frame ids must be integers, not {frames.dtype}.")
+        ids = self.frames["Id"]
+        if len(ids) == 0:
+            absent = np.ones(frames.shape, dtype=bool)
+        else:
+            idx = np.minimum(np.searchsorted(ids, frames), len(ids) - 1)
+            absent = ids[idx] != frames
+        if np.any(absent):
+            raise IndexError(
+                f"No such frame(s): {np.unique(frames[absent])[:5].tolist()}. "
+                f"The dataset has frames {self.min_frame} to {self.max_frame}."
+            )
+        return frames.astype(np.uint32)
+
     def _check_columns(self, columns) -> None:
         unknown = [c for c in columns if c not in self.all_columns]
         if unknown:
@@ -336,8 +364,8 @@ class OpenTIMS:
         if frames is None:
             frames = self.frames["Id"]
 
+        frames = self._frame_ids(frames)
         try:
-            frames = np.r_[frames].astype(np.uint32)
             size = self.peaks_per_frame_cnts(frames, convert=False)
             arrays = (
                 self._sanitize_user_provided_arrays(size, columns, check=_sanitize)
@@ -461,7 +489,7 @@ class OpenTIMS:
         Returns:
             np.array: raw data from the selection of frames.
         """
-        frames = np.array(frames).astype(np.uint32)
+        frames = self._frame_ids(frames)
         try:
             peaks_cnt = self.handle.no_peaks_in_frames(frames)
             X = np.empty(shape=(peaks_cnt, 4), order="F", dtype=np.uint32)

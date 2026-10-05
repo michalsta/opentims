@@ -574,13 +574,16 @@ class OpenTIMS:
     ) -> np.array:
         """Transform retention times into their corresponding frame numbers.
 
-        We check if retention times are within sensible bounds.
+        Each time maps to the first frame finishing at or after it. Times later
+        than the last frame by at most _buffer seconds map to the last frame;
+        later ones raise ValueError.
 
         Arguments:
-            retention_time (np.array): An array of retention times.
+            retention_time (np.array): Retention times [second].
+            _buffer (float): Tolerance past the last frame [second].
 
         Returns:
-            np.array: integers, numbers of respective frames (Tims pushes).
+            np.array: frame numbers.
         """
         retention_time = np.array(
             retention_time
@@ -596,15 +599,18 @@ class OpenTIMS:
         retention_time: float | npt.NDArray[float] | list[float],
         _buffer: int = 1,
     ) -> np.array:
-        """Transform MS1 retention times into their corresponding frame numbers.
+        """Transform retention times into the corresponding MS1 frame numbers.
 
-        This is to be sure that we get values only in MS1.
-        We check if retention times are within sensible bounds.
+        Like retention_time_to_frame, but only MS1 frames are considered: each
+        time maps to the first MS1 frame finishing at or after it, and _buffer
+        applies to the last MS1 frame.
 
         Arguments:
-            retention_time (np.array): An array of retention times.
+            retention_time (np.array): Retention times [second].
+            _buffer (float): Tolerance past the last MS1 frame [second].
+
         Returns:
-            np.array: integers, numbers of respective frames (Tims pushes).
+            np.array: MS1 frame numbers.
         """
         # TODO: this allocates extra space and sucks...
         retention_time = np.array(
@@ -617,14 +623,13 @@ class OpenTIMS:
         # times past the last MS1 frame, but within _buffer, belong to that frame
         return self.ms1_frames[np.minimum(res, len(all_ms1_rts) - 1)]
 
-    # TODO: this should be numbized or something: we make a copy of frame-1.
     def frame_to_retention_time(self, frame: FRAMES_TYPE) -> np.array:
         """Transform frames into their corresponding retention times.
 
-        We check if frames are within sensible bounds.
+        Frame ids absent from the dataset raise IndexError.
 
         Arguments:
-            frame (np.array): An array of frames.
+            frame (np.array): Frame ids.
 
         Returns:
             np.array: retention time when a frame finishes [second].
@@ -644,17 +649,18 @@ class OpenTIMS:
     ) -> np.array:
         """Transform scans into their corresponding inverse ion mobilities.
 
-        We check if scans are within sensible bounds.
+        Frames may come in any order; they are sorted internally, which costs
+        O(n log n). If they are already sorted, use 'scan_to_inv_ion_mobility_frame_sorted'.
 
-        This works in O(nlog(n)).
-        Not happy, well, there's always 'scan_to_inv_ion_mobility_frame_sorted'.
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            scan (np.array): An array of scans.
-            frame (np.array): An array of integer scans.
+            scan (np.array): Scan numbers.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
 
         Returns:
-            np.array: inverse ion mobilities [1/k0].
+            np.array: inverse ion mobilities [1/K0].
         """
         scan, frame = cast_to_numpy_arrays(scan, frame)
         return translate_values_frames_not_guaranteed_sorted(
@@ -672,16 +678,19 @@ class OpenTIMS:
     ) -> np.array:
         """Transform scans into their corresponding inverse ion mobilities.
 
-        We check if scans are within sensible bounds.
+        Runs in O(n). Meant for input sorted by frame: values are converted one
+        run of equal frames at a time, so unsorted input still gives correct
+        results, just with one converter call per run.
 
-        This works in O(n).
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            scan (np.array): An array of scans.
-            frame (np.array): An array of integer scans.
+            scan (np.array): Scan numbers.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
 
         Returns:
-            np.array: inverse ion mobilities [1/k0].
+            np.array: inverse ion mobilities [1/K0].
         """
         scan, frame = cast_to_numpy_arrays(scan, frame)
         return translate_values_frame_sorted(
@@ -698,20 +707,23 @@ class OpenTIMS:
         frame: np.array,
         _buffer: float = 0.0,
     ) -> np.array:
-        """Transform inverse ion mobilities into their corresponding scan values.
+        """Transform inverse ion mobilities into their corresponding scan numbers.
 
-        We check if scans are within sensible bounds.
         Scans correspond to individual emptyings of the second TIMS trap.
 
-        This works in O(nlog(n)).
-        Not happy, well, there's always 'inv_ion_mobility_to_scan_frame_sorted'.
+        Frames may come in any order; they are sorted internally, which costs
+        O(n log n). If they are already sorted, use 'inv_ion_mobility_to_scan_frame_sorted'.
+
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            inv_ion_mobility (np.array): Inverse ion mobility values to translate.
-            frame (np.array): An array of integer scans.
+            inv_ion_mobility (np.array): Inverse ion mobility values [1/K0].
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
+            _buffer: ignored; kept for backward compatibility.
 
         Returns:
-            np.array: inverse ion mobilities [1/k0].
+            np.array: scan numbers (uint32).
         """
         inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
         return translate_values_frames_not_guaranteed_sorted(
@@ -728,19 +740,24 @@ class OpenTIMS:
         frame: np.array,
         _buffer: float = 0.0,
     ) -> np.array:
-        """Transform inverse ion mobilities into their corresponding scan values, assuming frames are sorted.
+        """Transform inverse ion mobilities into their corresponding scan numbers.
 
-        We check if scans are within sensible bounds.
         Scans correspond to individual emptyings of the second TIMS trap.
 
-        This works in O(n).
+        Runs in O(n). Meant for input sorted by frame: values are converted one
+        run of equal frames at a time, so unsorted input still gives correct
+        results, just with one converter call per run.
+
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            inv_ion_mobility (np.array): Inverse ion mobility values to translate.
-            frame (np.array): An array of integer scans.
+            inv_ion_mobility (np.array): Inverse ion mobility values [1/K0].
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
+            _buffer: ignored; kept for backward compatibility.
 
         Returns:
-            np.array: inverse ion mobilities [1/k0].
+            np.array: scan numbers (uint32).
         """
         inv_ion_mobility, frame = cast_to_numpy_arrays(inv_ion_mobility, frame)
         return translate_values_frame_sorted(
@@ -764,18 +781,19 @@ class OpenTIMS:
     def tof_to_mz(self, tof: np.array, frame: np.array) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
 
-        Caution!
-        We do not check if the values are sensible, i.e. if they correspond to meaningful outputs.
+        Frames may come in any order; they are sorted internally, which costs
+        O(n log n). If they are already sorted, use 'tof_to_mz_frame_sorted'.
 
-        This works in O(nlog(n)).
-        Not happy, well, there's always 'tof_to_mz_frame_sorted'.
+        Frame ids outside [min_frame, max_frame] raise IndexError; the values
+        themselves are not checked.
 
         Arguments:
-            tof (np.array): An array of time of flight integers.
-            frame (np.array): An array of integer scans.
+            tof (np.array): Time of flight indices.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
 
         Returns:
-            np.array: array of doubles with m/z values.
+            np.array: m/z values.
         """
         tof, frame = cast_to_numpy_arrays(tof, frame)
         self.__tof_to_mz_assertions(tof, frame)
@@ -790,17 +808,20 @@ class OpenTIMS:
     def tof_to_mz_frame_sorted(self, tof: np.array, frame: np.array) -> np.array:
         """Transform time of flight indices (tof) into their corresponding mass to charge ratios (m/z).
 
-        Caution!
-        We do not check if the values are sensible, i.e. if they correspond to meaningful outputs.
+        Runs in O(n). Meant for input sorted by frame: values are converted one
+        run of equal frames at a time, so unsorted input still gives correct
+        results, just with one converter call per run.
 
-        This works in O(n).
+        Frame ids outside [min_frame, max_frame] raise IndexError; the values
+        themselves are not checked.
 
         Arguments:
-            tof (np.array): An array of time of flight integers.
-            frame (np.array): An array of integer scans.
+            tof (np.array): Time of flight indices.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
 
         Returns:
-            np.array: array of doubles with m/z values.
+            np.array: m/z values.
         """
         tof, frame = cast_to_numpy_arrays(tof, frame)
         self.__tof_to_mz_assertions(tof, frame)
@@ -820,18 +841,19 @@ class OpenTIMS:
     ) -> np.array:
         """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
 
-        We check if m/z values are within sensible bounds.
-        Time of flight indices are somehow proportional to time of flights.
-        We are figuring out how.
+        Frames may come in any order; they are sorted internally, which costs
+        O(n log n). If they are already sorted, use 'mz_to_tof_frame_sorted'.
 
-        This works in O(nlog(n)).
-        Not happy, well, there's always 'mz_to_tof_frame_sorted'.
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            mz (np.array): An array of m/z floats.
+            mz (np.array): m/z values.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
+            _buffer: ignored; kept for backward compatibility.
 
         Returns:
-            np.array: integer time of flight indices.
+            np.array: time of flight indices (uint32).
         """
         mz, frame = cast_to_numpy_arrays(mz, frame)
         return translate_values_frames_not_guaranteed_sorted(
@@ -850,17 +872,20 @@ class OpenTIMS:
     ) -> np.array:
         """Transform mass to charge ratios (m/z) into their corresponding time of flight indices (tof).
 
-        We check if m/z values are within sensible bounds.
-        Time of flight indices are somehow proportional to time of flights.
-        We are figuring out how.
+        Runs in O(n). Meant for input sorted by frame: values are converted one
+        run of equal frames at a time, so unsorted input still gives correct
+        results, just with one converter call per run.
 
-        This works in O(n).
+        Neither the values nor the frame ids are checked.
 
         Arguments:
-            mz (np.array): An array of m/z floats.
+            mz (np.array): m/z values.
+            frame (np.array): Ids of the frames the values come from; conversion
+                is calibrated per frame.
+            _buffer: ignored; kept for backward compatibility.
 
         Returns:
-            np.array: integer time of flight indices.
+            np.array: time of flight indices (uint32).
         """
         mz, frame = cast_to_numpy_arrays(mz, frame)
         return translate_values_frame_sorted(

@@ -69,6 +69,7 @@ setMethod('show',
 #'
 #' @param x OpenTIMS data instance.
 #' @return The total number of peaks in the dataset.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -84,6 +85,7 @@ setMethod('length',
 #' @param x OpenTIMS data instance.
 #' @param i An array of nonzero indices to extract.
 #' @return For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -110,6 +112,7 @@ setMethod("[",
 #' @param na.rm Needed to comply with the generic. There should not be any NA frames, 
 #' since the from and to are checked against the limits of the data.
 #' @return For the selected frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -511,8 +514,10 @@ rt_query <- function(opentims,
 #' @importFrom utils download.file
 #' @export
 #' @examples
-#' \dontrun{
-#' download_bruker_proprietary_code("your/prefered/destination/folder")
+#' \donttest{
+#' if (interactive()) {
+#'   download_bruker_proprietary_code(tempdir())
+#' }
 #' }
 download_bruker_proprietary_code <- function(
   target.folder, 
@@ -577,9 +582,11 @@ CloseTIMS <- function(opentims){
 #' @return No return value, called for its side effect of switching the conversion backend.
 #' @export
 #' @examples
-#' \dontrun{
-#' so_path = download_bruker_proprietary_code("your/prefered/destination/folder")
-#' setup_bruker_so(so_path)
+#' \donttest{
+#' if (interactive()) {
+#'   so_path = download_bruker_proprietary_code(tempdir())
+#'   setup_bruker_so(so_path)
+#' }
 #' }
 setup_bruker_so <- function(path) .setup_bruker_so(path)
 
@@ -624,12 +631,15 @@ lookup_frame <- function(frame){
 #' @return No return value, called for its side effect of changing the conversion.
 #' @export
 #' @examples
-#' \dontrun{
-#' setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
-#' D = OpenTIMS('path/to/your/folder.d')
-#' use_mz_lookup(D)        # calibration of frame 1 for all frames
-#' use_mz_lookup(D, 500)   # calibration of frame 500 instead
-#' use_mz_lookup(D, NULL)  # back to exact conversion
+#' \donttest{
+#' if (interactive()) {
+#'   setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+#'   D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+#'   use_mz_lookup(D)        # calibration of frame 1 for all frames
+#'   use_mz_lookup(D, 2)     # calibration of frame 2 instead
+#'   use_mz_lookup(D, NULL)  # back to exact conversion
+#'   CloseTIMS(D)
+#' }
 #' }
 use_mz_lookup <- function(opentims, frame=1L){
   tdf_set_mz_lookup_frame(opentims@handle, lookup_frame(frame))
@@ -648,10 +658,13 @@ use_mz_lookup <- function(opentims, frame=1L){
 #' @return No return value, called for its side effect of changing the conversion.
 #' @export
 #' @examples
-#' \dontrun{
-#' setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
-#' D = OpenTIMS('path/to/your/folder.d')
-#' use_inv_ion_mobility_lookup(D)
+#' \donttest{
+#' if (interactive()) {
+#'   setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+#'   D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+#'   use_inv_ion_mobility_lookup(D)
+#'   CloseTIMS(D)
+#' }
 #' }
 use_inv_ion_mobility_lookup <- function(opentims, frame=1L){
   tdf_set_inv_ion_mobility_lookup_frame(opentims@handle, lookup_frame(frame))

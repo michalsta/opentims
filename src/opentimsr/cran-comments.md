@@ -1,5 +1,19 @@
 ## Resubmission
 
+This resubmission addresses the review of 2026-10-06:
+
+* Single quotes in Title and Description are no longer used around file and
+  folder names (analysis.tdf, analysis.tdf_bin, .d) or the instrument name
+  timsTOF.
+* The S4 methods length(), range() and `[` for OpenTIMS objects are now
+  exported, so their examples document exported functions.
+* Examples that download Bruker's proprietary library now use \donttest{}
+  instead of \dontrun{}, and write to tempdir(). They are additionally
+  wrapped in if (interactive()), because using that library requires
+  accepting Bruker's license terms, which an automated check cannot do.
+
+## Previous submission
+
 opentimsr was archived on 2023-03-29 for misrepresentation of authorship
 and copyright holders of the included 'zstd' sources, and for compiling a
 bundled copy of 'zstd' instead of using the installed library.
@@ -23,12 +37,13 @@ by email to CRAN-submissions@R-project.org from his address.
 
 The package can optionally use Bruker's proprietary 'timsdata' library.
 It is not included in the package; download_bruker_proprietary_code()
-fetches it only when the user calls it explicitly (never in examples or
-tests), and the package works fully without it using built-in open-source
-converters. This is documented in the help pages and inst/COPYRIGHTS.
+fetches it only when the user calls it explicitly (examples doing so run
+only in interactive sessions; tests never do), and the package works fully
+without it using built-in open-source converters. This is documented in the
+help pages and inst/COPYRIGHTS.
 
 Other changes: all examples now run on a small dataset shipped in
-inst/extdata, except the two that download Bruker's proprietary library.
+inst/extdata, except the four that need Bruker's proprietary library.
 
 Frames are now decoded in parallel (C++ std::thread). When
 _R_CHECK_LIMIT_CORES_ is set, the package uses at most two threads, and the
@@ -48,5 +63,11 @@ tests set two threads explicitly.
 
 * New submission / archived package (see above).
 * Possibly misspelled words in DESCRIPTION: 'Bruker's' is a company name,
-  'Łącki et al.' is the author citation, and 'mobilities' is the plural of
-  ion mobility; all are spelled correctly.
+  'timsTOF' is the name of Bruker's mass spectrometers, 'tdf' is part of the
+  file names analysis.tdf and analysis.tdf_bin, 'Łącki et al.' is the author
+  citation, and 'mobilities' is the plural of ion mobility; all are spelled
+  correctly.
+* Installed size (5.9Mb on Ubuntu, libs 4.9Mb): reported as a NOTE by
+  R 4.3.3 and only as INFO by R 4.6.1, so it is not counted above. Almost all
+  of it is debug information from the default -g compiler flag. The shared
+  library without debug information is about 0.4Mb.

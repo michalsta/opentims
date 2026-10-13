@@ -20,9 +20,12 @@ pressure compensation, so this conversion is the same in every frame and the
 table is exact for all frames.
 }
 \examples{
-\dontrun{
-setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
-D = OpenTIMS('path/to/your/folder.d')
-use_inv_ion_mobility_lookup(D)
+\donttest{
+if (interactive()) {
+  setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+  D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+  use_inv_ion_mobility_lookup(D)
+  CloseTIMS(D)
+}
 }
 }

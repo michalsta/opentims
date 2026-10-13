@@ -29,11 +29,14 @@ conversion. Only available with Bruker's conversion
 (see \code{\link{setup_bruker_so}}).
 }
 \examples{
-\dontrun{
-setup_bruker_so(download_bruker_proprietary_code("your/prefered/destination/folder"))
-D = OpenTIMS('path/to/your/folder.d')
-use_mz_lookup(D)        # calibration of frame 1 for all frames
-use_mz_lookup(D, 500)   # calibration of frame 500 instead
-use_mz_lookup(D, NULL)  # back to exact conversion
+\donttest{
+if (interactive()) {
+  setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+  D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+  use_mz_lookup(D)        # calibration of frame 1 for all frames
+  use_mz_lookup(D, 2)     # calibration of frame 2 instead
+  use_mz_lookup(D, NULL)  # back to exact conversion
+  CloseTIMS(D)
+}
 }
 }

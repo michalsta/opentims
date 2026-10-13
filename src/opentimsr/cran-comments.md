@@ -52,7 +52,8 @@ tests set two threads explicitly.
 ## Test environments
 
 * local Ubuntu 24.04, R 4.6.1 and R 4.3.3
-* win-builder, R-release (4.6.1) and R-devel (Windows Server 2022)
+* win-builder, R-oldrelease (4.5.3), R-release (4.6.1) and R-devel
+  (Windows Server 2022)
 * macOS builder, R-release (4.6.1, macOS arm64)
 * GitHub Actions: Windows x64 and arm64, macOS arm64 (R release);
   Ubuntu (R release, devel and 4.3)

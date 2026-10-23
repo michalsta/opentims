@@ -20,8 +20,10 @@ The library is available only for 64-bit x86 Linux and Windows. opentimsr works 
 using its built-in open-source converters (see \code{\link{setup_opensource}}).
 }
 \examples{
-\dontrun{
-so_path = download_bruker_proprietary_code("your/prefered/destination/folder")
-setup_bruker_so(so_path)
+\donttest{
+if (interactive()) {
+  so_path = download_bruker_proprietary_code(tempdir())
+  setup_bruker_so(so_path)
+}
 }
 }

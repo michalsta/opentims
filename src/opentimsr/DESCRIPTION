@@ -1,9 +1,9 @@
 Encoding: UTF-8
 Package: opentimsr
 Type: Package
-Title: An Open-Source Loader for Bruker's 'timsTOF' Data Files
-Version: 1.2.1
-Date: 2026-10-03
+Title: An Open-Source Loader for Bruker's timsTOF Data Files
+Version: 1.2.2
+Date: 2026-10-23
 Authors@R:
     c(person(given="Michał Piotr",
              family="Startek",
@@ -20,8 +20,8 @@ Authors@R:
              comment="Author and copyright holder of the bundled 'mio' library (https://github.com/mandreyel/mio)")
     )
 Maintainer: Mateusz Krzysztof Łącki <matteo.lacki@gmail.com>
-Description: Reads raw data from Bruker's 'timsTOF' mass spectrometers,
-    stored in 'analysis.tdf' and 'analysis.tdf_bin' files inside '.d' folders.
+Description: Reads raw data from Bruker's timsTOF mass spectrometers,
+    stored in analysis.tdf and analysis.tdf_bin files inside .d folders.
     Frames can be selected by number or by retention time, and each peak is
     reported with its scan, time-of-flight index, intensity, mass-to-charge
     ratio and inverse ion mobility. Mass-to-charge ratios and ion mobilities
@@ -45,4 +45,4 @@ NeedsCompilation: yes
 SystemRequirements: C++20, libzstd
 Suggests:
     testthat (>= 3.0.0)
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

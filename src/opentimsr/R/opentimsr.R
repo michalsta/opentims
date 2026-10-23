@@ -95,6 +95,7 @@ setMethod('show',
 #'
 #' @param x OpenTIMS data instance.
 #' @return The total number of peaks in the dataset.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -110,6 +111,7 @@ setMethod('length',
 #' @param x OpenTIMS data instance.
 #' @param i Frame numbers to extract.
 #' @return For the requested frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -134,6 +136,7 @@ setMethod("[",
 #' @param na.rm Needed to comply with the generic. There should not be any NA frames, 
 #' since the from and to are checked against the limits of the data.
 #' @return For the selected frames, a data.frame with columns 'frame', 'scan', 'tof' and 'intensity', one row per peak.
+#' @export
 #' @examples
 #' path.d = system.file("extdata", "test.d", package = "opentimsr")
 #' setup_opensource()
@@ -445,6 +448,41 @@ query_slice <- function(opentims,
 }
 
 
+#' Get frames as separate data frames.
+#'
+#' Like \code{\link{query}}, but returns one data frame per frame instead of
+#' one table with the peaks of all frames. Frames are decoded in parallel
+#' (see \code{\link{opentims_set_threads}}). A frame requested more than once
+#' is returned once.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frames Vector of frame numbers to extract.
+#' @param columns Vector of columns to extract. Defaults to all columns.
+#' @return A named list of data.frames, one per distinct frame, in order of
+#' first request and named by frame number. Each data.frame has the requested
+#' columns, with one row per peak, as returned by \code{\link{query}}.
+#' @export
+#' @examples
+#' path.d = system.file("extdata", "test.d", package = "opentimsr")
+#' setup_opensource()
+#' D = OpenTIMS(path.d)
+#' frames = get_separate_frames(D, c(1, 2))
+#' names(frames)
+#' head(frames[["2"]])
+#' get_separate_frames(D, 1, columns=c('scan','intensity')) # only 'scan' and 'intensity'
+#' CloseTIMS(D)
+get_separate_frames <- function(opentims,
+                                frames,
+                                columns=all_columns){
+  if(!all(columns %in% all_columns)) stop(paste0("Wrong column names. Choose among:\n", paste0(all_columns, sep=" ", collapse="")))
+
+  frames = unique(as.integer(frames))
+  res = tdf_extract_separate_frames(opentims@handle, frames, unique(columns))
+  names(res) = frames
+  res
+}
+
+
 # Positions (not frame ids) in the retention time vector y bounding the closed interval.
 get_left_position <- function(x,y) ifelse(x > y[length(y)], NA, findInterval(x, y, left.open=T) + 1)
 get_right_position <- function(x,y) ifelse(x < y[1], NA, findInterval(x, y, left.open=F))
@@ -502,8 +540,10 @@ rt_query <- function(opentims,
 #' @importFrom utils download.file
 #' @export
 #' @examples
-#' \dontrun{
-#' download_bruker_proprietary_code("your/prefered/destination/folder")
+#' \donttest{
+#' if (interactive()) {
+#'   download_bruker_proprietary_code(tempdir())
+#' }
 #' }
 download_bruker_proprietary_code <- function(
   target.folder, 
@@ -570,9 +610,11 @@ CloseTIMS <- function(opentims){
 #' @return No return value, called for its side effect of switching the conversion backend.
 #' @export
 #' @examples
-#' \dontrun{
-#' so_path = download_bruker_proprietary_code("your/prefered/destination/folder")
-#' setup_bruker_so(so_path)
+#' \donttest{
+#' if (interactive()) {
+#'   so_path = download_bruker_proprietary_code(tempdir())
+#'   setup_bruker_so(so_path)
+#' }
 #' }
 setup_bruker_so <- function(path) .setup_bruker_so(path)
 
@@ -596,9 +638,80 @@ setup_bruker_so <- function(path) .setup_bruker_so(path)
 setup_opensource <- function() invisible(.setup_opensource())
 
 
+lookup_frame <- function(frame){
+  if(is.null(frame)) return(NULL)
+  if(length(frame) != 1 || is.na(frame) || frame < 1) stop("frame must be a single positive frame number, or NULL.")
+  as.integer(frame)
+}
+
+
+#' Use a lookup table for m/z conversion with Bruker's library.
+#'
+#' Bruker's library converts one frame at a time and can only be called by one
+#' thread at a time, which limits parallel extraction. After this call, m/z
+#' values come from a table holding the m/z of every tof index for
+#' \code{frame}, computed once by Bruker's library and then used for all frames.
+#'
+#' Values are exact for \code{frame} and approximate for other frames: Bruker's
+#' m/z calibration changes slightly from frame to frame (by at most 0.16 ppm over
+#' four test datasets). The function can be called again with another frame,
+#' which refills the same table, or with \code{NULL} to return to exact
+#' conversion. Only available with Bruker's conversion
+#' (see \code{\link{setup_bruker_so}}).
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frame Frame whose calibration to use, or \code{NULL} for exact conversion.
+#' @return No return value, called for its side effect of changing the conversion.
+#' @export
+#' @examples
+#' \donttest{
+#' if (interactive()) {
+#'   setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+#'   D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+#'   use_mz_lookup(D)        # calibration of frame 1 for all frames
+#'   use_mz_lookup(D, 2)     # calibration of frame 2 instead
+#'   use_mz_lookup(D, NULL)  # back to exact conversion
+#'   CloseTIMS(D)
+#' }
+#' }
+use_mz_lookup <- function(opentims, frame=1L){
+  tdf_set_mz_lookup_frame(opentims@handle, lookup_frame(frame))
+  invisible(NULL)
+}
+
+
+#' Use a lookup table for inverse ion mobility conversion with Bruker's library.
+#'
+#' Like \code{\link{use_mz_lookup}}, for inverse ion mobility. opentimsr uses no
+#' pressure compensation, so this conversion is the same in every frame and the
+#' table is exact for all frames.
+#'
+#' @param opentims Instance of OpenTIMS.
+#' @param frame Frame whose calibration to use, or \code{NULL} for exact conversion.
+#' @return No return value, called for its side effect of changing the conversion.
+#' @export
+#' @examples
+#' \donttest{
+#' if (interactive()) {
+#'   setup_bruker_so(download_bruker_proprietary_code(tempdir()))
+#'   D = OpenTIMS(system.file("extdata", "test.d", package = "opentimsr"))
+#'   use_inv_ion_mobility_lookup(D)
+#'   CloseTIMS(D)
+#' }
+#' }
+use_inv_ion_mobility_lookup <- function(opentims, frame=1L){
+  tdf_set_inv_ion_mobility_lookup_frame(opentims@handle, lookup_frame(frame))
+  invisible(NULL)
+}
+
+
 #' Set the number of threads to be used for data processing by OpenTIMS
 #'
-#' A value of 0 is acceptable: it will cause OpenTIMS to use all detected cores.
+#' Frames are decoded in parallel by \code{\link{query}}, \code{\link{query_slice}},
+#' \code{\link{rt_query}}, \code{[} and \code{range}. By default all detected cores
+#' are used; a value of 0 restores that default. When the environment variable
+#' \code{_R_CHECK_LIMIT_CORES_} is set (as during \code{R CMD check --as-cran}),
+#' the default is two threads.
 #'
 #' @param n The number of worker threads to be used.
 #' @return No return value, called for its side effect of setting the number of threads.
@@ -607,4 +720,11 @@ setup_opensource <- function() invisible(.setup_opensource())
 #' opentims_set_threads(1)
 opentims_set_threads <- function(n){
     tdf_set_num_threads(n)
+}
+
+
+.onLoad <- function(libname, pkgname){
+    # CRAN checks may use at most two cores.
+    limit_cores = tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+    if(nzchar(limit_cores) && limit_cores != "false") tdf_set_num_threads(2)
 }

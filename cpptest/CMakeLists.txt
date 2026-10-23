@@ -138,6 +138,7 @@ set(OPENTIMS_TEST_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/test_extraction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_corruption.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/test_threading.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_repeated_frames.cpp"
 )
 
 # Core sources + test support, for one sqlite backend.

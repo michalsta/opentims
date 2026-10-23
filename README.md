@@ -221,8 +221,8 @@ pprint(next(it))
 
 # All MS1 frames, but one at a time
 iterator_over_MS1 = D.query_iter(D.ms1_frames, columns=all_columns)
-pprint(next(it))
-pprint(next(it))
+pprint(next(iterator_over_MS1))
+pprint(next(iterator_over_MS1))
 # or in a loop, only getting intensities
 for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
     print(fr['intensity'])
@@ -237,6 +237,14 @@ for fr in D.query_iter(D.ms1_frames, columns=('intensity',)):
 # [  9   9   9 ... 117   9  64]
 # [ 20 147  69 ...  58   9   9]
 # [ 9  9  9 ...  9 91  9]
+
+
+# Several frames at once, each as its own arrays: a dict keyed by frame number,
+# decoded in parallel. A frame requested more than once is returned once.
+frames = D.get_separate_frames([1, 5, 67], columns=('mz', 'intensity'))
+frames[5]['mz']         # numpy array with the m/z of every peak in frame 5
+frames[5]['intensity']  # and their intensities
+# Unlike query_iter, all requested frames are held in memory at once.
 
 
 # The frame lasts a convenient time unit that well suits chromatography peak elution.
@@ -377,6 +385,14 @@ pprint(rt_query(D, 10, 12))  # seconds
 for(fr in MS1(D)){
     print(query(D, fr, columns=all_columns))
 }
+
+
+# Several frames at once, each as its own data.frame: a named list (names are
+# frame numbers), decoded in parallel. A frame requested more than once is
+# returned once. Unlike the loop above, all requested frames are held in memory.
+frames = get_separate_frames(D, c(1, 5, 67), columns=c('mz', 'intensity'))
+names(frames)        # "1" "5" "67"
+head(frames[["5"]])  # the same as query(D, 5, columns=c('mz', 'intensity'))
 
 
 # Bracket indexing extracts raw data (frame, scan, tof, intensity):
@@ -526,11 +542,72 @@ Consider [TimsPy](https://github.com/MatteoLacki/timspy) and [TimsR](https://git
 # Development
 We will be happy to accept any contributions.
 
+# Performance
+
+Frames are decoded in parallel, by default on all cores.
+Set the number of threads with `opentimspy.set_num_threads(n)` in Python and `opentims_set_threads(n)` in R
+(R uses two threads by default when `_R_CHECK_LIMIT_CORES_` is set, as during `R CMD check --as-cran`).
+
+Timings below: 1000 frames (45.9 million peaks) of one dataset, AMD Ryzen 7 4800H (8 cores, 16 threads), best of three runs.
+"Before" is the previous code, which decoded frames on one thread.
+
+**R, open-source conversion**
+
+| | before | now, 1 thread | now, 16 threads |
+|---|---|---|---|
+| `query()`, raw columns (frame, scan, tof, intensity) | 2.09 s | 0.66 s | 0.10 s |
+| `query()`, all columns | 3.31 s | 1.26 s | 0.24 s |
+| `query_slice()`, all columns | 3.30 s | 1.26 s | 0.24 s |
+| `D[frames]` | 2.12 s | 1.46 s | 0.90 s |
+| `get_separate_frames()`, all columns (new; previously `query()` + `split()`) | 5.4 s | 1.25 s | 0.27 s |
+
+**R, Bruker's conversion, `query()` with all columns**
+
+| before | now, exact | now, with lookup tables |
+|---|---|---|
+| 4.01 s | 1.68 s (16 threads) | 0.29 s (16 threads) |
+
+**Python, open-source conversion, `query()`**
+
+| | before | now, 16 threads |
+|---|---|---|
+| raw columns | 0.75 s | 0.11 s |
+| all columns | 0.79 s | 0.20 s |
+
+With NumPy's default settings, Python is fastest at about 4 threads (raw columns 0.16 s, all columns 0.34 s) and slower beyond that,
+because NumPy allocates large arrays with transparent huge pages and many threads writing into fresh huge pages contend in the kernel.
+Setting the environment variable `NUMPY_MADVISE_HUGEPAGE=0` gives the 16-thread timings above.
+
+Where the speed comes from:
+- R decodes straight into R vectors; previously about 85% of `query()` time went into zero-filling and copying buffers.
+- Frames are decoded in parallel, each with its own zstd decoder; a frame requested several times is decoded once.
+- Bruker's library is not safe to call from several threads at once (it crashes or returns wrong values), so calls into it are serialised,
+  and even with separate file handles its m/z conversion hardly speeds up with more threads.
+  The optional lookup tables avoid calling it per frame:
+
+```python
+D.use_mz_lookup()                # m/z of every tof index from frame 1, used for all frames
+D.use_inv_ion_mobility_lookup()  # the same for inverse ion mobility
+D.use_mz_lookup(None)            # back to exact conversion
+```
+
+```R
+use_mz_lookup(D)                 # likewise in R; use_mz_lookup(D, 500) uses frame 500 instead
+use_inv_ion_mobility_lookup(D)
+use_mz_lookup(D, NULL)
+```
+
 # Notes on conversion accuracy
 
 OpenTIMS ships built-in open-source converters for tof→m/z and scan→inverse ion mobility, enabled via `setup_opensource()` in both Python and R.
 These are derived from the acquisition metadata and are suitable for most use cases.
 Bruker's proprietary conversion functions (available via [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) on Linux and Windows) may give slightly more accurate results in some edge cases; they are used automatically when available.
+
+With Bruker's conversion, the optional lookup tables (see Performance) are exact for the frame they were computed from.
+For other frames, m/z is approximate because Bruker's calibration changes slightly from frame to frame:
+the largest difference was 0.16 ppm, checked on every 10th frame of four datasets.
+Inverse ion mobility from a table is exact for all frames, except with `PerFramePressureCompensation` (Python only),
+where the table applies one frame's pressure correction to all frames (up to 1.2 scan steps on three test datasets).
 
 ## Licence
 

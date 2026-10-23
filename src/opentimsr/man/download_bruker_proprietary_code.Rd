@@ -34,7 +34,9 @@ function stops with an error. opentimsr works without it,
 using its built-in open-source converters (see \code{\link{setup_opensource}}).
 }
 \examples{
-\dontrun{
-download_bruker_proprietary_code("your/prefered/destination/folder")
+\donttest{
+if (interactive()) {
+  download_bruker_proprietary_code(tempdir())
+}
 }
 }

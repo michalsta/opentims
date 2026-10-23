@@ -127,7 +127,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_extract_frames
-Rcpp::DataFrame tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+Rcpp::List tdf_extract_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
 RcppExport SEXP _opentimsr_tdf_extract_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -146,7 +146,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // tdf_extract_frames_slice
-Rcpp::DataFrame tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
+Rcpp::List tdf_extract_frames_slice(const Rcpp::XPtr<TimsDataHandle> tdf, const size_t start, const size_t end, const int32_t step, const bool get_frames, const bool get_scans, const bool get_tofs, const bool get_intensities, const bool get_mzs, const bool get_inv_ion_mobilities, const bool get_retention_times);
 RcppExport SEXP _opentimsr_tdf_extract_frames_slice(SEXP tdfSEXP, SEXP startSEXP, SEXP endSEXP, SEXP stepSEXP, SEXP get_framesSEXP, SEXP get_scansSEXP, SEXP get_tofsSEXP, SEXP get_intensitiesSEXP, SEXP get_mzsSEXP, SEXP get_inv_ion_mobilitiesSEXP, SEXP get_retention_timesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -164,6 +164,41 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type get_retention_times(get_retention_timesSEXP);
     rcpp_result_gen = Rcpp::wrap(tdf_extract_frames_slice(tdf, start, end, step, get_frames, get_scans, get_tofs, get_intensities, get_mzs, get_inv_ion_mobilities, get_retention_times));
     return rcpp_result_gen;
+END_RCPP
+}
+// tdf_extract_separate_frames
+Rcpp::List tdf_extract_separate_frames(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::IntegerVector indexes, const Rcpp::CharacterVector columns);
+RcppExport SEXP _opentimsr_tdf_extract_separate_frames(SEXP tdfSEXP, SEXP indexesSEXP, SEXP columnsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type indexes(indexesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector >::type columns(columnsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tdf_extract_separate_frames(tdf, indexes, columns));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tdf_set_mz_lookup_frame
+void tdf_set_mz_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame);
+RcppExport SEXP _opentimsr_tdf_set_mz_lookup_frame(SEXP tdfSEXP, SEXP frameSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::IntegerVector> >::type frame(frameSEXP);
+    tdf_set_mz_lookup_frame(tdf, frame);
+    return R_NilValue;
+END_RCPP
+}
+// tdf_set_inv_ion_mobility_lookup_frame
+void tdf_set_inv_ion_mobility_lookup_frame(const Rcpp::XPtr<TimsDataHandle> tdf, const Rcpp::Nullable<Rcpp::IntegerVector> frame);
+RcppExport SEXP _opentimsr_tdf_set_inv_ion_mobility_lookup_frame(SEXP tdfSEXP, SEXP frameSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::XPtr<TimsDataHandle> >::type tdf(tdfSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::IntegerVector> >::type frame(frameSEXP);
+    tdf_set_inv_ion_mobility_lookup_frame(tdf, frame);
+    return R_NilValue;
 END_RCPP
 }
 // tdf_set_num_threads
@@ -190,6 +225,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_opentimsr_tdf_get_range_noend", (DL_FUNC) &_opentimsr_tdf_get_range_noend, 3},
     {"_opentimsr_tdf_extract_frames", (DL_FUNC) &_opentimsr_tdf_extract_frames, 9},
     {"_opentimsr_tdf_extract_frames_slice", (DL_FUNC) &_opentimsr_tdf_extract_frames_slice, 11},
+    {"_opentimsr_tdf_extract_separate_frames", (DL_FUNC) &_opentimsr_tdf_extract_separate_frames, 3},
+    {"_opentimsr_tdf_set_mz_lookup_frame", (DL_FUNC) &_opentimsr_tdf_set_mz_lookup_frame, 2},
+    {"_opentimsr_tdf_set_inv_ion_mobility_lookup_frame", (DL_FUNC) &_opentimsr_tdf_set_inv_ion_mobility_lookup_frame, 2},
     {"_opentimsr_tdf_set_num_threads", (DL_FUNC) &_opentimsr_tdf_set_num_threads, 1},
     {NULL, NULL, 0}
 };

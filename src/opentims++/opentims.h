@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -308,6 +309,21 @@ public:
     const std::vector<std::pair<std::string, std::string>>& get_global_metadata() const { return global_metadata; };
 #endif /* OPENTIMS_BUILDING_R */
 
+    //! Convert tof indices to m/z with a lookup table filled by Bruker's library for `frame`.
+    /**
+     * Faster than calling Bruker's library for every frame (which can only be done by one
+     * thread at a time), exact for `frame` and approximate for other frames. Can be called
+     * again with another frame; std::nullopt returns to exact conversion. Only available
+     * with Bruker's conversion. Must not be called while frames are being extracted.
+     */
+    void set_mz_lookup_frame(std::optional<uint32_t> frame);
+
+    //! Convert scans to inverse ion mobility with a lookup table filled by Bruker's library for `frame`.
+    /**
+     * As set_mz_lookup_frame(). Exact for all frames unless per-frame pressure compensation is used.
+     */
+    void set_inv_ion_mobility_lookup_frame(std::optional<uint32_t> frame);
+
     //! Close and deallocate the TimsTOF data handle (destructor).
     ~TimsDataHandle();
 
@@ -478,6 +494,34 @@ public:
                         double* const * retention_times);
 
     void allocate_buffers();
+
+    //! Output buffers for one requested frame; nullptr for columns not wanted.
+    struct FrameOutput
+    {
+        uint32_t* frame_ids;
+        uint32_t* scan_ids;
+        uint32_t* tofs;
+        uint32_t* intensities;
+        double* mzs;
+        double* inv_ion_mobilities;
+        double* retention_times;
+    };
+
+    // Decode the requested frames into their outputs, in parallel when possible.
+    void decode_frames(const uint32_t* indexes,
+                       size_t no_indexes,
+                       const std::vector<FrameOutput>& outputs);
+
+    // Decode frames into contiguous output columns, in parallel when possible.
+    void extract_frames_contiguous(const uint32_t* indexes,
+                                   size_t no_indexes,
+                                   uint32_t* frame_ids,
+                                   uint32_t* scan_ids,
+                                   uint32_t* tofs,
+                                   uint32_t* intensities,
+                                   double* mzs,
+                                   double* inv_ion_mobilities,
+                                   double* retention_times);
 
     inline void ensure_buffers_allocated() { if(_scan_ids_buffer) return; allocate_buffers(); };
 

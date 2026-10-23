@@ -89,8 +89,15 @@ void TimsFrame::print() const
 
 void TimsFrame::decompress(char* decompression_buffer, ZSTD_DCtx* decomp_ctx)
 {
-    uint32_t tims_packet_size = *reinterpret_cast<const uint32_t*>(tims_bin_frame);
-    assert(num_scans == *(reinterpret_cast<const uint32_t*>(tims_bin_frame)+1));
+    // Compressed frames may start at offsets that are not uint32_t-aligned.
+    uint32_t tims_packet_size;
+    std::memcpy(&tims_packet_size, tims_bin_frame, sizeof(tims_packet_size));
+#ifndef NDEBUG
+    uint32_t packet_num_scans;
+    std::memcpy(&packet_num_scans, tims_bin_frame + sizeof(tims_packet_size),
+                sizeof(packet_num_scans));
+    assert(num_scans == packet_num_scans);
+#endif
 
     size_t dsbytes = data_size_bytes();
 

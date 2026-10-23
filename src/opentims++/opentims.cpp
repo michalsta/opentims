@@ -15,6 +15,7 @@
 #include <iostream>
 #include <locale>
 #include <memory>
+#include <new>
 #include <limits>
 #include <stdexcept>
 #include <thread>
@@ -699,15 +700,50 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
     {
         std::atomic<size_t> next_task(0);
         std::atomic<bool> failed(false);
-        std::exception_ptr first_error;
+        enum class DecodeError { none, standard, allocation, unknown };
+        DecodeError first_error = DecodeError::none;
+        std::string error_message;
         std::mutex error_mutex;
 
+        // Called from a catch handler, on the thread that caught the exception.
+        // R can load both libc++ and libstdc++; their exception_ptr machinery
+        // can then resolve to incompatible runtimes. Transfer diagnostic data
+        // instead, and create a fresh exception on the calling thread.
         auto record_error = [&]()
         {
             std::lock_guard<std::mutex> lock(error_mutex);
-            if(!first_error)
-                first_error = std::current_exception();
+            if(first_error != DecodeError::none)
+                return;
+            first_error = DecodeError::unknown;
             failed = true;
+            try
+            {
+                throw;
+            }
+            catch(const std::bad_alloc&)
+            {
+                first_error = DecodeError::allocation;
+            }
+            catch(const std::exception& error)
+            {
+                try
+                {
+                    error_message = error.what();
+                    first_error = DecodeError::standard;
+                }
+                catch(const std::bad_alloc&)
+                {
+                    first_error = DecodeError::allocation;
+                }
+                catch(...)
+                {
+                    // Keep the unknown-error fallback if copying fails.
+                }
+            }
+            catch(...)
+            {
+                // Non-standard exceptions still report failure to the caller.
+            }
         };
 
         auto worker = [&]()
@@ -763,8 +799,12 @@ void TimsDataHandle::decode_frames(const uint32_t* indexes,
 
         ThreadingManager::get_instance().set_converter_threading();
 
-        if(first_error)
-            std::rethrow_exception(first_error);
+        if(first_error == DecodeError::allocation)
+            throw std::bad_alloc();
+        if(first_error == DecodeError::standard)
+            throw std::runtime_error(error_message);
+        if(first_error == DecodeError::unknown)
+            throw std::runtime_error("Unknown exception while decoding frames");
     }
 
     for(const auto& [request, source] : repeats)

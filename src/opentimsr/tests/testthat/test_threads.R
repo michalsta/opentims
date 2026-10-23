@@ -25,7 +25,7 @@ test_that("a frame requested twice is returned twice", {
   expect_identical(both, expected)
 })
 
-test_that("corrupted frame data raises an R error with parallel decoding", {
+test_that("corrupted frame errors retain their message with parallel decoding", {
   bad.d <- file.path(tempfile(), "bad.d")
   dir.create(bad.d, recursive = TRUE)
   file.copy(file.path(path.d, c("analysis.tdf", "analysis.tdf_bin")), bad.d)
@@ -34,8 +34,19 @@ test_that("corrupted frame data raises an R error with parallel decoding", {
   bytes[9:40] <- as.raw(0xFF)  # overwrite the start of frame 1's compressed data
   writeBin(bytes, bin)
 
-  opentims_set_threads(2)
-  D <- OpenTIMS(bad.d)
-  on.exit(CloseTIMS(D))
-  expect_error(query(D, frames = 1:2), "Error uncompressing frame")
+  errors <- lapply(c(1L, 2L), function(n) {
+    opentims_set_threads(n)
+    D <- OpenTIMS(bad.d)
+    on.exit(CloseTIMS(D))
+    tryCatch(query(D, frames = 1:2), error = identity)
+  })
+  for (error in errors) {
+    expect_s3_class(error, "error")
+    expect_match(conditionMessage(error), "Error uncompressing frame")
+  }
+  expect_identical(conditionMessage(errors[[1]]), conditionMessage(errors[[2]]))
+
+  # A failed extraction must not prevent subsequent valid parallel decoding.
+  expect_identical(query_with_threads(2, frames = 1:2),
+                   query_with_threads(1, frames = 1:2))
 })

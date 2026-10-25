@@ -12,7 +12,7 @@ zstd-compressed frame data). One C++ core, three front ends:
 src/opentims++/   C++20 core: frame index, decompression, tof→m/z and
                   scan→1/K0 converters, threading, dlopen helpers
 src/opentimspy/   Python package (pybind11 module `opentimspy_cpp` + pure-Python wrapper)
-src/opentimsr/    R package (Rcpp), published to CRAN
+src/opentimsr/    R package (Rcpp), on CRAN and in GitHub releases
 src/opentimsj/    Scala/JNI bindings (sbt) — not built or tested by CI
 ```
 
@@ -22,6 +22,7 @@ them:
 - `src/opentimspy/opentims++ -> ../opentims++`
 - `src/opentimsr/src/opentims_core -> ../../opentims++`
 - `src/opentimsr/inst/extdata/test.d -> ../../../../pytest/test.d`
+- `src/opentimsr/NEWS.md -> ../../CHANGELOG.md`
 
 ## Core architecture (src/opentims++)
 
@@ -57,6 +58,13 @@ them:
   ship it).
 - Bundled third-party code — do not edit: `zstd/`, `sqlite/`, `mio.hpp`
   (and R's `mio.h`).
+
+## Changelog
+
+`CHANGELOG.md` covers all front ends, under `### Core`, `### Python` and
+`### R` in each version. Add user-visible changes to the top section,
+`## X.Y.Z (unreleased)`, and give it the date when releasing. R reads it as
+`NEWS.md`, so keep version headings as `## X.Y.Z ...`.
 
 ## Building
 
@@ -150,14 +158,17 @@ cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j
   hardened standard libraries, Valgrind, a 5-minute libFuzzer run, and an
   install-and-consume check of the shared library. Not part of `publish.yml`.
 - `r_check.yml` — builds the R tarball on Linux, then `rcmdcheck --as-cran`
-  with `error_on = "warning"` on Windows/macOS/Linux, R release/devel/4.3.
-  Warnings fail the job.
+  on Windows/macOS/Linux, R release/devel/4.3, and a plain `R CMD check` on
+  each OS with R release, all with `error_on = "warning"`. Warnings fail the
+  job.
 - `publish.yml` — the release; **pushing a `v*` tag publishes.** It calls
   `build_wheels.yml` (cibuildwheel), `run_tests.yml` and `r_check.yml`, builds
   the R Windows binary and a symlink-free repository archive, and publishes
   only if all of it passed: GitHub release as a draft first, then PyPI, then
   the draft made public. The tag must equal `v` + `pyproject.toml` version,
-  whose numeric part must equal `DESCRIPTION`'s. Keep the file name — PyPI's
+  whose numeric part must equal `DESCRIPTION`'s, and (except for pre-releases)
+  `CHANGELOG.md` needs a dated `## X.Y.Z (YYYY-MM-DD)` section, used as the
+  release notes. Keep the file name — PyPI's
   trusted publisher is bound to it. Manual dispatch without a tag is a dry run.
 
 ## Rules

@@ -9,8 +9,10 @@ name: Release
 #   copies, installable with remotes (subdir) and pip on any platform;
 # the last three attached to the tag's GitHub release.
 #
-# Nothing is published until every build and test has passed. The GitHub
-# release is then prepared as a draft, the files go to PyPI, and only after
+# Nothing is published until every build and test has passed, including R CMD
+# check with and without --as-cran, and a tag that is not a pre-release also
+# needs a dated CHANGELOG.md section, which becomes the release notes. The
+# GitHub release is then prepared as a draft, the files go to PyPI, and only after
 # that is the draft made public. PyPI cannot be undone, so it runs once
 # everything that can fail on the GitHub side already has; if a later step
 # fails, re-running the failed jobs finishes the release (the PyPI upload
@@ -80,6 +82,32 @@ jobs:
           if [ "$base" != "$desc" ]; then
             echo "::error::pyproject.toml version $py does not match DESCRIPTION Version $desc"
             exit 1
+          fi
+
+      # A release needs a dated section in CHANGELOG.md ("## 1.2.2 (2026-10-30)",
+      # not "(unreleased)"); it becomes the release notes. Pre-releases may go
+      # without one, and a run without a tag only warns.
+      - name: Check CHANGELOG.md
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          ref="${TAG:+refs/tags/$TAG}"
+          ref="${ref:-HEAD}"
+          py="$(git show "$ref:pyproject.toml" | sed -n 's/^version *= *"\(.*\)"/\1/p' | head -n 1)"
+          heading="$(git show "$ref:CHANGELOG.md" | awk -v v="$py" '$1 == "##" && $2 == v' | head -n 1)"
+          echo "CHANGELOG.md: ${heading:-no section for $py}"
+          problem=""
+          if [ -z "$heading" ]; then
+            problem="CHANGELOG.md has no section for $py"
+          elif ! echo "$heading" | grep -Eq '\([0-9]{4}-[0-9]{2}-[0-9]{2}\)$'; then
+            problem="The CHANGELOG.md section for $py is not dated: $heading"
+          fi
+          if [ -n "$problem" ]; then
+            case "$py" in
+              *[!0-9.]*) echo "::warning::$problem (pre-release, allowed)" ;;
+              *) if [ -n "$TAG" ]; then echo "::error::$problem"; exit 1; fi
+                 echo "::warning::$problem (no tag, so nothing is released)" ;;
+            esac
           fi
 
   build_wheels:
@@ -181,6 +209,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
       - uses: actions/download-artifact@v4
         with:
           pattern: opentimsr-*
@@ -201,8 +233,16 @@ jobs:
             case "${TAG#v}" in
               *[!0-9.]*) prerelease="--prerelease" ;;
             esac
+            # The tag's CHANGELOG.md section, or GitHub's generated notes
+            # for a pre-release without one.
+            awk -v v="${TAG#v}" '$1 == "##" { p = ($2 == v); next } p' CHANGELOG.md > notes.md
+            if grep -q '[^[:space:]]' notes.md; then
+              notes="--notes-file notes.md"
+            else
+              notes="--generate-notes"
+            fi
             gh release create "$TAG" --draft --verify-tag --title "$TAG" \
-              --generate-notes $prerelease
+              $notes $prerelease
           fi
           gh release upload "$TAG" dist/* --clobber
 

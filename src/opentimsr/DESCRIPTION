@@ -3,7 +3,7 @@ Package: opentimsr
 Type: Package
 Title: An Open-Source Loader for Bruker's timsTOF Data Files
 Version: 1.2.2
-Date: 2026-10-23
+Date: 2026-10-25
 Authors@R:
     c(person(given="Michał Piotr",
              family="Startek",

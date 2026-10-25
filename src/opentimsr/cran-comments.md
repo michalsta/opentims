@@ -1,74 +1,51 @@
-## Resubmission
+## Update
 
-This resubmission addresses the review of 2026-10-06:
+This update fixes the problems that CRAN's checks found in opentimsr 1.2.0:
 
-* Single quotes in Title and Description are no longer used around file and
-  folder names (analysis.tdf, analysis.tdf_bin, .d) or the instrument name
-  timsTOF.
-* The S4 methods length(), range() and `[` for OpenTIMS objects are now
-  exported, so their examples document exported functions.
-* Examples that download Bruker's proprietary library now use \donttest{}
-  instead of \dontrun{}, and write to tempdir(). They are additionally
-  wrapped in if (interactive()), because using that library requires
-  accepting Bruker's license terms, which an automated check cannot do.
+* r-devel-linux-x86_64-fedora-clang, ERROR in tests (test_threads.R): an
+  error raised while decoding frames in parallel reached R as "c++ exception
+  (unknown reason)". The error was carried between threads in a
+  std::exception_ptr; when libc++ and libstdc++ are both loaded in one
+  process (as on that check machine, where R links ICU and thereby
+  libstdc++), libc++'s exception_ptr can interpret libstdc++'s exception
+  data and rethrow an unrecognisable exception. The package now passes the
+  error message between threads and throws a fresh exception on the calling
+  thread.
+* gcc-UBSAN and M1-SAN: "load of misaligned address" in opentims.cpp. Frame
+  headers in the memory-mapped data file are now read with memcpy.
 
-## Previous submission
+Both were reproduced locally on 1.2.0 (an R build using clang and libc++,
+with Rcpp also built against libc++; and a gcc -fsanitize=undefined build)
+and are gone in 1.2.2.
 
-opentimsr was archived on 2023-03-29 for misrepresentation of authorship
-and copyright holders of the included 'zstd' sources, and for compiling a
-bundled copy of 'zstd' instead of using the installed library.
-
-This version addresses both points:
-
-* 'zstd' is no longer bundled. A configure script locates the system
-  library (via pkg-config, falling back to -lzstd) and fails with
-  installation instructions if it is missing; Windows links -lzstd from
-  Rtools. 'libzstd' is listed in SystemRequirements.
-* The bundled 'sqlite' sources have been removed as well; all SQLite access
-  now goes through RSQLite.
-* The only remaining third-party code is the header-only 'mio' library
-  (MIT). Its author is listed in Authors@R as contributor and copyright
-  holder, and its copyright notice and license text are reproduced in
-  inst/COPYRIGHTS (referenced from the Copyright field in DESCRIPTION).
-
-The maintainer has changed from Michał Piotr Startek to Mateusz Krzysztof
-Łącki, as agreed between the two authors. Michał Startek will confirm this
-by email to CRAN-submissions@R-project.org from his address.
-
-The package can optionally use Bruker's proprietary 'timsdata' library.
-It is not included in the package; download_bruker_proprietary_code()
-fetches it only when the user calls it explicitly (examples doing so run
-only in interactive sessions; tests never do), and the package works fully
-without it using built-in open-source converters. This is documented in the
-help pages and inst/COPYRIGHTS.
-
-Other changes: all examples now run on a small dataset shipped in
-inst/extdata, except the four that need Bruker's proprietary library.
-
-Frames are now decoded in parallel (C++ std::thread). When
-_R_CHECK_LIMIT_CORES_ is set, the package uses at most two threads, and the
-tests set two threads explicitly.
+Other changes are listed in NEWS.md. Among them, download_bruker_proprietary_code()
+no longer overwrites a library that is already downloaded (overwriting one
+that was loaded crashed R); it gained an argument, overwrite, defaulting to
+FALSE.
 
 ## Test environments
 
-* local Ubuntu 24.04, R 4.6.1 and R 4.3.3
-* win-builder, R-oldrelease (4.5.3), R-release (4.6.1) and R-devel
-  (Windows Server 2022)
-* macOS builder, R-release (4.6.1, macOS arm64)
-* GitHub Actions: Windows x64 and arm64, macOS arm64 (R release);
-  Ubuntu (R release, devel and 4.3)
+* local Arch Linux, R 4.6.1 (gcc 16): R CMD check and R CMD check --as-cran
+* local Arch Linux, R 4.6.1, clang with libc++: tests
+* local Arch Linux, R 4.6.1, gcc with -fsanitize=undefined: tests
+* GitHub Actions: R CMD check --as-cran on Windows x64 and arm64, macOS
+  arm64 (R release) and Ubuntu (R release, devel and 4.3); plain R CMD check
+  on Windows, macOS and Ubuntu (R release)
 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
-* New submission / archived package (see above).
 * Possibly misspelled words in DESCRIPTION: 'Bruker's' is a company name,
   'timsTOF' is the name of Bruker's mass spectrometers, 'tdf' is part of the
   file names analysis.tdf and analysis.tdf_bin, 'Łącki et al.' is the author
   citation, and 'mobilities' is the plural of ion mobility; all are spelled
   correctly.
-* Installed size (5.9Mb on Ubuntu, libs 4.9Mb): reported as a NOTE by
-  R 4.3.3 and only as INFO by R 4.6.1, so it is not counted above. Almost all
-  of it is debug information from the default -g compiler flag. The shared
-  library without debug information is about 0.4Mb.
+* Installed size (about 6Mb on Linux): reported as a NOTE by R 4.3 and only
+  as INFO by current R, so it is not counted above. Almost all of it is
+  debug information from the default -g compiler flag; the shared library
+  without it is about 0.4Mb.
+
+## Reverse dependencies
+
+There are none.

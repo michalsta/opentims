@@ -248,7 +248,17 @@ jobs:
             gh release create "$TAG" --draft --verify-tag --title "$TAG" \
               $notes $prerelease
           fi
-          gh release upload "$TAG" dist/* --clobber
+          # A label is shown in the release's file list instead of the file
+          # name, which must stay as it is (R reads the package name from it).
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              opentimsr_*.tar.gz) label="R package source (CRAN submission; install.packages(<file>, repos = NULL, type = \"source\"))" ;;
+              opentimsr_*.zip)    label="R package, Windows binary (no Rtools needed; install.packages(<file>, repos = NULL))" ;;
+              opentims-*.tar.gz)  label="Full repository source, symlinks replaced by copies (works on Windows)" ;;
+              *)                  label="" ;;
+            esac
+            gh release upload "$TAG" "$f${label:+#$label}" --clobber
+          done
 
   upload_pypi:
     name: Upload to PyPI

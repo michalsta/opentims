@@ -251,10 +251,11 @@ jobs:
           # A label is shown in the release's file list instead of the file
           # name, which must stay as it is (R reads the package name from it).
           for f in dist/*; do
-            case "$(basename "$f")" in
-              opentimsr_*.tar.gz) label="R package source (CRAN submission; install.packages(<file>, repos = NULL, type = \"source\"))" ;;
-              opentimsr_*.zip)    label="R package, Windows binary (no Rtools needed; install.packages(<file>, repos = NULL))" ;;
-              opentims-*.tar.gz)  label="Full repository source, symlinks replaced by copies (works on Windows)" ;;
+            name="$(basename "$f")"
+            case "$name" in
+              opentimsr_*.tar.gz) label="$name - R source package, for CRAN or a source install" ;;
+              opentimsr_*.zip)    label="$name - R package, Windows binary (no Rtools needed)" ;;
+              opentims-*.tar.gz)  label="$name - full repository source, symlinks replaced by copies" ;;
               *)                  label="" ;;
             esac
             gh release upload "$TAG" "$f${label:+#$label}" --clobber

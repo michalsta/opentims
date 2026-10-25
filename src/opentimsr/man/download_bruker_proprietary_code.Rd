@@ -9,6 +9,7 @@ download_bruker_proprietary_code(
   net_url = paste0("https://raw.githubusercontent.com/MatteoLacki/",
     "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode = "wb",
+  overwrite = FALSE,
   ...
 )
 }
@@ -18,6 +19,11 @@ download_bruker_proprietary_code(
 \item{net_url}{The url with location of all files.}
 
 \item{mode}{Which mode to use when downloading a file?}
+
+\item{overwrite}{Download again even if the file is already in \code{target.folder}?
+By default an existing file is reused. A library already loaded with
+\code{\link{setup_bruker_so}} is never modified in place; on Windows it
+cannot be replaced at all until R is restarted.}
 
 \item{...}{Other parameters to 'download.file'.}
 }

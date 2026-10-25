@@ -535,6 +535,10 @@ rt_query <- function(opentims,
 #' @param target.folder Folder where to store the 'dll' or 'so' file.
 #' @param net_url The url with location of all files.
 #' @param mode Which mode to use when downloading a file?
+#' @param overwrite Download again even if the file is already in \code{target.folder}?
+#'   By default an existing file is reused. A library already loaded with
+#'   \code{\link{setup_bruker_so}} is never modified in place; on Windows it
+#'   cannot be replaced at all until R is restarted.
 #' @param ... Other parameters to 'download.file'.
 #' @return Path to the output 'timsdata.dll' on Windows and 'libtimsdata.so' on Linux.
 #' @importFrom utils download.file
@@ -550,6 +554,7 @@ download_bruker_proprietary_code <- function(
   net_url=paste0("https://raw.githubusercontent.com/MatteoLacki/",
                  "opentims_bruker_bridge/main/opentims_bruker_bridge/"),
   mode="wb",
+  overwrite=FALSE,
   ...){
   # Bruker's library exists only for 64-bit x86 Linux and Windows; what matters
   # is the architecture of R itself, since R loads the library.
@@ -570,8 +575,21 @@ download_bruker_proprietary_code <- function(
   }
   url = paste0(net_url, url_ending)
   target.file = file.path(target.folder, file)
+  if(file.exists(target.file) && !overwrite){
+    message("Using existing ", target.file, " (overwrite=TRUE downloads it again).")
+    return(target.file)
+  }
   message("Downloading from: ", url)
-  download.file(url, target.file, mode=mode, ...)
+  # Download next to the target, then rename it into place: rewriting the file
+  # in place would corrupt a copy of the library that is already loaded, and an
+  # interrupted download would leave a broken library behind.
+  tmp.file = tempfile(pattern=file, tmpdir=target.folder)
+  on.exit(unlink(tmp.file))
+  download.file(url, tmp.file, mode=mode, ...)
+  if(!file.rename(tmp.file, target.file))
+    stop(paste0("Could not replace ", target.file, ". On Windows a library loaded ",
+                "with setup_bruker_so() cannot be replaced: restart R and try again."),
+         call.=FALSE)
 
   target.file
 }

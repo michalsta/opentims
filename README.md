@@ -44,10 +44,17 @@ When `opentims_bruker_bridge` is installed it is used automatically; otherwise t
 
 ## R
 
-### System requirements
+`opentimsr` is on [CRAN](https://cran.r-project.org/package=opentimsr):
+```r
+install.packages("opentimsr")
+```
+CRAN provides binaries for Windows and macOS, which need nothing else.
 
-`opentimsr` links against the system [zstd](https://github.com/facebook/zstd) library.
-Installing from source needs zstd with its development headers:
+### Installing from source
+
+On Linux, and wherever R installs packages from source, `opentimsr` is compiled
+against the system [zstd](https://github.com/facebook/zstd) library, which needs
+its development headers:
 ```bash
 sudo apt install libzstd-dev         # Debian/Ubuntu
 sudo dnf install libzstd-devel       # Fedora/RHEL
@@ -60,31 +67,7 @@ If zstd is installed in a non-standard location, point the build at it:
 ZSTD_CFLAGS="-I/path/to/include" ZSTD_LIBS="-L/path/to/lib -lzstd" R CMD INSTALL opentimsr_*.tar.gz
 ```
 
-### Installation
-
-The recommended way is to install from a
-[GitHub release](https://github.com/michalsta/opentims/releases); the latest
-is [1.2.1](https://github.com/michalsta/opentims/releases/tag/v1.2.1).
-
-From source, on any platform (needs a compiler, i.e. Rtools on Windows, and
-zstd as described above):
-```r
-install.packages(c("Rcpp", "DBI", "RSQLite"))
-install.packages(
-  "https://github.com/michalsta/opentims/releases/download/v1.2.1/opentimsr_1.2.1.tar.gz",
-  repos = NULL, type = "source")
-```
-
-Windows binary, no Rtools needed (built for the R version current at release
-time; on other R versions use the source install above):
-```r
-install.packages(c("Rcpp", "DBI", "RSQLite"))
-install.packages(
-  "https://github.com/michalsta/opentims/releases/download/v1.2.1/opentimsr_1.2.1.zip",
-  repos = NULL)
-```
-
-#### Development version
+### Development version
 
 On Linux and macOS:
 ```r

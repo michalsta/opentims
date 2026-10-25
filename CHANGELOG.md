@@ -38,6 +38,7 @@ Each release's section becomes the notes of its GitHub release, and
 
 ### R
 
+- Back on CRAN: the README installs it with `install.packages("opentimsr")`.
 - New `get_separate_frames()`.
 - Frames are decoded straight into R vectors.
 - `download_bruker_proprietary_code()` reuses a library already downloaded

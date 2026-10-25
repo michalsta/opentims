@@ -151,6 +151,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: opentimsr
+          extra-packages: any::testthat
 
       - name: Build binary
         run: |
@@ -158,17 +159,20 @@ jobs:
           cd binary
           R CMD INSTALL --build ../opentimsr_*.tar.gz
 
-      - name: Install the binary into a fresh library and read the test data
+      # R CMD check works only on source packages, so the released binary is
+      # tested by running the package's test suite against it.
+      - name: Install the binary into a fresh library and run the tests on it
         shell: Rscript {0}
         run: |
           lib <- file.path(tempdir(), "lib")
           dir.create(lib)
           install.packages(Sys.glob("binary/opentimsr_*.zip"), lib = lib, repos = NULL)
-          library(opentimsr, lib.loc = lib)
-          setup_opensource()
-          D <- OpenTIMS(system.file("extdata", "test.d", package = "opentimsr", lib.loc = lib))
-          stopifnot(nrow(query(D, frames = 1L)) > 0)
-          CloseTIMS(D)
+          .libPaths(c(lib, .libPaths()))
+          library(opentimsr)
+          stopifnot(startsWith(normalizePath(find.package("opentimsr")), normalizePath(lib)))
+          untar(Sys.glob("opentimsr_*.tar.gz"), files = "opentimsr/tests", exdir = "src")
+          testthat::test_dir("src/opentimsr/tests/testthat", package = "opentimsr",
+                             load_package = "installed", stop_on_failure = TRUE)
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use OpenTIMS, TimsPy or TimsR in your work, please cite the article below."
+title: "OpenTIMS"
+abstract: "An open-source reader for Bruker timsTOF data (.d folders: analysis.tdf and analysis.tdf_bin), with a C++ core and Python (opentimspy) and R (opentimsr) front ends."
+type: software
+authors:
+  - family-names: "Łącki"
+    given-names: "Mateusz Krzysztof"
+    orcid: "https://orcid.org/0000-0001-7415-4748"
+  - family-names: "Startek"
+    given-names: "Michał Piotr"
+    orcid: "https://orcid.org/0000-0001-5227-3447"
+version: "1.2.2"
+date-released: "2026-10-25"
+license: MIT
+repository-code: "https://github.com/michalsta/opentims"
+keywords:
+  - timsTOF
+  - Bruker TDF
+  - mass spectrometry
+  - ion mobility
+preferred-citation:
+  type: article
+  title: "OpenTIMS, TimsPy, and TimsR: Open and Easy Access to timsTOF Raw Data"
+  authors:
+    - family-names: "Łącki"
+      given-names: "Mateusz Krzysztof"
+      orcid: "https://orcid.org/0000-0001-7415-4748"
+    - family-names: "Startek"
+      given-names: "Michał Piotr"
+      orcid: "https://orcid.org/0000-0001-5227-3447"
+    - family-names: "Brehmer"
+      given-names: "Sven"
+    - family-names: "Distler"
+      given-names: "Ute"
+    - family-names: "Tenzer"
+      given-names: "Stefan"
+  journal: "Journal of Proteome Research"
+  year: 2021
+  volume: 20
+  issue: 4
+  start: 2122
+  end: 2129
+  doi: "10.1021/acs.jproteome.0c00962"

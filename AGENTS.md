@@ -70,7 +70,7 @@ them:
 
 Version single source of truth: `version` in `pyproject.toml`. `CMakeLists.txt`
 parses it; `src/opentimsr/DESCRIPTION` has its own `Version:` that is kept in
-step by hand.
+step by hand, as are `version` and `date-released` in `CITATION.cff`.
 
 ### Python
 

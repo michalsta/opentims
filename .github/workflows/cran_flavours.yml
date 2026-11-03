@@ -6,9 +6,14 @@ name: CRAN flavours
 #   published recipe by .github/scripts/fedora_clang_check.sh (libc++);
 # - R-hub's images (https://github.com/r-hub/containers) for fedora-gcc,
 #   debian-clang and the sanitizer and valgrind checks.
-# Slow, so it runs weekly, on release (publish.yml calls it) and by hand.
+# Slow, so it runs weekly, on release (publish.yml calls it), by hand, and
+# when this workflow or its script changes.
 
 on:
+  push:
+    paths:
+      - '.github/workflows/cran_flavours.yml'
+      - '.github/scripts/fedora_clang_check.sh'
   schedule:
     - cron: '0 4 * * 1'
   workflow_dispatch:

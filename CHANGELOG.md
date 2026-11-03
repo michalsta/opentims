@@ -7,7 +7,12 @@ number. R versions carry no pre-release suffix, so 1.2.0b4 was opentimsr 1.2.0.
 Each release's section becomes the notes of its GitHub release, and
 `src/opentimsr/NEWS.md` points here, so R's `news()` shows it too.
 
-## 1.2.3 (unreleased)
+## 1.2.3 (2026-11-03)
+
+### Core
+
+- The shared C++ library installs `NOTICE` (licences of the bundled SQLite,
+  Zstandard and mio) next to its licence.
 
 ### Python
 

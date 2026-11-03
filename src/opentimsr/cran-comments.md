@@ -1,27 +1,15 @@
 ## Update
 
-This update fixes the problems that CRAN's checks found in opentimsr 1.2.0:
+A small follow-up to 1.2.2:
 
-* r-devel-linux-x86_64-fedora-clang, ERROR in tests (test_threads.R): an
-  error raised while decoding frames in parallel reached R as "c++ exception
-  (unknown reason)". The error was carried between threads in a
-  std::exception_ptr; when libc++ and libstdc++ are both loaded in one
-  process (as on that check machine, where R links ICU and thereby
-  libstdc++), libc++'s exception_ptr can interpret libstdc++'s exception
-  data and rethrow an unrecognisable exception. The package now passes the
-  error message between threads and throws a fresh exception on the calling
-  thread.
-* gcc-UBSAN and M1-SAN: "load of misaligned address" in opentims.cpp. Frame
-  headers in the memory-mapped data file are now read with memcpy.
+* OpenTIMS() on a folder without analysis.tdf now stops with "No
+  analysis.tdf in <folder>" before opening a database connection. Before,
+  RSQLite failed with "Could not connect to database" and leaked the handle
+  of the failed connection, which valgrind reports as definitely lost (the
+  package's tests exercise this case).
 
-Both were reproduced locally on 1.2.0 (an R build using clang and libc++,
-with Rcpp also built against libc++; and a gcc -fsanitize=undefined build)
-and are gone in 1.2.2.
-
-Other changes are listed in NEWS.md. Among them, download_bruker_proprietary_code()
-no longer overwrites a library that is already downloaded (overwriting one
-that was loaded crashed R); it gained an argument, overwrite, defaulting to
-FALSE.
+Other changes are listed in NEWS.md; none of them touch the R package's
+code.
 
 ## Test environments
 
@@ -31,6 +19,9 @@ FALSE.
 * GitHub Actions: R CMD check --as-cran on Windows x64 and arm64, macOS
   arm64 (R release) and Ubuntu (R release, devel and 4.3); plain R CMD check
   on Windows, macOS and Ubuntu (R release)
+* GitHub Actions, CRAN's Linux flavours: r-devel fedora-clang (rebuilt from
+  CRAN's recipe: LLVM with libc++), and the R-hub images for fedora-gcc,
+  debian-clang, gcc and clang ASan+UBSan, and valgrind
 
 ## R CMD check results
 

@@ -10,8 +10,8 @@ authors:
   - family-names: "Startek"
     given-names: "Michał Piotr"
     orcid: "https://orcid.org/0000-0001-5227-3447"
-version: "1.2.2"
-date-released: "2026-10-25"
+version: "1.2.3"
+date-released: "2026-11-03"
 license: MIT
 repository-code: "https://github.com/michalsta/opentims"
 keywords:

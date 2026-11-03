@@ -10,7 +10,8 @@ name: Release
 # the last three attached to the tag's GitHub release.
 #
 # Nothing is published until every build and test has passed, including R CMD
-# check with and without --as-cran, and a tag that is not a pre-release also
+# check with and without --as-cran and on CRAN's Linux check setups
+# (cran_flavours.yml), and a tag that is not a pre-release also
 # needs a dated CHANGELOG.md section, which becomes the release notes. The
 # GitHub release is then prepared as a draft, the files go to PyPI, and only after
 # that is the draft made public. PyPI cannot be undone, so it runs once
@@ -128,6 +129,12 @@ jobs:
     with:
       ref: ${{ needs.version.outputs.tag }}
 
+  cran_flavours:
+    needs: version
+    uses: ./.github/workflows/cran_flavours.yml
+    with:
+      ref: ${{ needs.version.outputs.tag }}
+
   r_windows_binary:
     name: R Windows binary
     needs: r_check
@@ -136,7 +143,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: opentimsr-tarball
 
@@ -174,7 +181,7 @@ jobs:
           testthat::test_dir("src/opentimsr/tests/testthat", package = "opentimsr",
                              load_package = "installed", stop_on_failure = TRUE)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: opentimsr-windows-binary
           path: binary/opentimsr_*.zip
@@ -200,14 +207,14 @@ jobs:
             .github/scripts/make_source_archive.sh HEAD "opentims-$(git rev-parse --short HEAD)" dist
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: opentimsr-repository-archive
           path: dist/*.tar.gz
 
   draft_release:
     name: Prepare GitHub release (draft)
-    needs: [version, build_wheels, tests, r_check, r_windows_binary, source_archive]
+    needs: [version, build_wheels, tests, r_check, cran_flavours, r_windows_binary, source_archive]
     if: needs.version.outputs.tag != ''
     runs-on: ubuntu-latest
     permissions:
@@ -217,7 +224,7 @@ jobs:
         with:
           ref: ${{ needs.version.outputs.tag }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: opentimsr-*
           path: dist
@@ -271,7 +278,7 @@ jobs:
       id-token: write
     steps:
       - name: Download artifacts from Build workflow
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: cibw-*
           path: dist

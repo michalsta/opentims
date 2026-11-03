@@ -181,6 +181,6 @@ test_that("OpenTIMS rejects a missing folder", {
 test_that("OpenTIMS does not create analysis.tdf in a folder lacking it", {
   path.d <- file.path(tempfile(), "empty.d")
   dir.create(path.d, recursive = TRUE)
-  expect_error(OpenTIMS(path.d))
+  expect_error(OpenTIMS(path.d), "No analysis.tdf", fixed = TRUE)
   expect_false(file.exists(file.path(path.d, "analysis.tdf")))
 })

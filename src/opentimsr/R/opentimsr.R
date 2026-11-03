@@ -217,6 +217,8 @@ OpenTIMS <- function(path.d){
     path.d = normalizePath(path.d, mustWork=TRUE)
     # getting tables from SQlite
     analysis.tdf = file.path(path.d, 'analysis.tdf')
+    # Checked here: RSQLite leaks the handle of a connection that fails to open.
+    if (!file.exists(analysis.tdf)) stop("No analysis.tdf in ", path.d)
     sql_conn = DBI::dbConnect(RSQLite::SQLite(), analysis.tdf, flags=RSQLite::SQLITE_RO)
     on.exit(DBI::dbDisconnect(sql_conn))
     frames = DBI::dbReadTable(sql_conn, 'Frames')

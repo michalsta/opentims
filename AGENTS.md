@@ -161,8 +161,16 @@ cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j
   on Windows/macOS/Linux, R release/devel/4.3, and a plain `R CMD check` on
   each OS with R release, all with `error_on = "warning"`. Warnings fail the
   job.
+- `cran_flavours.yml` — `--as-cran` on Linux setups mirroring CRAN's r-devel
+  machines, weekly and on release: fedora-clang rebuilt from CRAN's published
+  recipe (LLVM release + libc++, R-devel from source;
+  `.github/scripts/fedora_clang_check.sh`, runnable in a fresh `fedora:44`
+  container), and R-hub images for fedora-gcc, debian-clang, gcc/clang
+  ASan+UBSan and valgrind. Sanitizer/valgrind reports in test output fail
+  the job. Bump `LLVM_VERSION`/`PANDOC_VERSION` in the script when CRAN does.
 - `publish.yml` — the release; **pushing a `v*` tag publishes.** It calls
-  `build_wheels.yml` (cibuildwheel), `run_tests.yml` and `r_check.yml`, builds
+  `build_wheels.yml` (cibuildwheel), `run_tests.yml`, `r_check.yml` and
+  `cran_flavours.yml`, builds
   the R Windows binary and a symlink-free repository archive, and publishes
   only if all of it passed: GitHub release as a draft first, then PyPI, then
   the draft made public. The tag must equal `v` + `pyproject.toml` version,

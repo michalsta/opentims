@@ -16,6 +16,13 @@ Each release's section becomes the notes of its GitHub release, and
   of the bundled SQLite, Zstandard and mio) ship in the wheel. Building from
   source needs scikit-build-core 0.11 or newer.
 
+### R
+
+- `OpenTIMS()` on a folder without `analysis.tdf` stops with "No analysis.tdf
+  in <folder>" before opening a database connection, instead of RSQLite's
+  "Could not connect to database" (which also leaked memory; CRAN's valgrind
+  check would report it).
+
 ## 1.2.2 (2026-10-25)
 
 ### Core

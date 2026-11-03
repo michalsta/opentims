@@ -1,0 +1,146 @@
+name: CRAN flavours
+
+# R CMD check --as-cran on Linux setups that mirror CRAN's r-devel machines
+# and additional-issue checks, which r_check.yml's runners do not:
+# - fedora-clang: CRAN's r-devel-linux-x86_64-fedora-clang, rebuilt from its
+#   published recipe by .github/scripts/fedora_clang_check.sh (libc++);
+# - R-hub's images (https://github.com/r-hub/containers) for fedora-gcc,
+#   debian-clang and the sanitizer and valgrind checks.
+# Slow, so it runs weekly, on release (publish.yml calls it) and by hand.
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to check (default the triggering commit)
+        type: string
+        default: ''
+
+jobs:
+  build:
+    # Same as in r_check.yml; a separate artifact name, since publish.yml runs
+    # both workflows and collects opentimsr-* artifacts for the release.
+    name: Build source tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - name: Build tarball
+        run: R CMD build src/opentimsr
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cran-flavours-tarball
+          path: opentimsr_*.tar.gz
+
+  fedora_clang:
+    name: fedora-clang
+    needs: build
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 120
+    steps:
+      - name: Tools for checkout
+        run: dnf install -y -q git tar
+
+      # The script comes from this commit; the checked package from the ref.
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: cran-flavours-tarball
+
+      - name: Build R-devel with clang/libc++ and check
+        run: .github/scripts/fedora_clang_check.sh opentimsr_*.tar.gz check
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-fedora-clang
+          path: check
+
+  rhub:
+    name: ${{ matrix.flavour }}
+    needs: build
+    runs-on: ubuntu-latest
+    container: ghcr.io/r-hub/containers/${{ matrix.flavour }}:latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        # gcc16: CRAN's r-devel-linux-x86_64-fedora-gcc.
+        # debian-clang: CRAN's r-devel-linux-x86_64-debian-clang.
+        # The rest: CRAN's gcc-ASAN/UBSAN, clang-ASAN, clang-UBSAN and
+        # valgrind additional issues.
+        flavour: [gcc16, debian-clang, gcc-asan, clang-asan, clang-ubsan, valgrind]
+    env:
+      _R_CHECK_CRAN_INCOMING_REMOTE_: false
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cran-flavours-tarball
+
+      - name: Install zstd
+        run: |
+          if command -v dnf >/dev/null; then
+            dnf install -y libzstd-devel
+          else
+            apt-get update && apt-get install -y libzstd-dev
+          fi
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Extract DESCRIPTION for dependency resolution
+        run: tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: opentimsr
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: Check tarball
+        shell: Rscript {0}
+        env:
+          VALGRIND: ${{ matrix.flavour == 'valgrind' }}
+        run: |
+          rcmdcheck::rcmdcheck(
+            Sys.glob("opentimsr_*.tar.gz"),
+            args = c("--as-cran", "--no-manual",
+                     if (Sys.getenv("VALGRIND") == "true") "--use-valgrind"),
+            error_on = "warning",
+            check_dir = "check"
+          )
+
+      # R CMD check passes even when a sanitizer or valgrind reported errors
+      # in the test output, so look for the reports.
+      - name: Look for sanitizer and valgrind reports
+        run: |
+          pattern='runtime error:|ERROR: AddressSanitizer|SUMMARY: UndefinedBehaviorSanitizer|==[0-9]+== ERROR SUMMARY: [1-9]'
+          if grep -rEn --include='*.Rout*' "$pattern" check; then
+            echo "::error::Sanitizer or valgrind errors in the test output"
+            exit 1
+          fi
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.flavour }}
+          path: check

@@ -198,6 +198,10 @@ if(OPENTIMS_BUILD_LIB)
             COMPONENT Runtime
             RENAME copyright
         )
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/NOTICE"
+            DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+            COMPONENT Runtime
+        )
     endif()
 endif()
 

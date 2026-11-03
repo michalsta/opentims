@@ -1,7 +1,7 @@
 
 
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
+requires = ["scikit-build-core>=0.11", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -13,7 +13,8 @@ authors = [
 	{ name = "Mateusz Krzysztof Łącki (MatteoLacki)", email = "matteo.lacki@gmail.com" },
 	{ name = "Michał Startek (michalsta)", email = "michal.startek@mimuw.edu.pl" }
 ]
-license = { file = "LICENCE" }
+license = "MIT"
+license-files = ["LICENCE", "NOTICE"]
 keywords = ["timsTOFpro", "Bruker TDF", "data science", "mass spectrometry"]
 classifiers = [
 	"Development Status :: 4 - Beta",

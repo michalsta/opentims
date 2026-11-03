@@ -594,7 +594,7 @@ where the table applies one frame's pressure correction to all frames (up to 1.2
 
 ## Licence
 
-OpenTIMS is released under the terms of MIT licence. Full text below in LICENCE file.
+OpenTIMS is released under the terms of MIT licence; full text in the [LICENCE](LICENCE) file.
 If you require other licensing terms please contact the authors.
 
 OpenTIMS contains built-in versions of the following software:
@@ -602,7 +602,7 @@ OpenTIMS contains built-in versions of the following software:
 - ZSTD, BSD licence
 - mio, MIT licence
 
-See the respective files for details.
+Their licence texts are in the [NOTICE](NOTICE) file.
 The [opentims_bruker_bridge](https://github.com/MatteoLacki/opentims_bruker_bridge) module ships Bruker's proprietary tof→m/z and scan→drift time conversion binaries under a separate license.
 
 If the above license terms do not suit you, please contact us.

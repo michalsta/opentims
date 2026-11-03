@@ -7,6 +7,15 @@ number. R versions carry no pre-release suffix, so 1.2.0b4 was opentimsr 1.2.0.
 Each release's section becomes the notes of its GitHub release, and
 `src/opentimsr/NEWS.md` points here, so R's `news()` shows it too.
 
+## 1.2.3 (unreleased)
+
+### Python
+
+- Package metadata gives the licence as the SPDX expression `MIT` (PEP 639)
+  instead of the full licence text; `LICENCE` and the new `NOTICE` (licences
+  of the bundled SQLite, Zstandard and mio) ship in the wheel. Building from
+  source needs scikit-build-core 0.11 or newer.
+
 ## 1.2.2 (2026-10-25)
 
 ### Core

@@ -92,6 +92,8 @@ jobs:
         flavour: [gcc16, debian-clang, gcc-asan, clang-asan, clang-ubsan, valgrind]
     env:
       _R_CHECK_CRAN_INCOMING_REMOTE_: false
+      # As on CRAN: the images' own flags are not the package's NOTE.
+      _R_CHECK_COMPILATION_FLAGS_KNOWN_: '-Werror=implicit-function-declaration -Wno-error=enum-constexpr-conversion -Wp,-D_FORTIFY_SOURCE=3 -Wno-missing-template-arg-list-after-template-kw'
     defaults:
       run:
         shell: bash

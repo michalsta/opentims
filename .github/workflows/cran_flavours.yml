@@ -92,8 +92,6 @@ jobs:
         flavour: [gcc16, debian-clang, gcc-asan, clang-asan, clang-ubsan, valgrind]
     env:
       _R_CHECK_CRAN_INCOMING_REMOTE_: false
-      # As on CRAN: the images' own flags are not the package's NOTE.
-      _R_CHECK_COMPILATION_FLAGS_KNOWN_: '-Werror=implicit-function-declaration -Wno-error=enum-constexpr-conversion -Wp,-D_FORTIFY_SOURCE=3 -Wno-missing-template-arg-list-after-template-kw'
     defaults:
       run:
         shell: bash
@@ -127,6 +125,13 @@ jobs:
         env:
           VALGRIND: ${{ matrix.flavour == 'valgrind' }}
         run: |
+          # As on CRAN, the images' own compilation flags are not the
+          # package's NOTE. Added to the list some images set, not replacing it.
+          Sys.setenv(`_R_CHECK_COMPILATION_FLAGS_KNOWN_` = paste(
+            Sys.getenv("_R_CHECK_COMPILATION_FLAGS_KNOWN_"),
+            "-Werror=implicit-function-declaration -Wno-error=enum-constexpr-conversion",
+            "-Wp,-D_FORTIFY_SOURCE=3 -Wno-missing-template-arg-list-after-template-kw"
+          ))
           rcmdcheck::rcmdcheck(
             Sys.glob("opentimsr_*.tar.gz"),
             args = c("--as-cran", "--no-manual",

@@ -143,7 +143,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: opentimsr-tarball
 
@@ -181,7 +181,7 @@ jobs:
           testthat::test_dir("src/opentimsr/tests/testthat", package = "opentimsr",
                              load_package = "installed", stop_on_failure = TRUE)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: opentimsr-windows-binary
           path: binary/opentimsr_*.zip
@@ -207,7 +207,7 @@ jobs:
             .github/scripts/make_source_archive.sh HEAD "opentims-$(git rev-parse --short HEAD)" dist
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: opentimsr-repository-archive
           path: dist/*.tar.gz
@@ -224,7 +224,7 @@ jobs:
         with:
           ref: ${{ needs.version.outputs.tag }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: opentimsr-*
           path: dist
@@ -278,7 +278,7 @@ jobs:
       id-token: write
     steps:
       - name: Download artifacts from Build workflow
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: cibw-*
           path: dist

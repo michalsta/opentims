@@ -42,7 +42,7 @@ jobs:
       - name: Build tarball
         run: R CMD build src/opentimsr
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cran-flavours-tarball
           path: opentimsr_*.tar.gz
@@ -62,7 +62,7 @@ jobs:
         with:
           sparse-checkout: .github/scripts
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: cran-flavours-tarball
 
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload check results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: check-fedora-clang
           path: check
@@ -97,7 +97,7 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: cran-flavours-tarball
 
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload check results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: check-${{ matrix.flavour }}
           path: check

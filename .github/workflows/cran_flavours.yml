@@ -182,7 +182,8 @@ jobs:
           name: cran-flavours-tarball
 
       - name: System packages
-        run: apt-get update && apt-get install -y --no-install-recommends libzstd-dev pandoc tidy
+        # libuv: fs (needed by testthat) builds against it.
+        run: apt-get update && apt-get install -y --no-install-recommends libzstd-dev libuv1-dev pandoc tidy
 
       # From source, so the dependencies are built with RD's sanitizer flags.
       - name: Dependencies

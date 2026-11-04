@@ -28,6 +28,20 @@ RSQLite failed with "Could not connect to database" and leaked the handle
 of the failed connection, which valgrind reports as definitely lost (the
 package's tests exercise this case).
 
+The leak itself is in RSQLite (3.53.3, and unchanged on its main branch),
+so other packages that test a failing dbConnect() will see it too. In
+src/DbConnection.cpp, the DbConnection constructor calls cpp11::stop() when
+sqlite3_open_v2() fails, without first passing the handle to
+sqlite3_close(); SQLite's documentation says the handle must be closed
+whether or not opening succeeded, and since the constructor throws, the
+destructor never runs. About 800 bytes are lost per failed connection.
+Reproducible with RSQLite alone:
+
+    try(DBI::dbConnect(RSQLite::SQLite(), "/nonexistent/dir/db.sqlite"))
+
+run under R -d "valgrind --leak-check=full". Saving the message from
+sqlite3_errmsg(), calling sqlite3_close_v2() and then stopping fixes it.
+
 Other changes since 1.2.0 are listed in NEWS.md. Among them,
 download_bruker_proprietary_code() no longer overwrites a library that is
 already downloaded (overwriting one that was loaded crashed R); it gained an

@@ -1,15 +1,51 @@
 ## Update
 
-A small follow-up to 1.2.2:
+The version on CRAN is 1.2.0. This update fixes the problems that CRAN's
+checks report for it:
 
-* OpenTIMS() on a folder without analysis.tdf now stops with "No
-  analysis.tdf in <folder>" before opening a database connection. Before,
-  RSQLite failed with "Could not connect to database" and leaked the handle
-  of the failed connection, which valgrind reports as definitely lost (the
-  package's tests exercise this case).
+* r-devel-linux-x86_64-fedora-clang, ERROR in tests (test_threads.R): an
+  error raised while decoding frames in parallel reached R as "c++ exception
+  (unknown reason)". The error was carried between threads in a
+  std::exception_ptr; when libc++ and libstdc++ are both loaded in one
+  process (as on that check machine, where R links ICU and thereby
+  libstdc++), libc++'s exception_ptr can interpret libstdc++'s exception
+  data and rethrow an unrecognisable exception. The package now passes the
+  error message between threads and throws a fresh exception on the calling
+  thread.
+* gcc-UBSAN and M1-SAN: "load of misaligned address" in opentims.cpp. Frame
+  headers in the memory-mapped data file are now read with memcpy.
 
-Other changes are listed in NEWS.md; none of them touch the R package's
-code.
+Both were reproduced on 1.2.0, locally (an R build using clang and libc++,
+with Rcpp also built against libc++; and a gcc -fsanitize=undefined build)
+and on r-devel fedora-clang rebuilt from CRAN's published recipe, which
+gives the same ERROR. Neither occurs in 1.2.3 in those setups, nor with
+the R-hub sanitizer images.
+
+It also avoids a memory leak that the valgrind check would report:
+OpenTIMS() on a folder without analysis.tdf now stops with "No
+analysis.tdf in <folder>" before opening a database connection. Before,
+RSQLite failed with "Could not connect to database" and leaked the handle
+of the failed connection, which valgrind reports as definitely lost (the
+package's tests exercise this case).
+
+The leak itself is in RSQLite (3.53.3, and unchanged on its main branch),
+so other packages that test a failing dbConnect() will see it too. In
+src/DbConnection.cpp, the DbConnection constructor calls cpp11::stop() when
+sqlite3_open_v2() fails, without first passing the handle to
+sqlite3_close(); SQLite's documentation says the handle must be closed
+whether or not opening succeeded, and since the constructor throws, the
+destructor never runs. About 800 bytes are lost per failed connection.
+Reproducible with RSQLite alone:
+
+    try(DBI::dbConnect(RSQLite::SQLite(), "/nonexistent/dir/db.sqlite"))
+
+run under R -d "valgrind --leak-check=full". Saving the message from
+sqlite3_errmsg(), calling sqlite3_close_v2() and then stopping fixes it.
+
+Other changes since 1.2.0 are listed in NEWS.md. Among them,
+download_bruker_proprietary_code() no longer overwrites a library that is
+already downloaded (overwriting one that was loaded crashed R); it gained an
+argument, overwrite, defaulting to FALSE.
 
 ## Test environments
 

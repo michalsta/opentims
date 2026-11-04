@@ -1,13 +1,16 @@
 name: CRAN flavours
 
-# R CMD check --as-cran on Linux setups that mirror CRAN's r-devel machines
-# and additional-issue checks, which r_check.yml's runners do not:
+# R CMD check --as-cran on setups that mirror CRAN's own check machines,
+# which r_check.yml's runners do not:
 # - fedora-clang: CRAN's r-devel-linux-x86_64-fedora-clang, rebuilt from its
 #   published recipe by .github/scripts/fedora_clang_check.sh (libc++);
 # - R-hub's images (https://github.com/r-hub/containers) for fedora-gcc,
-#   debian-clang and the sanitizer and valgrind checks.
+#   debian-clang and the sanitizer and valgrind checks;
+# - Rocker's r-devel-san (CRAN's memtests UBSan flags);
+# - macOS with CRAN's R and CRAN's static libraries from its macOS recipes.
 # Slow, so it runs weekly, on release (publish.yml calls it), by hand, and
-# when this workflow or its script changes.
+# when this workflow or its script changes -- not on ordinary pushes.
+# Why each job exists: .github/workflows/README.md.
 
 on:
   push:
@@ -155,4 +158,154 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: check-${{ matrix.flavour }}
+          path: check
+
+  r_devel_san:
+    # R-devel built with gcc -fsanitize=undefined,bounds-strict, the flags of
+    # CRAN's memtests (https://www.stats.ox.ac.uk/pub/bdr/memtests/README.txt);
+    # R-hub's gcc-asan lacks bounds-strict. The instrumented R is RD.
+    name: r-devel-san (Rocker)
+    needs: build
+    runs-on: ubuntu-latest
+    container: rocker/r-devel-san:latest
+    timeout-minutes: 120
+    env:
+      _R_CHECK_CRAN_INCOMING_REMOTE_: false
+      UBSAN_OPTIONS: print_stacktrace=1
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: cran-flavours-tarball
+
+      - name: System packages
+        run: apt-get update && apt-get install -y --no-install-recommends libzstd-dev pandoc tidy
+
+      # From source, so the dependencies are built with RD's sanitizer flags.
+      - name: Dependencies
+        run: |
+          tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+          RDscript - opentimsr/DESCRIPTION <<'EOF'
+          d <- read.dcf(commandArgs(TRUE)[1], c("Imports", "LinkingTo", "Suggests"))
+          pkgs <- trimws(sub("\\(.*", "", unlist(strsplit(d[!is.na(d)], ","))))
+          pkgs <- setdiff(unique(pkgs), rownames(installed.packages(priority = "base")))
+          install.packages(pkgs, repos = "https://cloud.r-project.org", Ncpus = parallel::detectCores())
+          missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+          if (length(missing)) stop("not installed: ", paste(missing, collapse = ", "))
+          EOF
+
+      # Like rcmdcheck's error_on = "warning" in the other jobs: NOTEs pass.
+      - name: Check tarball
+        run: |
+          mkdir check
+          cd check
+          RD CMD check --as-cran --no-manual ../opentimsr_*.tar.gz || true
+          status="$(grep '^Status:' opentimsr.Rcheck/00check.log || echo 'Status: no result')"
+          echo "$status"
+          if echo "$status" | grep -Eq 'ERROR|WARNING|no result'; then
+            exit 1
+          fi
+
+      - name: Look for sanitizer reports
+        run: |
+          if grep -rEn --include='*.Rout*' 'runtime error:|SUMMARY: UndefinedBehaviorSanitizer' check; then
+            echo "::error::Sanitizer errors in the test output"
+            exit 1
+          fi
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: check-r-devel-san
+          path: check
+
+  macos:
+    # CRAN's macOS check and binary machines: CRAN's R, with system libraries
+    # from CRAN's macOS recipes (https://github.com/R-macos/recipes, CRAN.md):
+    # static, under /opt/R/<arch>. r_check.yml's macOS jobs use Homebrew's
+    # zstd instead, as users installing from source do.
+    name: macOS ${{ matrix.config.arch }} / R ${{ matrix.config.r }}
+    needs: build
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # CRAN checks r-release and r-oldrel on both architectures; the
+        # macOS builder also offers r-devel (arm64).
+        config:
+          - {os: macos-latest, arch: arm64, r: release}
+          - {os: macos-latest, arch: arm64, r: oldrel}
+          - {os: macos-latest, arch: arm64, r: devel}
+          - {os: macos-15-intel, arch: x86_64, r: release}
+          - {os: macos-15-intel, arch: x86_64, r: oldrel}
+    env:
+      _R_CHECK_CRAN_INCOMING_REMOTE_: false
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: cran-flavours-tarball
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Extract DESCRIPTION for dependency resolution
+        run: tar xzf opentimsr_*.tar.gz opentimsr/DESCRIPTION
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: opentimsr
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      # Homebrew's zstd and pkg-config stay installed (the runner's own tools
+      # use them), but CRAN's pkg-config comes first and searches only
+      # /opt/R/<arch>, as on CRAN's machines.
+      - name: zstd and pkg-config from CRAN's macOS recipes
+        run: |
+          sudo Rscript -e 'source("https://mac.R-project.org/bin/install.R"); install.libs(c("zstd", "pkgconfig"))'
+          prefix="/opt/R/${{ matrix.config.arch }}"
+          ls -l "$prefix"/lib/libzstd* "$prefix"/bin/pkg-config
+          echo "$prefix/bin" >> "$GITHUB_PATH"
+          echo "PKG_CONFIG_PATH=$prefix/lib/pkgconfig:/usr/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Check tarball
+        shell: Rscript {0}
+        run: |
+          rcmdcheck::rcmdcheck(
+            Sys.glob("opentimsr_*.tar.gz"),
+            args = c("--as-cran", "--no-manual"),
+            error_on = "warning",
+            check_dir = "check"
+          )
+
+      # CRAN's binaries carry no dependency on a zstd dylib: it must have been
+      # linked statically from /opt/R/<arch>, and nothing from Homebrew used.
+      - name: zstd came from CRAN's recipes
+        run: |
+          grep -E 'Using ZSTD_(CFLAGS|LIBS)' check/opentimsr.Rcheck/00install.out
+          so=check/opentimsr.Rcheck/opentimsr/libs/opentimsr.so
+          otool -L "$so"
+          if otool -L "$so" | grep -q zstd; then
+            echo "::error::opentimsr.so links a zstd dylib; CRAN's builds link it statically"
+            exit 1
+          fi
+          if grep -n homebrew check/opentimsr.Rcheck/00install.out; then
+            echo "::error::The build used Homebrew"
+            exit 1
+          fi
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: check-macos-${{ matrix.config.arch }}-r${{ matrix.config.r }}
           path: check

@@ -151,6 +151,10 @@ cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j
 
 ## CI
 
+`.github/workflows/README.md` is the CI memo: when each workflow runs and
+why each job exists. Read it before changing CI, and update it with the
+change.
+
 - `run_tests.yml` — pytest on Linux x86/ARM, Windows x86/ARM, macOS Intel/ARM,
   Python 3.9–3.14, plus a clang job on Linux; also runs with the Bruker bridge on
   Linux/Windows.
@@ -161,13 +165,17 @@ cmake --build build-tests && ctest --test-dir build-tests --output-on-failure -j
   on Windows/macOS/Linux, R release/devel/4.3, and a plain `R CMD check` on
   each OS with R release, all with `error_on = "warning"`. Warnings fail the
   job.
-- `cran_flavours.yml` — `--as-cran` on Linux setups mirroring CRAN's r-devel
-  machines, weekly and on release: fedora-clang rebuilt from CRAN's published
-  recipe (LLVM release + libc++, R-devel from source;
-  `.github/scripts/fedora_clang_check.sh`, runnable in a fresh `fedora:44`
-  container), and R-hub images for fedora-gcc, debian-clang, gcc/clang
-  ASan+UBSan and valgrind. Sanitizer/valgrind reports in test output fail
-  the job. Bump `LLVM_VERSION`/`PANDOC_VERSION` in the script when CRAN does.
+- `cran_flavours.yml` — `--as-cran` on setups mirroring CRAN's check
+  machines: fedora-clang rebuilt from CRAN's published recipe (LLVM release +
+  libc++, R-devel from source; `.github/scripts/fedora_clang_check.sh`,
+  runnable in a fresh `fedora:44` container); R-hub images for fedora-gcc,
+  debian-clang, gcc/clang ASan+UBSan and valgrind; Rocker's r-devel-san; and
+  macOS arm64/Intel with CRAN's R and zstd from CRAN's macOS recipes.
+  Sanitizer/valgrind reports in test output fail the job. Bump
+  `LLVM_VERSION`/`PANDOC_VERSION` in the script when CRAN does.
+  **It runs weekly, on release, by hand and when it changes — deliberately not
+  on ordinary pushes.** After changing the R package or the C++ core, run it
+  by hand (`gh workflow run cran_flavours.yml`) before tagging a release.
 - `publish.yml` — the release; **pushing a `v*` tag publishes.** It calls
   `build_wheels.yml` (cibuildwheel), `run_tests.yml`, `r_check.yml` and
   `cran_flavours.yml`, builds

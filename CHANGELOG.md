@@ -7,6 +7,17 @@ number. R versions carry no pre-release suffix, so 1.2.0b4 was opentimsr 1.2.0.
 Each release's section becomes the notes of its GitHub release, and
 `src/opentimsr/NEWS.md` points here, so R's `news()` shows it too.
 
+## 1.2.4 (unreleased)
+
+### Core
+
+- Add an experimental native Rust compression-type-2 TDF reader with positioned
+  reads or mmap, raw/normalized intensities, reusable worker buffers, and
+  open-source calibration. Existing C++, Python and R implementations remain.
+- Add an optional owning Rust binding to the C++ reader, parity tests and a
+  reproducible runtime comparison. A timsrust 0.4.2 adapter recipe preserves
+  Sage's spectrum processing while replacing frame reads with native OpenTIMS.
+
 ## 1.2.3 (2026-11-03)
 
 ### Core

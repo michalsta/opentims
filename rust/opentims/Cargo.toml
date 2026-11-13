@@ -1,0 +1,25 @@
+# Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
+# SPDX-License-Identifier: MIT
+[package]
+name = "opentims"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Native Rust and C++ backed OpenTIMS readers"
+
+[features]
+default = []
+cpp = ["dep:cc"]
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
+zstd = "0.13"
+memmap2 = "0.9"
+
+[build-dependencies]
+cc = { version = "1", optional = true }
+
+[[example]]
+name = "compare"
+required-features = ["cpp"]

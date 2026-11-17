@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
 # SPDX-License-Identifier: MIT
-"""Run prebuilt benchmarks sequentially and record commands and full output."""
+"""Run upstream and adapted compat-check sequentially; record output, compare fingerprints."""
 import argparse
 import json
 import os
@@ -16,10 +16,9 @@ parser.add_argument("--adapted", required=True)
 parser.add_argument("--frames", type=int, default=1000)
 parser.add_argument("--output", required=True)
 args = parser.parse_args()
-root = Path(__file__).resolve().parent
 runs = []
 for dataset in args.datasets:
-    jobs = [("native-cpp", [str(root / "opentims/target/release/examples/compare"), dataset, "9", str(args.frames)], {})]
+    jobs = []
     for name, binary, env in [("upstream", args.upstream, {}), ("adapted-pread", args.adapted, {"OPENTIMS_IO": "pread"}), ("adapted-mmap", args.adapted, {"OPENTIMS_IO": "mmap"})]:
         jobs.append((name, [binary, dataset, str(args.frames)], env))
     for name, command, env in jobs:

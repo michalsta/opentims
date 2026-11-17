@@ -42,7 +42,7 @@ replace("        let tdf_bin_reader = TdfBlobReader::new(&path)?;", '''        l
 replace("            tdf_bin_reader,", "            opentims,")
 start = text.index("        let offset = self.get_binary_offset(index);", text.index("    fn get_from_compression_type_2("))
 end = text.index("        Ok(frame)", start)
-text = text[:start] + '''        let raw = self.opentims.read(frame.index.try_into().map_err(|_| FrameReaderError::CorruptFrame)?, opentims::IntensityMode::Raw)
+text = text[:start] + '''        let raw = self.opentims.read(frame.index.try_into().map_err(|_| FrameReaderError::CorruptFrame)?)
             .map_err(|e| FrameReaderError::OpenTims(e.to_string()))?;
         frame.scan_offsets = raw.scan_offsets;
         frame.tof_indices = raw.tofs;

@@ -6,20 +6,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 publish = false
-description = "Native Rust and C++ backed OpenTIMS readers"
-
-[features]
-default = []
-cpp = ["dep:cc"]
+description = "Native Rust OpenTIMS reader"
 
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
 zstd = "0.13"
 memmap2 = "0.9"
-
-[build-dependencies]
-cc = { version = "1", optional = true }
-
-[[example]]
-name = "compare"
-required-features = ["cpp"]

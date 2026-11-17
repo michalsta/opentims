@@ -6,18 +6,11 @@ use std::{collections::BTreeMap, fs::File, path::Path};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
-#[cfg(feature = "cpp")]
-pub mod cpp;
 
 #[derive(Clone, Copy, Debug)]
 pub enum IoMode {
     Pread,
     Mmap,
-}
-#[derive(Clone, Copy, Debug)]
-pub enum IntensityMode {
-    Raw,
-    Normalized,
 }
 #[derive(Clone, Debug)]
 pub struct FrameMeta {
@@ -157,19 +150,14 @@ impl Reader {
             file_len,
         })
     }
-    pub fn read(&self, id: u32, mode: IntensityMode) -> Result<Frame> {
+    /// Raw acquired intensities, not normalised to accumulation time.
+    pub fn read(&self, id: u32) -> Result<Frame> {
         let mut workspace = Workspace::new()?;
         let mut frame = Frame::default();
-        self.read_into(id, mode, &mut workspace, &mut frame)?;
+        self.read_into(id, &mut workspace, &mut frame)?;
         Ok(frame)
     }
-    pub fn read_into(
-        &self,
-        id: u32,
-        mode: IntensityMode,
-        w: &mut Workspace,
-        out: &mut Frame,
-    ) -> Result<()> {
+    pub fn read_into(&self, id: u32, w: &mut Workspace, out: &mut Frame) -> Result<()> {
         let meta = self.metadata.frame(id)?;
         out.tofs.clear();
         out.intensities.clear();
@@ -215,7 +203,7 @@ impl Reader {
         if w.zstd.decompress_to_buffer(payload, &mut w.decoded[..])? != bytes {
             return Err("decompressed size mismatch".into());
         }
-        decode(&w.decoded, meta, mode, out)
+        decode(&w.decoded, meta, out)
     }
 }
 fn read_at(file: &File, mut dst: &mut [u8], mut offset: u64) -> std::io::Result<()> {
@@ -242,7 +230,7 @@ fn read_at(file: &File, mut dst: &mut [u8], mut offset: u64) -> std::io::Result<
     }
     Ok(())
 }
-fn decode(data: &[u8], meta: &FrameMeta, mode: IntensityMode, out: &mut Frame) -> Result<()> {
+fn decode(data: &[u8], meta: &FrameMeta, out: &mut Frame) -> Result<()> {
     let words = data.len() / 4;
     let word = |i: usize| {
         u32::from_le_bytes([
@@ -269,15 +257,9 @@ fn decode(data: &[u8], meta: &FrameMeta, mode: IntensityMode, out: &mut Frame) -
         let mut tof = u32::MAX;
         for _ in 0..n {
             tof = tof.wrapping_add(word(pos));
-            let raw = word(pos + 1);
-            pos += 2;
             out.tofs.push(tof);
-            out.intensities.push(match mode {
-                IntensityMode::Raw => raw,
-                IntensityMode::Normalized => {
-                    (raw as f64 * (100. / meta.accumulation_time) + 0.5) as u32
-                }
-            });
+            out.intensities.push(word(pos + 1));
+            pos += 2;
         }
         count += n;
         out.scan_offsets.push(count as usize);

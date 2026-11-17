@@ -1,6 +1,6 @@
 // Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
 // SPDX-License-Identifier: MIT
-use opentims::{IntensityMode, IoMode, Reader};
+use opentims::{IoMode, Reader};
 use std::{
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
@@ -41,7 +41,7 @@ fn dataset(count: u32) -> Dataset {
     Dataset(path)
 }
 #[test]
-fn decoding_gapped_ids_empty_scans_normalization_and_cpp_parity() {
+fn decoding_gapped_ids_and_empty_scans() {
     let d = dataset(4);
     for mode in [IoMode::Pread, IoMode::Mmap] {
         let r = Reader::open(&d.0, mode).unwrap();
@@ -49,37 +49,21 @@ fn decoding_gapped_ids_empty_scans_normalization_and_cpp_parity() {
         assert_eq!(r.metadata.calibration.mz(1000), 1600.0);
         assert_eq!(r.metadata.calibration.inverse_mobility(0.0), 1.5);
         assert_eq!(r.metadata.calibration.inverse_mobility(3.0), 0.5);
-        let raw = r.read(7, IntensityMode::Raw).unwrap();
+        let raw = r.read(7).unwrap();
         assert_eq!(raw.tofs, vec![0, 4, 9]);
         assert_eq!(raw.scan_offsets, vec![0, 2, 2, 3]);
         assert_eq!(raw.intensities, vec![10, 21, u32::MAX]);
-        let corrected = r.read(7, IntensityMode::Normalized).unwrap();
-        assert_eq!(corrected.intensities, vec![20, 42, u32::MAX]);
-        assert_eq!(
-            r.read(19, IntensityMode::Raw).unwrap().scan_offsets,
-            vec![0, 0, 0, 0]
-        );
-        assert!(r.read(8, IntensityMode::Raw).is_err());
-        #[cfg(feature = "cpp")]
-        assert_eq!(
-            corrected,
-            opentims::cpp::Reader::open(&d.0).unwrap().read(7).unwrap()
-        );
+        assert_eq!(r.read(19).unwrap().scan_offsets, vec![0, 0, 0, 0]);
+        assert!(r.read(8).is_err());
     }
 }
 #[test]
 fn corrupt_scan_counts_and_truncated_packets() {
     let d = dataset(8);
-    assert!(Reader::open(&d.0, IoMode::Pread)
-        .unwrap()
-        .read(7, IntensityMode::Raw)
-        .is_err());
+    assert!(Reader::open(&d.0, IoMode::Pread).unwrap().read(7).is_err());
     std::fs::write(d.0.join("analysis.tdf_bin"), [0; 7]).unwrap();
     for mode in [IoMode::Pread, IoMode::Mmap] {
-        assert!(Reader::open(&d.0, mode)
-            .unwrap()
-            .read(7, IntensityMode::Raw)
-            .is_err());
+        assert!(Reader::open(&d.0, mode).unwrap().read(7).is_err());
     }
 }
 #[test]
@@ -91,23 +75,46 @@ fn concurrent_reads_use_independent_workspaces() {
             let r = &r;
             s.spawn(move || {
                 for _ in 0..20 {
-                    assert_eq!(r.read(7, IntensityMode::Raw).unwrap().tofs, vec![0, 4, 9]);
+                    assert_eq!(r.read(7).unwrap().tofs, vec![0, 4, 9]);
                 }
             });
         }
     });
 }
 #[test]
-fn real_compressed_fixture_parity() {
+fn real_compressed_fixture_matches_cpp_opentims() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../pytest/test.d");
-    let r = Reader::open(&path, IoMode::Pread).unwrap();
-    let m = Reader::open(&path, IoMode::Mmap).unwrap();
-    #[cfg(feature = "cpp")]
-    let mut cpp = opentims::cpp::Reader::open(&path).unwrap();
-    for f in &r.metadata.frames {
-        let frame = r.read(f.id, IntensityMode::Normalized).unwrap();
-        assert_eq!(frame, m.read(f.id, IntensityMode::Normalized).unwrap());
-        #[cfg(feature = "cpp")]
-        assert_eq!(frame, cpp.read(f.id).unwrap());
+    // From Python opentims (C++ reader). AccumulationTime is 100 ms, so its
+    // normalised intensities equal raw ones. Scans 0-based.
+    type Peaks = (u32, [usize; 5], [u32; 5], [u32; 5]); // frame id, scans, tofs, intensities
+    let expected: [Peaks; 2] = [
+        (
+            1,
+            [33, 49, 53, 59, 62],
+            [268877, 36849, 356994, 366925, 103614],
+            [10, 10, 87, 10, 80],
+        ),
+        (
+            2,
+            [54, 56, 73, 80, 83],
+            [399169, 205746, 205657, 66533, 315625],
+            [10, 51, 10, 10, 10],
+        ),
+    ];
+    for mode in [IoMode::Pread, IoMode::Mmap] {
+        let r = Reader::open(&path, mode).unwrap();
+        assert_eq!(r.metadata.frames.len(), expected.len());
+        for (id, scans, tofs, intensities) in expected {
+            let frame = r.read(id).unwrap();
+            let peak_scans: Vec<usize> = frame
+                .scan_offsets
+                .windows(2)
+                .enumerate()
+                .flat_map(|(scan, w)| std::iter::repeat_n(scan, w[1] - w[0]))
+                .collect();
+            assert_eq!(peak_scans, scans);
+            assert_eq!(frame.tofs, tofs);
+            assert_eq!(frame.intensities, intensities);
+        }
     }
 }

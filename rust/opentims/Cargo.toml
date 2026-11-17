@@ -11,11 +11,18 @@ description = "Native Rust and C++ backed OpenTIMS readers"
 [features]
 default = []
 cpp = ["dep:cc"]
+uring = ["dep:io-uring"]
+parallel = ["dep:rayon", "dep:libc"]
 
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
 zstd = "0.13"
 memmap2 = "0.9"
+rayon = { version = "1", optional = true }
+libc = { version = "0.2", optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = { version = "0.7", optional = true }
 
 [build-dependencies]
 cc = { version = "1", optional = true }
@@ -23,3 +30,7 @@ cc = { version = "1", optional = true }
 [[example]]
 name = "compare"
 required-features = ["cpp"]
+
+[[example]]
+name = "parallel_compare"
+required-features = ["uring", "parallel"]

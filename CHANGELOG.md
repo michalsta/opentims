@@ -17,6 +17,12 @@ Each release's section becomes the notes of its GitHub release, and
 - Add an optional owning Rust binding to the C++ reader, parity tests and a
   reproducible runtime comparison. A timsrust 0.4.2 adapter recipe preserves
   Sage's spectrum processing while replacing frame reads with native OpenTIMS.
+- Add an optional Linux io_uring reader that batches frame headers and payloads,
+  preserves requested frame order, and shares the native decoder. Benchmark
+  queue depths against pread, mmap and the C++ binding.
+- Add owned compressed batches and reusable decoding workspaces for overlapping
+  io_uring reads with parallel decoding. Compare matched mmap and io_uring paths
+  across worker counts, batch sizes, access orders and measured cache states.
 
 ## 1.2.3 (2026-11-03)
 

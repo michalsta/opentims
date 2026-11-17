@@ -8,6 +8,8 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
 #[cfg(feature = "cpp")]
 pub mod cpp;
+#[cfg(all(feature = "uring", target_os = "linux"))]
+pub mod uring;
 
 #[derive(Clone, Copy, Debug)]
 pub enum IoMode {
@@ -131,6 +133,68 @@ pub struct Workspace {
     zstd: zstd::bulk::Decompressor<'static>,
 }
 impl Workspace {
+    /// Decode a completed compressed payload using worker-owned scratch space.
+    pub fn decode_compressed(
+        &mut self,
+        meta: &FrameMeta,
+        payload: &[u8],
+        mode: IntensityMode,
+        out: &mut Frame,
+    ) -> Result<()> {
+        out.tofs.clear();
+        out.intensities.clear();
+        out.scan_offsets.clear();
+        if meta.num_peaks == 0 {
+            out.scan_offsets.resize(meta.num_scans as usize + 1, 0);
+            return Ok(());
+        }
+        if meta.num_scans == 0 {
+            return Err("frame has peaks but no scans".into());
+        }
+        self.decompress_payload(meta, payload)?;
+        decode(&self.decoded, meta, mode, out)
+    }
+    /// Profile decompression separately from decoding/output assembly (seconds).
+    pub fn profile_compressed(
+        &mut self,
+        meta: &FrameMeta,
+        payload: &[u8],
+        mode: IntensityMode,
+        out: &mut Frame,
+    ) -> Result<(f64, f64)> {
+        if meta.num_peaks == 0 {
+            self.decode_compressed(meta, payload, mode, out)?;
+            return Ok((0., 0.));
+        }
+        if meta.num_scans == 0 {
+            return Err("frame has peaks but no scans".into());
+        }
+        let start = std::time::Instant::now();
+        self.decompress_payload(meta, payload)?;
+        let decompression = start.elapsed().as_secs_f64();
+        let start = std::time::Instant::now();
+        out.tofs.clear();
+        out.intensities.clear();
+        out.scan_offsets.clear();
+        decode(&self.decoded, meta, mode, out)?;
+        Ok((decompression, start.elapsed().as_secs_f64()))
+    }
+    fn decompress_payload(&mut self, meta: &FrameMeta, payload: &[u8]) -> Result<()> {
+        let words = u64::from(meta.num_scans) + 2 * u64::from(meta.num_peaks);
+        if words > u32::MAX as u64 {
+            return Err("frame exceeds supported word count".into());
+        }
+        let bytes = usize::try_from(words * 4)?;
+        self.decoded.resize(bytes, 0);
+        if self
+            .zstd
+            .decompress_to_buffer(payload, &mut self.decoded[..])?
+            != bytes
+        {
+            return Err("decompressed size mismatch".into());
+        }
+        Ok(())
+    }
     pub fn new() -> Result<Self> {
         Ok(Self {
             compressed: vec![],
@@ -140,6 +204,31 @@ impl Workspace {
     }
 }
 impl Reader {
+    /// Borrow a validated mmap payload. Demand paging occurs when the decoder touches it.
+    pub fn compressed_frame(&self, id: u32) -> Result<(&FrameMeta, &[u8])> {
+        let meta = self.metadata.frame(id)?;
+        let Source::Mmap(map) = &self.source else {
+            return Err("compressed_frame requires mmap".into());
+        };
+        if meta.num_peaks == 0 {
+            return Ok((meta, &[]));
+        }
+        if meta.num_scans == 0 {
+            return Err("frame has peaks but no scans".into());
+        }
+        if meta.offset > self.file_len || self.file_len - meta.offset < 8 {
+            return Err("truncated frame header".into());
+        }
+        let offset = usize::try_from(meta.offset)?;
+        let size = u32::from_le_bytes(map[offset..offset + 4].try_into()?) as usize;
+        if u32::from_le_bytes(map[offset + 4..offset + 8].try_into()?) != meta.num_scans {
+            return Err("frame scan count mismatch".into());
+        }
+        if size < 8 || size as u64 > self.file_len - meta.offset {
+            return Err("invalid frame packet length".into());
+        }
+        Ok((meta, &map[offset + 8..offset + size]))
+    }
     pub fn open(path: impl AsRef<Path>, mode: IoMode) -> Result<Self> {
         let metadata = Metadata::open(&path)?;
         let file = File::open(path.as_ref().join("analysis.tdf_bin"))?;

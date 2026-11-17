@@ -1,0 +1,33 @@
+{
+  "platform": "Linux-7.0.0-113042-tuxedo-x86_64-with-glibc2.39",
+  "runs": [
+    {
+      "name": "native-cpp",
+      "command": [
+        "/home/matteo/Projects/ionmaiden/pipelines/necromerge2/git/opentims/rust/opentims/target/release/examples/compare",
+        "/home/matteo/data_for_midiaID/F9477.d",
+        "9",
+        "1000",
+        "1,8,32,128"
+      ],
+      "env": {},
+      "returncode": 0,
+      "stdout": "frames=1000, peaks=20181212, repetitions=9, warm-cache, one thread\nbackend,open_ms,median_ms,min_ms,max_ms,million_peaks_per_second\nrust-pread,6.687,194.107,187.851,208.881,103.970\nrust-mmap,5.029,192.858,184.633,212.976,104.643\ncpp-mmap,24.689,218.349,208.705,232.681,92.427\nrust-uring-1,4.628,197.577,194.026,216.523,102.144\nrust-uring-8,4.710,199.918,194.512,215.522,100.947\nrust-uring-32,4.762,225.964,219.351,233.847,89.312\nrust-uring-128,4.859,213.815,209.361,219.874,94.386\n",
+      "stderr": ""
+    },
+    {
+      "name": "native-cpp",
+      "command": [
+        "/home/matteo/Projects/ionmaiden/pipelines/necromerge2/git/opentims/rust/opentims/target/release/examples/compare",
+        "/home/matteo/data_for_midiaID/DDA/MHC1/G220824_007_Slot2-28_1_6732.d",
+        "9",
+        "1000",
+        "1,8,32,128"
+      ],
+      "env": {},
+      "returncode": 0,
+      "stdout": "frames=1000, peaks=77112514, repetitions=9, warm-cache, one thread\nbackend,open_ms,median_ms,min_ms,max_ms,million_peaks_per_second\nrust-pread,5.277,661.087,655.326,678.474,116.645\nrust-mmap,4.895,626.676,616.313,701.904,123.050\ncpp-mmap,28.684,731.128,721.592,770.180,105.471\nrust-uring-1,4.604,666.948,652.036,677.127,115.620\nrust-uring-8,5.146,674.862,663.311,707.522,114.264\nrust-uring-32,4.516,689.582,676.347,713.008,111.825\nrust-uring-128,4.612,676.098,667.696,685.027,114.055\n",
+      "stderr": ""
+    }
+  ]
+}

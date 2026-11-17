@@ -4,9 +4,9 @@ use opentims::{cpp, Frame, IntensityMode, IoMode, Reader, Result, Workspace};
 use std::{hint::black_box, time::Instant};
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
-    let path = args
-        .get(1)
-        .ok_or("usage: compare DATA.d [repetitions=7] [max_frames=all]")?;
+    let path = args.get(1).ok_or(
+        "usage: compare DATA.d [repetitions=7] [max_frames=all] [uring_depths=1,8,32,128]",
+    )?;
     let reps: usize = args.get(2).map(|s| s.parse()).transpose()?.unwrap_or(7);
     if reps == 0 {
         return Err("repetitions must be positive".into());
@@ -25,6 +25,29 @@ fn main() -> Result<()> {
     let start = Instant::now();
     let mut cpp = cpp::Reader::open(path)?;
     let cpp_open = start.elapsed();
+    let backends = vec![
+        ("rust-pread".to_string(), pread_open),
+        ("rust-mmap".to_string(), mmap_open),
+        ("cpp-mmap".to_string(), cpp_open),
+    ];
+    #[cfg(all(feature = "uring", target_os = "linux"))]
+    let (backends, mut rings) = {
+        let mut backends = backends;
+        let mut rings = Vec::new();
+        for depth in args
+            .get(4)
+            .map(String::as_str)
+            .unwrap_or("1,8,32,128")
+            .split(',')
+        {
+            let depth: u32 = depth.parse()?;
+            let start = Instant::now();
+            let reader = opentims::uring::Reader::open(path, depth)?;
+            backends.push((format!("rust-uring-{depth}"), start.elapsed()));
+            rings.push((reader, Vec::new()));
+        }
+        (backends, rings)
+    };
     let ids: Vec<_> = pread
         .metadata
         .frames
@@ -54,39 +77,61 @@ fn main() -> Result<()> {
         );
         assert_eq!(a, cpp.read(id)?, "C++ mismatch frame {id}");
     }
+    #[cfg(all(feature = "uring", target_os = "linux"))]
+    for (ring, output) in &mut rings {
+        for chunk in ids.chunks(ring.queue_depth()) {
+            ring.read_batch_into(chunk, IntensityMode::Normalized, output)?;
+            for (&id, actual) in chunk.iter().zip(output.iter()) {
+                assert_eq!(
+                    *actual,
+                    pread.read(id, IntensityMode::Normalized)?,
+                    "io_uring mismatch frame {id}"
+                );
+            }
+        }
+    }
     println!(
         "frames={}, peaks={}, repetitions={}, warm-cache, one thread",
         ids.len(),
         peaks,
         reps
     );
-    let mut samples = [vec![], vec![], vec![]];
+    let mut samples = vec![vec![]; backends.len()];
     for rep in 0..reps {
-        for turn in 0..3 {
-            let backend = (rep + turn) % 3;
+        for turn in 0..backends.len() {
+            let backend = (rep + turn) % backends.len();
             let start = Instant::now();
-            for &id in &ids {
-                match backend {
-                    0 => {
-                        pread.read_into(id, IntensityMode::Normalized, &mut workspace, &mut out)?
+            if backend < 3 {
+                for &id in &ids {
+                    match backend {
+                        0 => pread.read_into(
+                            id,
+                            IntensityMode::Normalized,
+                            &mut workspace,
+                            &mut out,
+                        )?,
+                        1 => {
+                            mmap.read_into(id, IntensityMode::Normalized, &mut workspace, &mut out)?
+                        }
+                        _ => cpp.read_into(id, &mut out)?,
                     }
-                    1 => mmap.read_into(id, IntensityMode::Normalized, &mut workspace, &mut out)?,
-                    _ => cpp.read_into(id, &mut out)?,
+                    black_box(&out);
                 }
-                black_box(&out);
+            } else {
+                #[cfg(all(feature = "uring", target_os = "linux"))]
+                {
+                    let (ring, output) = &mut rings[backend - 3];
+                    for chunk in ids.chunks(ring.queue_depth()) {
+                        ring.read_batch_into(chunk, IntensityMode::Normalized, output)?;
+                        black_box(&output);
+                    }
+                }
             }
             samples[backend].push(start.elapsed().as_secs_f64());
         }
     }
     println!("backend,open_ms,median_ms,min_ms,max_ms,million_peaks_per_second");
-    for ((name, open), mut times) in [
-        ("rust-pread", pread_open),
-        ("rust-mmap", mmap_open),
-        ("cpp-mmap", cpp_open),
-    ]
-    .into_iter()
-    .zip(samples)
-    {
+    for ((name, open), mut times) in backends.into_iter().zip(samples) {
         times.sort_by(f64::total_cmp);
         let median = times[times.len() / 2];
         println!(

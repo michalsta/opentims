@@ -57,6 +57,57 @@ C++ handle, catches C++ exceptions, and requires a mutable borrow for reads.
 It is deliberately neither `Send` nor `Sync`; use one handle per worker.
 The binding currently exposes frame extraction, not the complete C++ API.
 
+## Linux io_uring alternative
+
+Build with feature `uring` to expose `opentims::uring::Reader`. This is a separate
+reader with one ring per worker and exclusive access to reusable batch buffers:
+
+```rust
+let mut reader = opentims::uring::Reader::open("/path/to/run.d", 32)?;
+let mut output = Vec::new();
+reader.read_batch_into(&[1, 5, 2, 5], opentims::IntensityMode::Raw, &mut output)?;
+```
+
+The queue depth (1–1024) bounds each I/O batch. Larger ID lists are split into
+batches. Header reads are submitted together, then payload reads together;
+Zstandard decompression and decoding happen on the calling thread. Results
+preserve input order, including duplicate IDs and empty frames. No pread
+fallback is used: unavailable/disabled io_uring returns an error. This backend
+does not require an async Rust runtime or change the existing Sage adapter.
+Sage would need to schedule batches to benefit from this interface.
+
+This implementation uses ordinary buffered positioned reads, without SQPOLL,
+registered buffers, O_DIRECT, or overlap of decoding with the next batch's I/O.
+Short reads are retried and all submitted completions are drained before normal
+I/O errors are returned. On an unrecoverable submission/wait failure or panic
+with requests in flight, the reader becomes unusable and its batch allocation
+is intentionally retained, preventing the kernel from touching freed memory.
+Normal completed read errors do not retain allocations.
+
+```sh
+cargo test --manifest-path rust/opentims/Cargo.toml --features cpp,uring
+cargo build --release --manifest-path rust/opentims/Cargo.toml \
+  --features cpp,uring --example compare
+python3 rust/run_comparison.py --frames-only --uring-depths 1,8,32,128 \
+  --output /tmp/uring-results.json /path/to/dia.d /path/to/dda.d
+```
+
+The comparison checks exact outputs before timing and rotates all backends
+through the execution order. See [IO_URING.md](IO_URING.md) for measured results.
+The `uring` tests require a Linux host that permits io_uring; they fail explicitly
+if ring creation fails, rather than passing by silently skipping the backend.
+
+## Parallel decoding and pipelining
+
+For the matched mmap/parallel-decoding and io_uring/pipelined-decoding experiment,
+see [PARALLEL_COMPARISON.md](PARALLEL_COMPARISON.md). Its benchmark requires
+features `uring,parallel` and keeps two owned compressed batches in circulation.
+`uring::Reader::read_compressed_batch_into` transfers completed payloads to an
+owned `CompressedBatch`; `Workspace::decode_compressed` lets independent workers
+decode those payloads while the producer reads the next batch. mmap uses the
+same decoder through `Reader::compressed_frame`. Neither API changes Sage by
+itself; the comparison lives in `examples/parallel_compare.rs`.
+
 ## Sage / timsrust 0.4.2
 
 The adapter recipe copies the pinned upstream crate into a separate directory

@@ -1,0 +1,11 @@
+# Copyright (C) 2020-2026 Michał Startek and Mateusz Łącki
+# SPDX-License-Identifier: MIT
+[package]
+name = "opentims-compat-check"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+timsrust = { version = "=0.4.2", default-features = false, features = ["tdf", "serialize"] }
+rayon = "1"

@@ -7,6 +7,12 @@ number. R versions carry no pre-release suffix, so 1.2.0b4 was opentimsr 1.2.0.
 Each release's section becomes the notes of its GitHub release, and
 `src/opentimsr/NEWS.md` points here, so R's `news()` shows it too.
 
+## 1.2.4 (unreleased)
+
+### Core
+
+- Experimental Rust reader and timsrust adapter in `rust/` (unreleased, not packaged).
+
 ## 1.2.3 (2026-11-03)
 
 ### Core
